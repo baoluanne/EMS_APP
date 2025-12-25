@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { Stack, Typography } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
@@ -15,27 +15,25 @@ import {
 } from '../../features/ktx-management/phong-ktx/components/PhongKtxFilter';
 import { phongKtxColumns as columns } from '../../features/ktx-management/phong-ktx/configs/table.configs';
 import { PhongKtxs, phongKtxSchema } from '../../features/ktx-management/phong-ktx/validation';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 const API_BASE_URL = 'http://localhost:5031';
 
 export default function PhongKtxPage() {
   const [filters, setFilters] = React.useState<PhongKtxFilterState>({});
+  const [customModalOpen, setCustomModalOpen] = useState(false);
+  const [isCustomAddMode, setIsCustomAddMode] = useState(true);
 
   const {
     refetch,
     formMethods,
     data,
-    isModalOpen,
     isRefetching,
     selectedRows,
     handleRowSelectionModelChange,
     isDeleteOpenModal,
-    onAdd,
-    onEdit,
     handleDeleteRecord,
     setIsDeleteOpenModal,
-    handleCloseModal,
-    isAddMode,
     tableConfig,
   } = useCrudPaginationModal<PhongKtxs, any>({
     defaultValues: {
@@ -102,24 +100,49 @@ export default function PhongKtxPage() {
     });
   }, [rawRowsData, filters]);
 
-  useEffect(() => {
-    if (
-      isModalOpen &&
-      !isAddMode &&
-      selectedRows &&
-      Array.isArray(selectedRows) &&
-      selectedRows.length > 0
-    ) {
-      const selectedId = selectedRows[0];
-      const record = rowsData.find((r) => r.id === selectedId);
-      if (record) {
-        formMethods.reset(record);
-      }
+  const handleRowClick = useCallback(
+    (params: any) => {
+      const rowId = params.row.id;
+      handleRowSelectionModelChange([rowId] as any);
+    },
+    [handleRowSelectionModelChange],
+  );
+
+  const handleAdd = useCallback(() => {
+    formMethods.reset({
+      id: undefined,
+      maPhong: '',
+      toaNhaId: undefined,
+      tenToaNha: '',
+      soLuongGiuong: 6,
+      soLuongDaO: 0,
+      trangThai: 'HOAT_DONG',
+      giaPhong: 0,
+    });
+    setIsCustomAddMode(true);
+    setCustomModalOpen(true);
+  }, [formMethods]);
+
+  const handleEditFromToolbar = useCallback(() => {
+    if (!selectedRows || !selectedRows.ids || selectedRows.ids.size !== 1) {
+      return;
     }
-  }, [isModalOpen, isAddMode, selectedRows, rowsData, formMethods]);
+
+    const selectedId = Array.from(selectedRows.ids)[0];
+    const rowToEdit = rowsData.find((r) => r.id === selectedId);
+
+    if (rowToEdit) {
+      formMethods.reset(rowToEdit);
+      setIsCustomAddMode(false);
+      setCustomModalOpen(true);
+    }
+  }, [selectedRows, rowsData, formMethods]);
+
+  const handleCloseModal = useCallback(() => {
+    setCustomModalOpen(false);
+  }, []);
 
   const handleFilterApply = useCallback((filterValues: PhongKtxFilterState) => {
-    console.log('📊 Filters applied:', filterValues);
     setFilters(filterValues);
   }, []);
 
@@ -127,23 +150,44 @@ export default function PhongKtxPage() {
     setFilters(phongKtxDefaultFilters);
   }, []);
 
-  const handleSave = async (formData: PhongKtxs) => {
+  const handleSave = formMethods.handleSubmit(async (formData: PhongKtxs) => {
     try {
-      if (isAddMode) {
+      if (isCustomAddMode) {
         await axios.post(`${API_BASE_URL}/api/phong-ktx/tao-phong-moi`, {
-          ...formData,
+          toaNhaId: formData.toaNhaId,
           maPhongNhapTay: formData.maPhong,
+          soLuongGiuong: formData.soLuongGiuong,
+          trangThai: formData.trangThai,
+          giaPhong: formData.giaPhong,
         });
       } else {
-        await axios.put(`${API_BASE_URL}/api/phong-ktx/${formData.id}`, formData);
+        const updatePayload = {
+          id: formData.id,
+          maPhong: formData.maPhong,
+          toaNhaId: formData.toaNhaId,
+          soLuongGiuong: formData.soLuongGiuong,
+          soLuongDaO: formData.soLuongDaO,
+          trangThai: formData.trangThai,
+          giaPhong: formData.giaPhong,
+        };
+
+        await axios.put(`${API_BASE_URL}/api/phong-ktx/${formData.id}`, updatePayload);
       }
+
+      setCustomModalOpen(false);
       refetch?.();
-      handleCloseModal();
       handleFilterReset();
+      alert(isCustomAddMode ? 'Thêm mới thành công' : 'Cập nhật thành công');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Lưu thất bại');
+      console.error('Save error:', error);
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        'Lưu thất bại';
+      alert(errorMessage);
     }
-  };
+  });
 
   return (
     <FormProvider {...formMethods}>
@@ -155,8 +199,8 @@ export default function PhongKtxPage() {
         <ActionsToolbar
           selectedRowIds={selectedRows}
           onDelete={() => setIsDeleteOpenModal(true)}
-          onAdd={onAdd}
-          onEdit={onEdit}
+          onAdd={handleAdd}
+          onEdit={handleEditFromToolbar}
         />
 
         <PhongKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
@@ -166,6 +210,7 @@ export default function PhongKtxPage() {
           rows={rowsData}
           loading={isRefetching}
           checkboxSelection
+          onRowClick={handleRowClick}
           getRowId={(row: any) => row.id}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
@@ -173,12 +218,13 @@ export default function PhongKtxPage() {
           height="calc(100% - 85px)"
         />
 
-        {isModalOpen && (
+        {customModalOpen && (
           <FormDetailsModal
-            title={isAddMode ? 'Thêm mới phòng' : 'Chỉnh sửa phòng'}
+            title={isCustomAddMode ? 'Thêm mới phòng' : 'Chỉnh sửa phòng'}
             onClose={handleCloseModal}
-            onSave={formMethods.handleSubmit(handleSave)}
+            onSave={handleSave}
             maxWidth="sm"
+            titleMode={TITLE_MODE.COLORED}
           >
             <PhongKtxForm />
           </FormDetailsModal>

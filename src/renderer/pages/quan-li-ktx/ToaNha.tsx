@@ -14,6 +14,7 @@ import {
 import { toaNhaColumns as columns } from '../../features/ktx-management/toa-nha/configs/table.configs';
 import { ToaNhaKtx, toaNhaSchema } from '../../features/ktx-management/toa-nha/validation';
 import React, { useMemo, useCallback } from 'react';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 const defaultValues = {
   id: undefined,
@@ -57,7 +58,6 @@ const ToaNha = () => {
     if ('result' in data && Array.isArray(data.result)) {
       return data.result;
     }
-    console.warn('Cấu trúc dữ liệu từ API không đúng định dạng mong đợi:', data);
     return [];
   }, [data]);
 
@@ -80,7 +80,6 @@ const ToaNha = () => {
   }, [rawRowsData, filters]);
 
   const handleFilterApply = useCallback((filterValues: ToaNhaFilterState) => {
-    console.log('📊 Filters applied:', filterValues);
     setFilters(filterValues);
   }, []);
 
@@ -114,6 +113,7 @@ const ToaNha = () => {
             onClose={handleCloseModal}
             onSave={onSave}
             maxWidth="sm"
+            titleMode={TITLE_MODE.COLORED}
           >
             <ToaNhaForm />
           </FormDetailsModal>

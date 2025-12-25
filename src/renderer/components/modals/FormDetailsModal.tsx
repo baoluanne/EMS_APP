@@ -21,6 +21,7 @@ interface Props {
   saveTitle?: string;
   cancelTitle?: string;
   isRefetching?: boolean;
+  fontFamily?: string;
 }
 
 export const FormDetailsModal = ({
@@ -34,32 +35,41 @@ export const FormDetailsModal = ({
   saveTitle = 'Lưu',
   cancelTitle = 'Hủy',
   isRefetching = false,
+  fontFamily,
 }: Props) => {
   const coloredTitleStyle = {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    backgroundColor: 'primary.light',
-    color: 'primary.contrastText',
-    pb: 1,
+    justifyContent: 'space-between',
+    fontWeight: 600,
+    fontSize: '1.25rem',
+    backgroundColor: 'primary.main',
+    color: 'white',
+    py: 2,
+    px: 3,
     position: 'relative',
-    cursor: 'move',
   };
 
   const basicTitleStyle = {
-    cursor: 'move',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: '1.2rem',
-    backgroundColor: '#f5f5f5',
-    borderBottom: '1px solid #ddd',
-    pb: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    fontWeight: 600,
+    fontSize: '1.25rem',
+    backgroundColor: '#4285f4',
+    color: '#fff',
+    borderBottom: '2px solid #e9ecef',
+    py: 2,
+    px: 3,
+    position: 'relative',
+    fontfamily: 'Momo Trust Sans',
   };
 
   return (
     <Dialog
       open={true}
+      onClose={() => {}}
+      disableEscapeKeyDown
       maxWidth={fullScreenMode ? false : maxWidth}
       fullWidth
       slotProps={{
@@ -69,27 +79,32 @@ export const FormDetailsModal = ({
                 width: '100%',
                 height: 'calc(100% - 42px)',
                 margin: 0,
-                borderRadius: 4,
+                borderRadius: 0,
                 pointerEvents: 'auto',
               }
-            : { borderRadius: 4, pointerEvents: 'auto' },
+            : { borderRadius: 0, pointerEvents: 'auto' },
         },
       }}
     >
       <DialogTitle sx={titleMode === TITLE_MODE.COLORED ? coloredTitleStyle : basicTitleStyle}>
-        {title}
+        <span className="">{title}</span>
         <IconButton
           aria-label="close"
           onClick={onClose}
+          size="small"
           sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color:
-              titleMode === TITLE_MODE.COLORED ? 'grey.100' : (theme) => theme.palette.grey[500],
+            color: titleMode === TITLE_MODE.COLORED ? 'white' : 'text.secondary',
+            '&:hover': {
+              backgroundColor:
+                titleMode === TITLE_MODE.COLORED
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.04)',
+            },
           }}
         >
-          <Close />
+          <div className="text-white">
+            <Close />
+          </div>
         </IconButton>
       </DialogTitle>
 
@@ -98,16 +113,30 @@ export const FormDetailsModal = ({
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
-          padding: '24px 32px !important',
-          fontSize: '12px',
+          padding: '24px !important',
+          backgroundColor: '#ffffff',
+          fontFamily: fontFamily || 'inherit',
+          '& *': {
+            fontFamily: fontFamily ? `${fontFamily} !important` : 'inherit',
+          },
         }}
       >
         {children}
       </DialogContent>
 
       {onSave && onClose && (
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={onClose}>{cancelTitle}</Button>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            backgroundColor: '#f8f9fa',
+            borderTop: '1px solid #e9ecef',
+            gap: 1,
+          }}
+        >
+          <Button onClick={onClose} color="inherit">
+            {cancelTitle}
+          </Button>
           <Button onClick={onSave} variant="contained" disabled={isRefetching}>
             {saveTitle}
           </Button>

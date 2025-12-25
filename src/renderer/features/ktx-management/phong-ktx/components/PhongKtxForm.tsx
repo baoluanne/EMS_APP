@@ -9,20 +9,34 @@ import {
 } from '@mui/material';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
+import React from 'react';
 
 export const PhongKtxForm = () => {
   const {
     register,
     control,
     formState: { errors },
+    setError,
+    clearErrors,
   } = useFormContext();
 
   const id = useWatch({ control, name: 'id' });
   const soLuongDaO = useWatch({ control, name: 'soLuongDaO' }) || 0;
+  const soLuongGiuong = useWatch({ control, name: 'soLuongGiuong' });
   const tenToaNha = useWatch({ control, name: 'tenToaNha' }) || '';
 
   const isEditMode = !!id;
-  const hasStudent = soLuongDaO > 0;
+
+  React.useEffect(() => {
+    if (isEditMode && soLuongGiuong && soLuongGiuong < soLuongDaO) {
+      setError('soLuongGiuong', {
+        type: 'manual',
+        message: `Số giường không thể nhỏ hơn số giường đã ở (${soLuongDaO})`,
+      });
+    } else {
+      clearErrors('soLuongGiuong');
+    }
+  }, [soLuongGiuong, soLuongDaO, isEditMode, setError, clearErrors]);
 
   return (
     <Stack spacing={3}>
@@ -32,7 +46,6 @@ export const PhongKtxForm = () => {
         label="Mã phòng *"
         fullWidth
         required
-        disabled={isEditMode}
         {...register('maPhong')}
         error={!!errors.maPhong}
         helperText={errors.maPhong?.message as string}
@@ -48,15 +61,26 @@ export const PhongKtxForm = () => {
         type="number"
         label="Số lượng giường *"
         fullWidth
-        disabled={isEditMode}
         {...register('soLuongGiuong', { valueAsNumber: true })}
         error={!!errors.soLuongGiuong}
         helperText={
-          isEditMode ? 'Không thể thay đổi số giường' : (errors.soLuongGiuong?.message as string)
+          (errors.soLuongGiuong?.message as string) ||
+          (isEditMode ? `Số giường hiện đang ở: ${soLuongDaO}` : '')
         }
+        slotProps={{
+          htmlInput: {
+            min: isEditMode ? soLuongDaO : 1,
+          },
+        }}
       />
 
-      <TextField label="Số giường đã ở" fullWidth disabled value={soLuongDaO} />
+      <TextField
+        label="Số giường đã ở"
+        fullWidth
+        disabled
+        value={soLuongDaO}
+        helperText="Trường này được tự động cập nhật"
+      />
 
       <Controller
         name="trangThai"
@@ -64,7 +88,7 @@ export const PhongKtxForm = () => {
         render={({ field, fieldState: { error } }) => (
           <FormControl fullWidth error={!!error} required>
             <InputLabel>Trạng thái *</InputLabel>
-            <Select {...field} label="Trạng thái *" disabled={isEditMode && hasStudent}>
+            <Select {...field} label="Trạng thái *">
               <MenuItem value="HOAT_DONG">Hoạt động</MenuItem>
               <MenuItem value="NGUNG_HOAT_DONG">Ngừng hoạt động</MenuItem>
             </Select>
@@ -80,6 +104,12 @@ export const PhongKtxForm = () => {
         {...register('giaPhong', { valueAsNumber: true })}
         error={!!errors.giaPhong}
         helperText={errors.giaPhong?.message as string}
+        slotProps={{
+          htmlInput: {
+            min: 0,
+            step: 10000,
+          },
+        }}
       />
     </Stack>
   );

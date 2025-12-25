@@ -20,6 +20,7 @@ import {
   defaultValues,
   ChiSoDienNuocKtx,
 } from '@renderer/features/ktx-management/chi-so-dien-nuoc/validation';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 const ChiSoDienNuoc = () => {
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +117,6 @@ const ChiSoDienNuoc = () => {
   }, [data]);
 
   const handleFilterApply = (filters: ChiSoDienNuocFilterState) => {
-    console.log('📊 Filters applied:', filters);
     mergeParams(filters);
   };
 
@@ -158,6 +158,7 @@ const ChiSoDienNuoc = () => {
             onClose={handleCloseModal}
             onSave={handleModalSave}
             maxWidth="md"
+            titleMode={TITLE_MODE.COLORED}
           >
             <ChiSoDienNuocForm />
           </FormDetailsModal>

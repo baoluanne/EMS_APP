@@ -15,6 +15,7 @@ import {
 import { viPhamKtxColumns as columns } from '@renderer/features/ktx-management/danh-sach-vi-pham/table.configs';
 import { ViPhamKtxFilter } from '@renderer/features/ktx-management/danh-sach-vi-pham/components/ViPhamKtxFilter';
 import { ViPhamKtxForm } from '@renderer/features/ktx-management/danh-sach-vi-pham/components/ViPhamKtxForm';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 const API_BASE_URL = 'http://localhost:5031/api/vi-pham-noiquy-ktx';
 
@@ -123,6 +124,7 @@ export default function ViPhamNoiQuyKtxPage() {
             onClose={handleCloseModal}
             onSave={formMethods.handleSubmit(handleSave)}
             maxWidth="md"
+            titleMode={TITLE_MODE.COLORED}
           >
             <ViPhamKtxForm />
           </FormDetailsModal>

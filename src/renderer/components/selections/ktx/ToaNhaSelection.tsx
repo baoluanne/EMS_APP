@@ -26,12 +26,9 @@ export const ToaNhaSelection = ({ control, name, label = 'Tòa nhà', required =
   const { data: toaNhaList = [], isLoading } = useQuery<ToaNhaOption[]>({
     queryKey: ['toa-nha-ktx-selection'],
     queryFn: async () => {
-      console.log('Đang load tòa nhà từ backend (HTTP)');
       const response = await axios.get(`http://localhost:5031/api/toa-nha-ktx/pagination`, {
         params: { page: 1, pageSize: 200 },
       });
-
-      console.log('Response raw:', response.data);
 
       const raw = response.data;
 
@@ -44,7 +41,6 @@ export const ToaNhaSelection = ({ control, name, label = 'Tòa nhà', required =
       } else if (Array.isArray(raw)) {
         list = raw;
       } else {
-        console.warn('Không tìm thấy mảng tòa nhà:', raw);
         return [];
       }
 
@@ -55,7 +51,6 @@ export const ToaNhaSelection = ({ control, name, label = 'Tòa nhà', required =
         }))
         .filter((item) => item.id);
 
-      console.log('Danh sách tòa nhà load được:', mapped);
       return mapped;
     },
     staleTime: 10 * 60 * 1000,

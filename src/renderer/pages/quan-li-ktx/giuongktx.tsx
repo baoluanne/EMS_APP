@@ -17,6 +17,7 @@ import {
   giuongKtxSchema,
   type GiuongKtxSchema,
 } from '@renderer/features/ktx-management/giuong-ktx/validation';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 const defaultValues: GiuongKtxSchema = {
   id: undefined,
@@ -164,6 +165,7 @@ export default function GiuongKtx() {
             onClose={handleCloseModal}
             onSave={handleCustomSave}
             maxWidth="sm"
+            titleMode={TITLE_MODE.COLORED}
           >
             <GiuongKtxForm />
           </FormDetailsModal>

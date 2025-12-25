@@ -27,7 +27,7 @@ export const PhongSelection = ({ control, name, label = 'Phòng', required = fal
   const { data: phongList = [], isLoading } = useQuery<PhongOption[]>({
     queryKey: ['phong-ktx-selection'],
     queryFn: async () => {
-      const response = await axios.get(`http://localhost:5031/api/phong-ktx`);
+      const response = await axios.get(`http://localhost:5031/api/phong-ktx/pagination`);
       const raw = response.data;
 
       let list: any[] = [];
@@ -39,7 +39,7 @@ export const PhongSelection = ({ control, name, label = 'Phòng', required = fal
         .map((item: any) => ({
           id: item.id?.toString() || '',
           maPhong: item.maPhong || 'Không mã',
-          tenToaNha: item.tenToaNha || item.TenToaNha || 'Không rõ tòa',
+          tenToaNha: item.tenToaNha || 'Không rõ tòa',
         }))
         .filter((item) => item.id);
     },
@@ -61,7 +61,6 @@ export const PhongSelection = ({ control, name, label = 'Phòng', required = fal
             ) : phongList.length === 0 ? (
               <MenuItem disabled>Không có phòng nào</MenuItem>
             ) : (
-              // <-- PHẦN QUAN TRỌNG: DÙNG ARRAY THAY VÌ FRAGMENT
               [
                 <MenuItem key="placeholder" value="">
                   <em>-- Chọn phòng --</em>
