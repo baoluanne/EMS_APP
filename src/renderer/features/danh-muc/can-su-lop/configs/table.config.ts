@@ -1,0 +1,73 @@
+import { GridColDef } from '@mui/x-data-grid';
+import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+
+export const danhMucCanSuLopColumns: GridColDef[] = generateTableConfigs([
+  {
+    field: 'maChucVu',
+    headerName: 'Mã chức vụ',
+    flex: 1,
+    minWidth: 120,
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'tenChucVu',
+    headerName: 'Tên chức vụ',
+    flex: 2,
+    minWidth: 200,
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'hoatDongDoan',
+    headerName: 'Hoạt động đoàn',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    type: 'boolean',
+  },
+  {
+    field: 'loaiChucVu',
+    headerName: 'Loại chức vụ',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (_, row) => row.loaiChucVu?.tenLoaiChucVu,
+  },
+  {
+    field: 'tenTiengAnh',
+    headerName: 'Tên tiếng Anh',
+    flex: 1.5,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'diemCong',
+    headerName: 'Điểm cộng',
+    flex: 1,
+    minWidth: 120,
+    align: 'center',
+    headerAlign: 'center',
+    type: 'number',
+  },
+  {
+    field: 'stt',
+    headerName: 'STT',
+    flex: 1,
+    minWidth: 80,
+    align: 'center',
+    headerAlign: 'center',
+    type: 'number',
+  },
+  {
+    field: 'ghiChu',
+    headerName: 'Ghi chú',
+    flex: 1.5,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+  },
+]);

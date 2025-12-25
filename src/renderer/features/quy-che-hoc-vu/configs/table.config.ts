@@ -1,0 +1,91 @@
+import { GridColDef } from '@mui/x-data-grid';
+import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+import { QuyCheHocVu } from '@renderer/shared/types';
+
+export const quyCheHocVuColumns: GridColDef<QuyCheHocVu>[] = generateTableConfigs([
+  { field: 'maQuyChe', headerName: 'Mã quy chế', flex: 1, minWidth: 150 },
+  { field: 'tenQuyChe', headerName: 'Tên quy chế', flex: 1.5, minWidth: 200 },
+  { field: 'bieuThuc', headerName: 'Biểu thức', flex: 1, minWidth: 200 },
+  { field: 'isNienChe', headerName: 'Niên chế', flex: 0.5, minWidth: 100, type: 'boolean' },
+  {
+    field: 'dkdT_IsDongHocPhi',
+    headerName: 'Đóng học phí',
+    flex: 0.5,
+    minWidth: 120,
+    type: 'boolean',
+  },
+  { field: 'ghiChu', headerName: 'Ghi chú', flex: 1, minWidth: 200 },
+  {
+    field: 'dkdT_IsDiemTBTK',
+    headerName: 'Dùng điểm TBTK',
+    type: 'boolean',
+    minWidth: 160,
+    flex: 0.8,
+  },
+  { field: 'dkdT_DiemTBTK', headerName: 'Điểm TBTK', type: 'number', minWidth: 140, flex: 0.7 },
+  {
+    field: 'dkdT_IsDiemTBTH',
+    headerName: 'Dùng điểm TBTH',
+    type: 'boolean',
+    minWidth: 170,
+    flex: 0.9,
+  },
+  { field: 'dkdT_DiemTBTH', headerName: 'Điểm TBTH', type: 'number', minWidth: 140, flex: 0.7 },
+  {
+    field: 'dkdT_IsKhongVangQua',
+    headerName: 'Không vắng quá (đk)',
+    type: 'boolean',
+    minWidth: 190,
+    flex: 1,
+  },
+  {
+    field: 'dkdT_TongTietVang',
+    headerName: 'Tổng tiết vắng',
+    type: 'number',
+    minWidth: 150,
+    flex: 0.8,
+  },
+  { field: 'dkdT_LyThuyet', headerName: 'Lý thuyết', type: 'number', minWidth: 120, flex: 0.6 },
+  { field: 'dkdT_ThucHanh', headerName: 'Thực hành', type: 'number', minWidth: 120, flex: 0.6 },
+  {
+    field: 'dkdT_DuocThiLai',
+    headerName: 'Được thi lại',
+    type: 'number',
+    minWidth: 140,
+    flex: 0.7,
+  },
+
+  {
+    field: 'dddS_DiemThanhPhan',
+    headerName: 'Điểm thành phần',
+    type: 'number',
+    minWidth: 160,
+    flex: 0.8,
+  },
+  {
+    field: 'dddS_DiemCuoiKy',
+    headerName: 'Điểm cuối kỳ',
+    type: 'number',
+    minWidth: 150,
+    flex: 0.8,
+  },
+  {
+    field: 'dddS_DiemTBThuongKy',
+    headerName: 'Điểm TB thường kỳ',
+    type: 'number',
+    minWidth: 180,
+    flex: 1,
+  },
+  { field: 'dddS_DiemTBTH', headerName: 'Điểm TBTH', type: 'number', minWidth: 140, flex: 0.7 },
+  { field: 'dddS_DiemTB', headerName: 'Điểm TB', type: 'number', minWidth: 120, flex: 0.6 },
+  {
+    field: 'dddS_DiemTBHK',
+    headerName: 'Điểm TB học kỳ',
+    type: 'number',
+    minWidth: 170,
+    flex: 0.9,
+  },
+  { field: 'dddS_DiemTN', headerName: 'Điểm TN', type: 'number', minWidth: 120, flex: 0.6 },
+  { field: 'dddS_DiemTK', headerName: 'Điểm TK', type: 'number', minWidth: 120, flex: 0.6 },
+  { field: 'dddS_KieuLamTron', headerName: 'Kiểu làm tròn', minWidth: 160, flex: 0.8 },
+]);

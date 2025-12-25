@@ -1,0 +1,96 @@
+import { GridColDef } from '@mui/x-data-grid';
+import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+import { LoaiSinhVien } from '@renderer/features/loai-sinh-vien';
+import { BacDaoTao, KhoaHoc, LoaiDaoTao } from '@renderer/shared/types';
+
+export const danhMucKhungHoSoHssvColumns: GridColDef[] = generateTableConfigs([
+  {
+    field: 'bacDaoTao',
+    headerName: 'Bậc đào tạo',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (value: BacDaoTao) => value?.tenBacDaoTao,
+  },
+  {
+    field: 'loaiDaoTao',
+    headerName: 'Loại đào tạo',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (value: LoaiDaoTao) => value?.tenLoaiDaoTao,
+  },
+  {
+    field: 'maHoSo',
+    headerName: 'Mã hồ sơ',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (_, row: any) => row.hoSoHSSV?.maHoSo || '',
+  },
+  {
+    field: 'tenHoSo',
+    headerName: 'Tên hồ sơ',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (_, row: any) => row.hoSoHSSV?.tenHoSo || '',
+  },
+
+  {
+    field: 'stt',
+    headerName: 'Số thứ tự',
+    flex: 2,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'isBatBuoc',
+    headerName: 'Bắt buộc',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    type: 'boolean',
+  },
+  {
+    field: 'ghiChu',
+    headerName: 'Ghi chú',
+    flex: 2,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'tieuChiTuyenSinh',
+    headerName: 'Tiêu chí tuyển sinh',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (value: { tenTieuChi: string }) => value?.tenTieuChi,
+  },
+  {
+    field: 'khoaHoc',
+    headerName: 'Khóa học',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (value: KhoaHoc) => value?.tenKhoaHoc,
+  },
+  {
+    field: 'loaiSinhVien',
+    headerName: 'Loại sinh viên',
+    flex: 1,
+    minWidth: 150,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (value: LoaiSinhVien) => value?.tenLoaiSinhVien,
+  },
+]);

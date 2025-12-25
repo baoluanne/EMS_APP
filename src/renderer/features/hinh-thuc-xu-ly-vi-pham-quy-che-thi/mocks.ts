@@ -1,0 +1,42 @@
+export const mockXuLyQuyCheThi = [
+  {
+    stt: 1,
+    maXuLyQuyCheThi: 'XL001',
+    tenXuLyQuyCheThi: 'Mang tài liệu vào phòng thi',
+    phanTramDiemTru: 50,
+    mucDo: 'Nặng',
+    diemTruRL: 30,
+  },
+  {
+    stt: 2,
+    maXuLyQuyCheThi: 'XL002',
+    tenXuLyQuyCheThi: 'Quay cóp trong giờ thi',
+    phanTramDiemTru: 40,
+    mucDo: 'Nặng',
+    diemTruRL: 25,
+  },
+  {
+    stt: 3,
+    maXuLyQuyCheThi: 'XL003',
+    tenXuLyQuyCheThi: 'Không mang thẻ sinh viên',
+    phanTramDiemTru: 10,
+    mucDo: 'Nhẹ',
+    diemTruRL: 5,
+  },
+  {
+    stt: 4,
+    maXuLyQuyCheThi: 'XL004',
+    tenXuLyQuyCheThi: 'Nói chuyện trong phòng thi',
+    phanTramDiemTru: 20,
+    mucDo: 'Trung bình',
+    diemTruRL: 10,
+  },
+  {
+    stt: 5,
+    maXuLyQuyCheThi: 'XL005',
+    tenXuLyQuyCheThi: 'Chép bài bạn',
+    phanTramDiemTru: 35,
+    mucDo: 'Trung bình',
+    diemTruRL: 20,
+  },
+];

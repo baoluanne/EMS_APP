@@ -1,0 +1,25 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+.env
+.idea/
+prompts
+.vscode/
+
+# AI Tools
+.claude/
+.cursor/
+.serena/
+
+# Bmad
+.bmad-config.yaml
+.bmad-core/
+.bmad-infrastructure-devops/
+
+# Generated files
+flattened-codebase.stats.md
+flattened-codebase.xml
+docs/

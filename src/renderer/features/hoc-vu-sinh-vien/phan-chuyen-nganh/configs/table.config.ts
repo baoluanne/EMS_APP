@@ -1,0 +1,56 @@
+import { GridColDef } from '@mui/x-data-grid';
+
+export const columns: GridColDef[] = [
+  {
+    field: 'index',
+    headerName: '*',
+    width: 50,
+    sortable: true,
+    align: 'center' as const,
+    headerAlign: 'center' as const,
+  },
+  {
+    field: 'maSinhVien',
+    headerName: 'Mã sinh viên',
+    width: 180,
+    type: 'string',
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'hoDem',
+    headerName: 'Họ đệm',
+    flex: 1,
+    minWidth: 220,
+    type: 'string',
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'ten',
+    headerName: 'Tên ',
+    flex: 1,
+    minWidth: 200,
+    type: 'string',
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'gioiTinh',
+    headerName: 'Giới tính ',
+    flex: 1,
+    minWidth: 200,
+    type: 'string',
+    align: 'center',
+    headerAlign: 'center',
+  },
+  {
+    field: 'ngaySinh',
+    headerName: 'Ngày sinh',
+    flex: 1,
+    minWidth: 200,
+    type: 'string',
+    align: 'center',
+    headerAlign: 'center',
+  },
+];

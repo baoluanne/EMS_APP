@@ -1,0 +1,40 @@
+import { ChungChi } from '@renderer/shared/types';
+
+export const mockChungChi: ChungChi[] = [
+  {
+    id: 'cc001',
+    maLoaiChungChi: 'CC001',
+    loaiChungChi: 'Chứng chỉ Tin học cơ bản',
+    kiHieu: 'THCB',
+    giaTri: 12,
+    hocPhi: 1200000,
+    lePhiThi: 300000,
+    thoiHan: 24,
+    diemQuyDinh: '6.0/10',
+    ghiChu: 'Áp dụng cho sinh viên CNTT',
+  },
+  {
+    id: 'cc002',
+    maLoaiChungChi: 'CC002',
+    loaiChungChi: 'Chứng chỉ Tiếng Anh B1',
+    kiHieu: 'TA-B1',
+    giaTri: 24,
+    hocPhi: 1500000,
+    lePhiThi: 500000,
+    thoiHan: 36,
+    diemQuyDinh: '5.5/10',
+    ghiChu: 'Phù hợp chương trình sau đại học',
+  },
+  {
+    id: 'cc003',
+    maLoaiChungChi: 'CC003',
+    loaiChungChi: 'Chứng chỉ Quản lý dự án',
+    kiHieu: 'QLDA',
+    giaTri: 36,
+    hocPhi: 2000000,
+    lePhiThi: 400000,
+    thoiHan: 48,
+    diemQuyDinh: '7.0/10',
+    ghiChu: 'Yêu cầu cho chức danh quản lý',
+  },
+];
