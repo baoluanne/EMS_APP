@@ -12,8 +12,10 @@ export interface DonKtxResponse {
   maPhongHienTai: string | null;
   maPhongMuonChuyen: string | null;
   maPhongDuocDuyet: string | null;
+
   ngayBatDauMongMuon: string;
   ngayHetHanMongMuon: string | null;
+
   ngayBatDauHienTai: string | null;
   ngayHetHanHienTai: string | null;
 }

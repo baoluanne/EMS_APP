@@ -47,12 +47,6 @@ export const DonSinhVienForm = () => {
   }, [hopDongHienTai, setValue]);
 
   const renderDynamicFields = () => {
-    if (!idSinhVien)
-      return (
-        <Grid size={{ xs: 12 }}>
-          <Alert severity="info">Vui lòng chọn sinh viên trước.</Alert>
-        </Grid>
-      );
     if (isLoadingHD)
       return (
         <Grid size={{ xs: 12 }}>
@@ -188,7 +182,7 @@ export const DonSinhVienForm = () => {
     <Stack spacing={3} sx={{ mt: 1 }}>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <SinhVienSelection control={control} name="idSinhVien" label="Sinh viên" required />
+          <SinhVienSelection control={control} name="idSinhVien" label="Sinh viên" />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <ControlledSelect
@@ -196,7 +190,6 @@ export const DonSinhVienForm = () => {
             name="loaiDon"
             label="Loại đơn"
             options={loaiDonOptions}
-            required
           />
         </Grid>
 
