@@ -16,7 +16,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { env } from '@renderer/shared/configs/env.config';
-import { DonKtxRow } from '@renderer/features/ktx-management/don-sinh-vien/type';
+import { DonKtxResponse } from '@renderer/features/ktx-management/don-sinh-vien/type';
 
 const api = axios.create({
   baseURL: env.API_ENDPOINT,
@@ -25,7 +25,7 @@ const api = axios.create({
 interface XuLyDonModalProps {
   open: boolean;
   onClose: () => void;
-  don: DonKtxRow | null;
+  don: DonKtxResponse | null;
   onSuccess: () => void;
 }
 

@@ -1,66 +1,53 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+import { DonKtxResponse } from '@renderer/features/ktx-management/don-sinh-vien/type';
+import dayjs from 'dayjs';
 
-export const donSinhVienColumns: GridColDef[] = generateTableConfigs([
-  { field: 'maDon', headerName: 'Mã đơn', minWidth: 200 },
-  { field: 'hoTenSinhVien', headerName: 'Họ tên SV', minWidth: 200, flex: 1 },
-  { field: 'maSinhVien', headerName: 'Mã SV', minWidth: 120 },
-  { field: 'lop', headerName: 'Lớp', minWidth: 100 },
+export const donSinhVienColumns: GridColDef<DonKtxResponse>[] = [
+  { field: 'maDon', headerName: 'Mã đơn', width: 150 },
+  { field: 'maSinhVien', headerName: 'Mã SV', width: 120 },
+  { field: 'hoTenSinhVien', headerName: 'Họ tên', flex: 1, minWidth: 180 },
   {
     field: 'loaiDon',
     headerName: 'Loại đơn',
-    minWidth: 140,
-    renderCell: (params) => {
-      switch (params.value) {
-        case 'VaoO':
-          return 'Vào ở';
-        case 'ChuyenPhong':
-          return 'Chuyển phòng';
-        case 'GiaHan':
-          return 'Gia hạn';
-        case 'RoiKtx':
-          return 'Rời KTX';
-        default:
-          return params.value;
-      }
+    width: 140,
+    valueFormatter: (params: any) => {
+      const map: Record<string, string> = {
+        VaoO: 'Vào ở',
+        ChuyenPhong: 'Chuyển phòng',
+        GiaHanKtx: 'Gia hạn',
+        RoiKtx: 'Rời KTX',
+      };
+      return map[params.value as string] || params.value;
     },
   },
   {
     field: 'trangThai',
     headerName: 'Trạng thái',
-    minWidth: 140,
+    width: 140,
     renderCell: (params) => {
-      const status = params.value;
-      let color = 'default';
-      if (status === 'DaDuyet') color = 'success';
-      if (status === 'TuChoi') color = 'error';
-      if (status === 'ChoPheDuyet') color = 'warning';
-      return (
-        <span style={{ color }}>
-          {status === 'ChoPheDuyet'
-            ? 'Chờ duyệt'
-            : status === 'DaDuyet'
-              ? 'Đã duyệt'
-              : status === 'TuChoi'
-                ? 'Từ chối'
-                : status}
-        </span>
-      );
+      let color = 'black';
+      let text = params.value;
+      if (params.value === 'ChoPhuyet') {
+        color = 'orange';
+        text = 'Chờ duyệt';
+      } else if (params.value === 'DaDuyet') {
+        color = 'green';
+        text = 'Đã duyệt';
+      } else if (params.value === 'TuChoi') {
+        color = 'red';
+        text = 'Từ chối';
+      }
+
+      return <span style={{ color, fontWeight: 600 }}>{text}</span>;
     },
   },
-  { field: 'maPhongHienTai', headerName: 'Phòng hiện tại', minWidth: 120 },
-  { field: 'maPhongMuonChuyen', headerName: 'Phòng mong muốn', minWidth: 140 },
-  { field: 'maPhongDuocDuyet', headerName: 'Phòng được duyệt', minWidth: 140 },
   {
-    field: 'ngayGui',
+    field: 'ngayGuiDon',
     headerName: 'Ngày gửi',
-    minWidth: 180,
-    type: 'dateTime',
-    valueGetter: (params) => {
-      const value = params;
-      if (!value) return null;
-      const date = new Date(value);
-      return isNaN(date.getTime()) ? null : date;
-    },
+    width: 150,
+    valueFormatter: (params: any) =>
+      params.value ? dayjs(params.value).format('DD/MM/YYYY HH:mm') : '',
   },
-]);
+  { field: 'maPhongHienTai', headerName: 'Phòng hiện tại', width: 120 },
+  { field: 'maPhongMuonChuyen', headerName: 'Phòng muốn đến', width: 120 },
+];
