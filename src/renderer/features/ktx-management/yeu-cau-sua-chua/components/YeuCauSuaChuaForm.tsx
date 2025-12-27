@@ -19,6 +19,9 @@ export const YeuCauSuaChuaForm = () => {
     formState: { errors },
   } = useFormContext();
 
+  const id = useWatch({ control, name: 'id' });
+  const isEditMode = !!id;
+
   const sinhVienId = useWatch({ control, name: 'sinhVienId' });
   const phongKtxId = useWatch({ control, name: 'phongKtxId' });
   const taiSanKtxId = useWatch({ control, name: 'taiSanKtxId' });
@@ -29,11 +32,6 @@ export const YeuCauSuaChuaForm = () => {
   const [taiSanInfo, setTaiSanInfo] = useState<any>(null);
   const [loadingPhong, setLoadingPhong] = useState(false);
   const [loadingTaiSan, setLoadingTaiSan] = useState(false);
-
-  // Tự động set trạng thái mặc định là "MoiGui" khi tạo mới
-  useEffect(() => {
-    setValue('trangThai', 'MoiGui');
-  }, [setValue]);
 
   useEffect(() => {
     if (!sinhVienId) {
@@ -224,13 +222,24 @@ export const YeuCauSuaChuaForm = () => {
         error={!!errors.trangThai}
         helperText={errors.trangThai?.message as string}
       >
-        <MenuItem value="MoiGui">Mới gửi</MenuItem>
-        <MenuItem value="DangXuLy">Đang xử lý</MenuItem>
-        <MenuItem value="DaXong">Hoàn thành</MenuItem>
-        <MenuItem value="Huy">Từ chối</MenuItem>
+        {!isEditMode ? (
+          <MenuItem value="MoiGui">Mới gửi</MenuItem>
+        ) : (
+          [
+            <MenuItem key="DangXuLy" value="DangXuLy">
+              Đang xử lý
+            </MenuItem>,
+            <MenuItem key="DaXong" value="DaXong">
+              Hoàn thành
+            </MenuItem>,
+            <MenuItem key="Huy" value="Huy">
+              Từ chối
+            </MenuItem>,
+          ]
+        )}
       </TextField>
 
-      {trangThai !== 'MoiGui' && trangThai !== 'DangXuLy' && (
+      {trangThai !== 'MoiGui' && (
         <>
           <TextField
             label="Ghi chú xử lý"
@@ -247,6 +256,7 @@ export const YeuCauSuaChuaForm = () => {
             label="Ngày xử lý"
             fullWidth
             type="date"
+            {...register('ngayXuLy')}
             slotProps={{ inputLabel: { shrink: true } }}
           />
         </>
