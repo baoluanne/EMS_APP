@@ -1,5 +1,5 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+// import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 
 const statusFormatter = (value: string) => {
   const statusMap: Record<string, string> = {
@@ -16,7 +16,7 @@ const priceFormatter = (value: number) => {
   }).format(value);
 };
 
-export const phongKtxColumns: GridColDef[] = generateTableConfigs([
+export const phongKtxColumns: GridColDef[] = ([
   {
     field: 'maPhong',
     headerName: 'Mã phòng',

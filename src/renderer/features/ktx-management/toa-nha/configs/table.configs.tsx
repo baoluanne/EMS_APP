@@ -1,7 +1,7 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+//import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 
-export const toaNhaColumns: GridColDef[] = generateTableConfigs([
+export const toaNhaColumns: GridColDef[] = ([
   {
     field: 'tenToaNha',
     headerName: 'Tên tòa nhà',

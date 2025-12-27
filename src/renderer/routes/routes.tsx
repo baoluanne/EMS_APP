@@ -2196,6 +2196,24 @@ const _appRoutes = [
             path: 'giuong-ktx',
             Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/giuongktx'))),
           },
+          {
+            label: 'Tài sản KTX',
+            icon: <FcFolder />,
+            path: 'tai-san-ktx',
+            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
+          },
+          {
+            label: 'Yêu cầu sửa chữa',
+            icon: <FcFolder />,
+            path: 'yeu-cau-sua-chua',
+            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/YeuCauSuaChua'))),
+          },
+          {
+            label: 'Báo cáo tài sản & sửa chữa',
+            path: 'bao-cao-co-so-vat-chat',
+            //Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
+            disabled: true,
+          },
         ],
       },
       {
@@ -2208,6 +2226,24 @@ const _appRoutes = [
             icon: <FcFolder />,
             path: 'input-meters',
             Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ChiSoDienNuoc'))),
+          },
+          {
+            label: 'Hóa đơn phòng',
+            icon: <FcFolder />,
+            path: 'hoa-don-phong',
+            //Component: Lazy(() => import('@renderer/pages/quan-li-ktx/HoaDonKtx'))
+          },
+          {
+            label: 'Theo dõi thanh toán',
+            icon: <FcFolder />,
+            path: 'theo-doi-thanh-toan',
+            //Component: Lazy(() => import('@renderer/pages/quan-li-ktx/TheoDoiThanhToan'))
+          },
+          {
+            label: 'Báo cáo doanh thu',
+            icon: <FcFolder />,
+            path: 'bao-cao-doanh-thu',
+            //Component: ... (sau này)
           },
         ],
       },

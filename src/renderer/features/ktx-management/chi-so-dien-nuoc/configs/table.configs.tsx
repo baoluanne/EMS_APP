@@ -1,5 +1,5 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+// import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 import { Chip } from '@mui/material';
 
 const statusChip = (daChot: boolean) => (
@@ -10,7 +10,7 @@ const statusChip = (daChot: boolean) => (
   />
 );
 
-export const chiSoDienNuocColumns = generateTableConfigs([
+export const chiSoDienNuocColumns = [
   { field: 'tenToaNha', headerName: 'Tòa nhà', minWidth: 160, flex: 1 },
   { field: 'maPhong', headerName: 'Mã phòng', minWidth: 120, align: 'center' },
   {
@@ -46,6 +46,6 @@ export const chiSoDienNuocColumns = generateTableConfigs([
     align: 'center',
     renderCell: (params) => statusChip(params.value),
   },
-]) as GridColDef[];
+] as GridColDef[];
 
 export { chiSoDienNuocColumns as columns };

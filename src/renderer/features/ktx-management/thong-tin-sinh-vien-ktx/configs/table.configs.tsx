@@ -1,8 +1,8 @@
 import { Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
-import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+//import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 
-export const thongTinSvKtxColumns: GridColDef[] = generateTableConfigs([
+export const thongTinSvKtxColumns: GridColDef[] = [
   { field: 'maSinhVien', headerName: 'Mã SV', minWidth: 110, align: 'center', sortable: true },
   { field: 'hoTen', headerName: 'Họ tên', minWidth: 180, flex: 1, sortable: true },
   { field: 'lop', headerName: 'Lớp', minWidth: 100 },
@@ -48,4 +48,4 @@ export const thongTinSvKtxColumns: GridColDef[] = generateTableConfigs([
       );
     },
   },
-]);
+];
