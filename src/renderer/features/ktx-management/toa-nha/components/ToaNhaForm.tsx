@@ -14,7 +14,6 @@ export const ToaNhaForm = () => {
       <TextField
         label="Tên tòa nhà"
         fullWidth
-        required
         placeholder="Ví dụ: Tòa A, Tòa Nam, Tòa Nữ..."
         {...register('tenToaNha')}
         error={!!errors.tenToaNha}

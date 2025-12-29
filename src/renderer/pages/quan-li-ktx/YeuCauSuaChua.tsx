@@ -40,21 +40,14 @@ const defaultValues: YeuCauSuaChua = {
   chiPhiPhatSinh: 0,
 };
 
-/**
- * Convert ngày từ format "YYYY-MM-DD" sang ISO DateTime "YYYY-MM-DDTHH:mm:ss.fffZ"
- * @param dateString - Ngày dạng "2025-12-30"
- * @returns ISO DateTime string hoặc empty string
- */
 const convertDateToIsoDateTime = (dateString: string): string => {
   if (!dateString) return '';
 
   try {
-    // Nếu đã là ISO format (có T), trả về nguyên
     if (dateString.includes('T')) {
       return dateString;
     }
 
-    // Convert từ "YYYY-MM-DD" sang ISO DateTime
     const date = new Date(dateString + 'T00:00:00Z');
     return date.toISOString();
   } catch {
@@ -122,7 +115,6 @@ const YeuCauSuaChuaPage = () => {
 
   const handleRowClick = useCallback(
     (params: any) => {
-      // Merge data từ API với defaultValues để tránh undefined
       const mergedData: YeuCauSuaChua = {
         ...defaultValues,
         ...params.row,
@@ -131,14 +123,9 @@ const YeuCauSuaChuaPage = () => {
     },
     [formMethods],
   );
-
-  /**
-   * Wrapper cho onSave để format DateTime trước khi gửi
-   */
   const onSave = useCallback(async () => {
     const formData = formMethods.getValues();
 
-    // Convert ngày sang ISO DateTime format
     const preparedData = {
       ...formData,
       ngayGui: convertDateToIsoDateTime(formData.ngayGui || ''),
@@ -146,10 +133,8 @@ const YeuCauSuaChuaPage = () => {
       ngayHoanThanh: convertDateToIsoDateTime(formData.ngayHoanThanh || ''),
     };
 
-    // Gán lại dữ liệu đã convert
     formMethods.reset(preparedData);
 
-    // Gọi hàm save gốc
     return originalOnSave();
   }, [formMethods, originalOnSave]);
 

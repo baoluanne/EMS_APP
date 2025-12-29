@@ -38,7 +38,6 @@ export const YeuCauSuaChuaForm = () => {
   const tenTaiSan = useWatch({ control, name: 'tenTaiSan' });
   const tinhTrangTaiSan = useWatch({ control, name: 'tinhTrangTaiSan' });
 
-  // Khởi tạo ngày mặc định khi tạo mới
   useEffect(() => {
     if (!isEditMode) {
       const today = new Date();
@@ -47,7 +46,6 @@ export const YeuCauSuaChuaForm = () => {
     }
   }, [isEditMode, setValue]);
 
-  // Xử lý sinh viên → tải phòng
   useEffect(() => {
     if (!sinhVienId) {
       setValue('phongKtxId', '');
@@ -85,7 +83,6 @@ export const YeuCauSuaChuaForm = () => {
       .finally(() => setLoadingPhong(false));
   }, [sinhVienId, setValue]);
 
-  // Xử lý phòng → tải tài sản
   useEffect(() => {
     if (!phongKtxId) {
       setTaiSanOptions([]);
@@ -107,7 +104,6 @@ export const YeuCauSuaChuaForm = () => {
       .finally(() => setLoadingTaiSan(false));
   }, [phongKtxId, setValue]);
 
-  // Xử lý tài sản → hiển thị thông tin
   useEffect(() => {
     if (!taiSanKtxId) {
       setTaiSanInfo(null);
@@ -257,8 +253,6 @@ export const YeuCauSuaChuaForm = () => {
           </Stack>
         </Box>
       )}
-
-      {/* Ngày gửi - hiển thị ở chế độ tạo mới */}
       {!isEditMode && (
         <TextField
           label="Ngày gửi"
@@ -299,7 +293,6 @@ export const YeuCauSuaChuaForm = () => {
         )}
       </TextField>
 
-      {/* Ghi chú xử lý + Ngày xử lý/Ngày hoàn thành - chỉ khi edit và không phải trạng thái mới */}
       {isEditMode && trangThai && trangThai !== 'MoiGui' && !ngayHoanThanh && (
         <>
           <TextField

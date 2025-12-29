@@ -1,35 +1,4 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { Chip } from '@mui/material';
-
-const getTrangThaiColor = (value: string) => {
-  switch (value) {
-    case 'MoiGui':
-      return 'warning';
-    case 'DangXuLy':
-      return 'info';
-    case 'DaXong':
-      return 'success';
-    case 'Huy':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-const getTrangThaiLabel = (value: string) => {
-  switch (value) {
-    case 'MoiGui':
-      return 'Mới gửi';
-    case 'DangXuLy':
-      return 'Đang xử lý';
-    case 'DaXong':
-      return 'Hoàn thành';
-    case 'Huy':
-      return 'Từ chối';
-    default:
-      return value;
-  }
-};
 
 export const yeuCauSuaChuaColumns: GridColDef[] = [
   { field: 'tieuDe', headerName: 'Tiêu đề', minWidth: 220, flex: 1.5 },
@@ -48,13 +17,24 @@ export const yeuCauSuaChuaColumns: GridColDef[] = [
     headerName: 'Trạng thái',
     minWidth: 140,
     flex: 0.9,
-    renderCell: (params) => (
-      <Chip
-        label={getTrangThaiLabel(params.value)}
-        color={getTrangThaiColor(params.value)}
-        size="small"
-      />
-    ),
+    renderCell: (params) => {
+      let color = 'black';
+      let text = params.value;
+      if (params.value === 'MoiGui') {
+        color = 'orange';
+        text = 'Mới gửi';
+      } else if (params.value === 'DangXuLy') {
+        color = 'violet';
+        text = 'Đang xử lí';
+      } else if (params.value === 'DaXong') {
+        color = 'green';
+        text = 'Hoàn thành';
+      } else if (params.value === 'Huy') {
+        color = 'red';
+        text = 'Từ chối';
+      }
+      return <span style={{ color, fontWeight: 600 }}>{text}</span>;
+    },
   },
   {
     field: 'ngayXuLy',

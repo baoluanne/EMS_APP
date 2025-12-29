@@ -1,36 +1,5 @@
 import { GridColDef } from '@mui/x-data-grid';
 //import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
-import { Chip } from '@mui/material';
-
-const getTinhTrangColor = (tinhTrang: string) => {
-  switch (tinhTrang) {
-    case 'Tot':
-      return 'success';
-    case 'BinhThuong':
-      return 'info';
-    case 'CanSuaChua':
-      return 'warning';
-    case 'Hong':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-const getTinhTrangLabel = (tinhTrang: string) => {
-  switch (tinhTrang) {
-    case 'Tot':
-      return 'Tốt';
-    case 'BinhThuong':
-      return 'Bình thường';
-    case 'CanSuaChua':
-      return 'Cần sửa chữa';
-    case 'Hong':
-      return 'Hỏng';
-    default:
-      return tinhTrang;
-  }
-};
 
 export const taiSanKtxColumns: GridColDef[] = [
   {
@@ -68,13 +37,25 @@ export const taiSanKtxColumns: GridColDef[] = [
     headerName: 'Tình trạng',
     minWidth: 130,
     flex: 0.8,
-    renderCell: (params) => (
-      <Chip
-        label={getTinhTrangLabel(params.value)}
-        color={getTinhTrangColor(params.value) as any}
-        size="small"
-      />
-    ),
+    renderCell: (params) => {
+      let color = 'black';
+      let text = params.value;
+      if (params.value === 'BinhThuong') {
+        color = 'orange';
+        text = 'Bình thường';
+      } else if (params.value === 'Tot') {
+        color = 'green';
+        text = 'Tốt';
+      } else if (params.value === 'Hong') {
+        color = 'red';
+        text = 'Hỏng';
+      } else if (params.value === 'CanSuaChua') {
+        color = 'yellow';
+        text = 'Cần sửa chữa';
+      }
+
+      return <span style={{ color, fontWeight: 600 }}>{text}</span>;
+    },
   },
   {
     field: 'giaTri',

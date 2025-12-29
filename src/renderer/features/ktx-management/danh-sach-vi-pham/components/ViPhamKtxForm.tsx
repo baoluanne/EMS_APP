@@ -23,7 +23,7 @@ export const ViPhamKtxForm = () => {
           <SinhVienDangOKtxSelection
             control={control}
             name="sinhVienId"
-            label="Sinh viên vi phạm *"
+            label="Sinh viên vi phạm"
             disabled={isEditMode}
           />
         </Grid>
@@ -31,7 +31,7 @@ export const ViPhamKtxForm = () => {
           <ControlledSelect
             control={control}
             name="noiDungViPham"
-            label="Nội dung vi phạm *"
+            label="Nội dung vi phạm"
             options={danhSachLoiViPham}
           />
         </Grid>
