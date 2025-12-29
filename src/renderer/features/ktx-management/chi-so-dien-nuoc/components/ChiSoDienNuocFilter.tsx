@@ -2,7 +2,7 @@ import { Grid } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
 import { ControlledSelect } from '@renderer/components/controlled-fields/ControlledSelect';
 import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
-import { PhongSelection } from '@renderer/components/selections/ktx/phongSelection';
+import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
 import { useForm } from 'react-hook-form';
 
 const thangOptions = Array.from({ length: 12 }, (_, i) => ({

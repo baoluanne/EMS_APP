@@ -30,15 +30,12 @@ export const GiuongKtxForm = () => {
       <Controller
         name="phongKtxId"
         control={control}
-        render={({ field }) => (
-          <PhongSelection {...field} control={control} label="Phòng *" required />
-        )}
+        render={({ field }) => <PhongSelection {...field} control={control} label="Phòng" />}
       />
 
       <TextField
-        label="Mã giường *"
+        label="Mã giường"
         fullWidth
-        required
         placeholder="Ví dụ: 01, 02, A, B..."
         {...register('maGiuong')}
         error={!!errors.maGiuong}
@@ -50,7 +47,7 @@ export const GiuongKtxForm = () => {
         control={control}
         render={({ field }) => (
           <FormControl fullWidth error={!!errors.trangThai}>
-            <InputLabel id="trang-thai-label">Trạng thái *</InputLabel>
+            <InputLabel id="trang-thai-label">Trạng thái</InputLabel>
             <Select labelId="trang-thai-label" {...field} label="Trạng thái *">
               {trangThaiOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>

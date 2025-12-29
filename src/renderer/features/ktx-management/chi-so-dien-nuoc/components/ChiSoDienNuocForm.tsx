@@ -1,7 +1,7 @@
 import { Stack, Grid, TextField, FormControlLabel, Checkbox, Alert } from '@mui/material';
 import { Controller, useFormContext, useWatch, useFormState } from 'react-hook-form';
 import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
-import { PhongSelection } from '@renderer/components/selections/ktx/phongSelection';
+import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';

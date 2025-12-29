@@ -177,15 +177,8 @@ export default function PhongKtxPage() {
       setCustomModalOpen(false);
       refetch?.();
       handleFilterReset();
-      alert(isCustomAddMode ? 'Thêm mới thành công' : 'Cập nhật thành công');
     } catch (error: any) {
       console.error('Save error:', error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message ||
-        'Lưu thất bại';
-      alert(errorMessage);
     }
   });
 

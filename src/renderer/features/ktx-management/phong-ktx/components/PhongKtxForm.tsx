@@ -43,9 +43,8 @@ export const PhongKtxForm = () => {
       <input type="hidden" {...register('id')} />
 
       <TextField
-        label="Mã phòng *"
+        label="Mã phòng"
         fullWidth
-        required
         {...register('maPhong')}
         error={!!errors.maPhong}
         helperText={errors.maPhong?.message as string}
@@ -54,12 +53,12 @@ export const PhongKtxForm = () => {
       {isEditMode ? (
         <TextField label="Tòa nhà" fullWidth disabled value={tenToaNha} />
       ) : (
-        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà" required />
+        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà" />
       )}
 
       <TextField
         type="number"
-        label="Số lượng giường *"
+        label="Số lượng giường"
         fullWidth
         {...register('soLuongGiuong', { valueAsNumber: true })}
         error={!!errors.soLuongGiuong}
@@ -86,9 +85,9 @@ export const PhongKtxForm = () => {
         name="trangThai"
         control={control}
         render={({ field, fieldState: { error } }) => (
-          <FormControl fullWidth error={!!error} required>
-            <InputLabel>Trạng thái *</InputLabel>
-            <Select {...field} label="Trạng thái *">
+          <FormControl fullWidth error={!!error}>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select {...field} label="Trạng thái">
               <MenuItem value="HOAT_DONG">Hoạt động</MenuItem>
               <MenuItem value="NGUNG_HOAT_DONG">Ngừng hoạt động</MenuItem>
             </Select>
@@ -99,7 +98,7 @@ export const PhongKtxForm = () => {
 
       <TextField
         type="number"
-        label="Giá phòng (VNĐ) *"
+        label="Giá phòng (VNĐ)"
         fullWidth
         {...register('giaPhong', { valueAsNumber: true })}
         error={!!errors.giaPhong}

@@ -16,7 +16,12 @@ export const yeuCauSuaChuaSchema = z
     trangThai: z.enum(['MoiGui', 'DangXuLy', 'DaXong', 'Huy']).optional(),
 
     ghiChuXuLy: z.string().nullable().optional(),
+
+    ngayGui: z.string().optional(),
+
     ngayXuLy: z.string().nullable().optional(),
+
+    ngayHoanThanh: z.string().nullable().optional(),
 
     chiPhiPhatSinh: z.number().min(0).default(0).optional(),
 
