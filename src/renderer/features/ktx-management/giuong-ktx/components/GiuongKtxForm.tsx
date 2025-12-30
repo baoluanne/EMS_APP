@@ -40,9 +40,8 @@ export const GiuongKtxForm = () => {
           <FormControl fullWidth error={!!error}>
             <InputLabel>Trạng thái</InputLabel>
             <Select {...field} label="Trạng thái">
-              <MenuItem value="TRONG">Trống</MenuItem>
-              <MenuItem value="CO_SV">Đã có người</MenuItem>
-              <MenuItem value="BAO_TRI">Bảo trì</MenuItem>
+              <MenuItem value="Trong">Trống</MenuItem>
+              <MenuItem value="BaoTri">Bảo trì</MenuItem>
             </Select>
             {error && <FormHelperText>{error.message}</FormHelperText>}
           </FormControl>

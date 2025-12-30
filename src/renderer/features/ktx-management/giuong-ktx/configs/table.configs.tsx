@@ -30,9 +30,9 @@ export const giuongKtxColumns: GridColDef<GiuongKtxSchema>[] = [
     headerName: 'Trạng thái',
     width: 150,
     valueFormatter: (value: any) => {
-      if (value === 'TRONG') return 'Trống';
-      if (value === 'DA_CO_NGUOI') return 'Đã có người';
-      if (value === 'BAO_TRI') return 'Bảo trì';
+      if (value === 'Trong') return 'Trống';
+      if (value === 'CoSV') return 'Đã có người';
+      if (value === 'BaoTri') return 'Bảo trì';
       return value;
     },
   },
