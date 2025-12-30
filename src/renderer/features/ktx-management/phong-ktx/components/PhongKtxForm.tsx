@@ -42,6 +42,12 @@ export const PhongKtxForm = () => {
     <Stack spacing={3}>
       <input type="hidden" {...register('id')} />
 
+      {isEditMode ? (
+        <TextField label="Tòa nhà" fullWidth disabled value={tenToaNha} />
+      ) : (
+        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà" />
+      )}
+
       <TextField
         label="Mã phòng"
         fullWidth
@@ -49,13 +55,6 @@ export const PhongKtxForm = () => {
         error={!!errors.maPhong}
         helperText={errors.maPhong?.message as string}
       />
-
-      {isEditMode ? (
-        <TextField label="Tòa nhà" fullWidth disabled value={tenToaNha} />
-      ) : (
-        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà" />
-      )}
-
       <TextField
         type="number"
         label="Số lượng giường"

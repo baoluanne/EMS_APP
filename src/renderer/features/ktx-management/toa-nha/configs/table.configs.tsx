@@ -1,7 +1,7 @@
 import { GridColDef } from '@mui/x-data-grid';
 //import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 
-export const toaNhaColumns: GridColDef[] = ([
+export const toaNhaColumns: GridColDef[] = [
   {
     field: 'tenToaNha',
     headerName: 'Tên tòa nhà',
@@ -21,4 +21,4 @@ export const toaNhaColumns: GridColDef[] = ([
     align: 'center',
     headerAlign: 'center',
   },
-]);
+];

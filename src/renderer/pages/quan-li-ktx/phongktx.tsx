@@ -1,222 +1,127 @@
-import React, { useMemo, useCallback, useState } from 'react';
-import { Stack, Typography } from '@mui/material';
+import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
-import axios from 'axios';
+import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
+import { TITLE_MODE } from '@renderer/shared/enums';
+import React, { useMemo, useCallback } from 'react';
 
+// Components
 import { PhongKtxForm } from '../../features/ktx-management/phong-ktx/components/PhongKtxForm';
 import {
   PhongKtxFilter,
   PhongKtxFilterState,
-  phongKtxDefaultFilters,
 } from '../../features/ktx-management/phong-ktx/components/PhongKtxFilter';
 import { phongKtxColumns as columns } from '../../features/ktx-management/phong-ktx/configs/table.configs';
-import { PhongKtxs, phongKtxSchema } from '../../features/ktx-management/phong-ktx/validation';
-import { TITLE_MODE } from '@renderer/shared/enums';
+import { PhongKtx, phongKtxSchema } from '../../features/ktx-management/phong-ktx/validation';
 
-const API_BASE_URL = 'http://localhost:5031';
+const defaultValues = {
+  id: undefined,
+  idToaNha: undefined,
+  maPhong: undefined,
+  tenPhong: undefined,
+  loaiPhong: undefined,
+  soLuongGiuong: 0,
+  giaPhong: 0,
+  ghiChu: undefined,
+};
 
-export default function PhongKtxPage() {
+const PhongKtxComp = () => {
   const [filters, setFilters] = React.useState<PhongKtxFilterState>({});
-  const [customModalOpen, setCustomModalOpen] = useState(false);
-  const [isCustomAddMode, setIsCustomAddMode] = useState(true);
 
   const {
-    refetch,
     formMethods,
     data,
+    isModalOpen,
     isRefetching,
-    selectedRows,
     handleRowSelectionModelChange,
     isDeleteOpenModal,
+    onAdd,
+    onEdit,
+    onSave,
     handleDeleteRecord,
+    selectedRows,
     setIsDeleteOpenModal,
+    handleCloseModal,
+    isAddMode,
     tableConfig,
-  } = useCrudPaginationModal<PhongKtxs, any>({
-    defaultValues: {
-      id: '',
-      maPhong: '',
-      toaNhaId: '',
-      soLuongGiuong: 6,
-      soLuongDaO: 0,
-      trangThai: 'HOAT_DONG',
-      giaPhong: 0,
-    },
+    columnVisibilityModel,
+  } = useCrudPaginationModal<PhongKtx, PhongKtx>({
+    defaultValues,
     schema: phongKtxSchema,
-    entity: 'phong-ktx',
+    entity: 'PhongKtx',
   });
 
-  const rawRowsData = React.useMemo(() => {
-    let rawData: any[] = [];
-
+  const rawRowsData: PhongKtx[] = React.useMemo(() => {
     if (!data) {
       return [];
     }
-
-    if (Array.isArray(data)) {
-      rawData = data;
-    } else if ((data as any)?.items && Array.isArray((data as any).items)) {
-      rawData = (data as any).items;
-    } else if ((data as any)?.data && Array.isArray((data as any).data)) {
-      rawData = (data as any).data;
-    } else {
-      return [];
+    if ('data' in data && Array.isArray(data.data)) {
+      return data.data;
     }
-
-    if (Array.isArray(rawData) && rawData.length > 0) {
-      return rawData.map((item: any) => ({
-        id: item.id || item.Id || '',
-        maPhong: item.maPhong || item.MaPhong || '',
-        tenToaNha: item.tenToaNha || item.TenToaNha || '',
-        toaNhaId: item.toaNhaId || item.ToaNhaId || '',
-        soLuongGiuong: item.soLuongGiuong ?? item.SoLuongGiuong ?? 0,
-        soLuongDaO: item.soLuongDaO ?? item.SoLuongDaO ?? 0,
-        trangThai: item.trangThai || item.TrangThai || 'HOAT_DONG',
-        giaPhong: item.giaPhong ?? item.GiaPhong ?? 0,
-      }));
+    if ('result' in data && Array.isArray(data.result)) {
+      return data.result;
     }
-
     return [];
   }, [data]);
 
-  const rowsData = useMemo(() => {
-    if (!filters.maPhong && !filters.toaNhaId && !filters.trangThai) {
+  // Client-side Filtering Logic (mô phỏng theo ToaNha)
+  const rowsData: PhongKtx[] = useMemo(() => {
+    const { maPhong, tenPhong, loaiPhong } = filters;
+
+    if (!maPhong && !tenPhong && !loaiPhong) {
       return rawRowsData;
     }
 
     return rawRowsData.filter((row) => {
-      const matchMaPhong =
-        !filters.maPhong || row.maPhong?.toLowerCase().includes(filters.maPhong.toLowerCase());
+      const matchMaPhong = !maPhong || row.maPhong?.toLowerCase().includes(maPhong.toLowerCase());
 
-      const matchToaNha =
-        !filters.toaNhaId || row.toaNhaId?.toLowerCase().includes(filters.toaNhaId.toLowerCase());
+      const matchTenPhong =
+        !tenPhong || row.tenPhong?.toLowerCase().includes(tenPhong.toLowerCase());
 
-      const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
+      const matchLoaiPhong =
+        !loaiPhong || row.loaiPhong?.toLowerCase().includes(loaiPhong.toLowerCase());
 
-      return matchMaPhong && matchToaNha && matchTrangThai;
+      return matchMaPhong && matchTenPhong && matchLoaiPhong;
     });
   }, [rawRowsData, filters]);
-
-  const handleRowClick = useCallback(
-    (params: any) => {
-      const rowId = params.row.id;
-      handleRowSelectionModelChange([rowId] as any);
-    },
-    [handleRowSelectionModelChange],
-  );
-
-  const handleAdd = useCallback(() => {
-    formMethods.reset({
-      id: undefined,
-      maPhong: '',
-      toaNhaId: undefined,
-      tenToaNha: '',
-      soLuongGiuong: 6,
-      soLuongDaO: 0,
-      trangThai: 'HOAT_DONG',
-      giaPhong: 0,
-    });
-    setIsCustomAddMode(true);
-    setCustomModalOpen(true);
-  }, [formMethods]);
-
-  const handleEditFromToolbar = useCallback(() => {
-    if (!selectedRows || !selectedRows.ids || selectedRows.ids.size !== 1) {
-      return;
-    }
-
-    const selectedId = Array.from(selectedRows.ids)[0];
-    const rowToEdit = rowsData.find((r) => r.id === selectedId);
-
-    if (rowToEdit) {
-      formMethods.reset(rowToEdit);
-      setIsCustomAddMode(false);
-      setCustomModalOpen(true);
-    }
-  }, [selectedRows, rowsData, formMethods]);
-
-  const handleCloseModal = useCallback(() => {
-    setCustomModalOpen(false);
-  }, []);
 
   const handleFilterApply = useCallback((filterValues: PhongKtxFilterState) => {
     setFilters(filterValues);
   }, []);
 
   const handleFilterReset = useCallback(() => {
-    setFilters(phongKtxDefaultFilters);
+    setFilters({});
   }, []);
-
-  const handleSave = formMethods.handleSubmit(async (formData: PhongKtxs) => {
-    try {
-      if (isCustomAddMode) {
-        await axios.post(`${API_BASE_URL}/api/phong-ktx/tao-phong-moi`, {
-          toaNhaId: formData.toaNhaId,
-          maPhongNhapTay: formData.maPhong,
-          soLuongGiuong: formData.soLuongGiuong,
-          trangThai: formData.trangThai,
-          giaPhong: formData.giaPhong,
-        });
-      } else {
-        const updatePayload = {
-          id: formData.id,
-          maPhong: formData.maPhong,
-          toaNhaId: formData.toaNhaId,
-          soLuongGiuong: formData.soLuongGiuong,
-          soLuongDaO: formData.soLuongDaO,
-          trangThai: formData.trangThai,
-          giaPhong: formData.giaPhong,
-        };
-
-        await axios.put(`${API_BASE_URL}/api/phong-ktx/${formData.id}`, updatePayload);
-      }
-
-      setCustomModalOpen(false);
-      refetch?.();
-      handleFilterReset();
-    } catch (error: any) {
-      console.error('Save error:', error);
-    }
-  });
 
   return (
     <FormProvider {...formMethods}>
-      <Stack height="100%" width="100%" p={2} spacing={2}>
-        <Typography variant="h5" fontWeight={600}>
-          Quản lý Phòng KTX
-        </Typography>
-
+      <Stack height="100%" width="100%" p={2}>
         <ActionsToolbar
           selectedRowIds={selectedRows}
           onDelete={() => setIsDeleteOpenModal(true)}
-          onAdd={handleAdd}
-          onEdit={handleEditFromToolbar}
+          onAdd={onAdd}
+          onEdit={onEdit}
+          onExport={(dataOption, columnOption) => {
+            exportPaginationToExcel<PhongKtx>({
+              entity: 'phong-ktx',
+              filteredData: rowsData,
+              columns: columns,
+              options: { dataOption, columnOption },
+              columnVisibilityModel,
+              fileName: 'Danh_sach_phong_ktx',
+            });
+          }}
         />
 
-        <PhongKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
-
-        <DataGridTable
-          columns={columns}
-          rows={rowsData}
-          loading={isRefetching}
-          checkboxSelection
-          onRowClick={handleRowClick}
-          getRowId={(row: any) => row.id}
-          onRowSelectionModelChange={handleRowSelectionModelChange}
-          rowSelectionModel={selectedRows}
-          {...tableConfig}
-          height="calc(100% - 85px)"
-        />
-
-        {customModalOpen && (
+        {isModalOpen && (
           <FormDetailsModal
-            title={isCustomAddMode ? 'Thêm mới phòng' : 'Chỉnh sửa phòng'}
+            title={isAddMode ? 'Thêm mới Phòng KTX' : 'Chỉnh sửa Phòng KTX'}
             onClose={handleCloseModal}
-            onSave={handleSave}
-            maxWidth="sm"
+            onSave={onSave}
+            maxWidth="md"
             titleMode={TITLE_MODE.COLORED}
           >
             <PhongKtxForm />
@@ -229,7 +134,24 @@ export default function PhongKtxPage() {
             onDelete={handleDeleteRecord}
           />
         )}
+
+        <PhongKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+
+        <DataGridTable
+          columns={columns}
+          rows={rowsData}
+          checkboxSelection
+          loading={isRefetching}
+          onRowClick={(params) => formMethods.reset(params.row)}
+          getRowId={(row) => row.id!}
+          onRowSelectionModelChange={handleRowSelectionModelChange}
+          rowSelectionModel={selectedRows}
+          height="calc(100% - 85px)"
+          {...tableConfig}
+        />
       </Stack>
     </FormProvider>
   );
-}
+};
+
+export default PhongKtxComp;

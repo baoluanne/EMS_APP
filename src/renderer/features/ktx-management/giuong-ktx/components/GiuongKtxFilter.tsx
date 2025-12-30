@@ -1,29 +1,21 @@
-import { Grid } from '@mui/material';
+import { Grid, MenuItem } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
 import { ControlledTextField } from '@renderer/components/controlled-fields';
-import { ControlledSelect } from '@renderer/components/controlled-fields/ControlledSelect';
 import { useForm } from 'react-hook-form';
-import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
+import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection'; // Component bạn đã sửa trước đó
 
 export interface GiuongKtxFilterState {
   maGiuong?: string;
-  phongId?: string;
+  phongKtxId?: string;
   trangThai?: string;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const giuongKtxDefaultFilters: GiuongKtxFilterState = {
   maGiuong: undefined,
-  phongId: undefined,
+  phongKtxId: undefined,
   trangThai: undefined,
 };
-
-const trangThaiOptions = [
-  { value: '', label: '-- Tất cả --' },
-  { value: 'Trong', label: 'Trống' },
-  { value: 'CoSinhVien', label: 'Có sinh viên' },
-  { value: 'BaoTri', label: 'Bảo trì' },
-];
 
 interface Props {
   onApply: (filters: GiuongKtxFilterState) => void;
@@ -45,8 +37,8 @@ export const GiuongKtxFilter = ({ onApply, onReset }: Props) => {
   const handleApply = (data: GiuongKtxFilterState) => {
     const cleanedData: GiuongKtxFilterState = {
       maGiuong: data.maGiuong?.trim() ? data.maGiuong.trim() : undefined,
-      phongId: data.phongId?.trim() ? data.phongId.trim() : undefined,
-      trangThai: data.trangThai?.trim() ? data.trangThai.trim() : undefined,
+      phongKtxId: data.phongKtxId || undefined, // ID không cần trim
+      trangThai: data.trangThai || undefined,
     };
 
     onApply(cleanedData);
@@ -59,26 +51,33 @@ export const GiuongKtxFilter = ({ onApply, onReset }: Props) => {
       methods={filterMethods}
     >
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6 }}>
+        <Grid size={4}>
           <ControlledTextField
             control={control}
             name="maGiuong"
             label="Mã giường"
-            placeholder="Nhập mã giường..."
+            placeholder="Nhập mã giường"
           />
         </Grid>
-
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <PhongSelection control={control} name="phongId" label="Phòng" />
+        <Grid size={4}>
+          <PhongSelection control={control} name="phongKtxId" label="Thuộc phòng" />
         </Grid>
-
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ControlledSelect
+        <Grid size={4}>
+          <ControlledTextField
             control={control}
             name="trangThai"
             label="Trạng thái"
-            options={trangThaiOptions}
-          />
+            select
+            placeholder="Chọn trạng thái"
+          >
+            <MenuItem value="">
+              <em>-- Tất cả --</em>
+            </MenuItem>
+            <MenuItem value="TRONG">Trống</MenuItem>
+            <MenuItem value="DA_CO_NGUOI">Đã có người</MenuItem>
+            <MenuItem value="BAO_TRI">Bảo trì</MenuItem>
+            <MenuItem value="NGUNG_HOAT_DONG">Ngừng hoạt động</MenuItem>
+          </ControlledTextField>
         </Grid>
       </Grid>
     </FilterDrawerBottom>

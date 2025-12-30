@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import {
   FormControl,
   InputLabel,
@@ -7,73 +6,72 @@ import {
   FormHelperText,
   CircularProgress,
 } from '@mui/material';
-import axios from 'axios';
 import { Control, Controller } from 'react-hook-form';
-
-interface ToaNhaOption {
-  id: string;
-  tenToaNha: string;
-}
+import { useMemo } from 'react';
+import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { toaNhaSchema } from '@renderer/features/ktx-management/toa-nha/validation';
 
 interface Props {
   control: Control<any>;
   name: string;
   label?: string;
   required?: boolean;
+  disabled?: boolean;
 }
 
-export const ToaNhaSelection = ({ control, name, label = 'Tòa nhà', required = false }: Props) => {
-  const { data: toaNhaList = [], isLoading } = useQuery<ToaNhaOption[]>({
-    queryKey: ['toa-nha-ktx-selection'],
-    queryFn: async () => {
-      const response = await axios.get(`http://localhost:5031/api/toa-nha-ktx/pagination`, {
-        params: { page: 1, pageSize: 200 },
-      });
-
-      const raw = response.data;
-
-      let list: any[] = [];
-
-      if (raw.result && Array.isArray(raw.result)) {
-        list = raw.result;
-      } else if (raw.data && Array.isArray(raw.data)) {
-        list = raw.data;
-      } else if (Array.isArray(raw)) {
-        list = raw;
-      } else {
-        return [];
-      }
-
-      const mapped = list
-        .map((item: any) => ({
-          id: item.id?.toString() || '',
-          tenToaNha: item.tenToaNha || 'Không tên',
-        }))
-        .filter((item) => item.id);
-
-      return mapped;
-    },
-    staleTime: 10 * 60 * 1000,
+export const ToaNhaSelection = ({
+  control,
+  name,
+  label = 'Tòa nhà',
+  required = false,
+  disabled = false,
+}: Props) => {
+  const { data, isRefetching } = useCrudPaginationModal({
+    entity: 'ToaNhaKtx',
+    schema: toaNhaSchema,
+    defaultValues: {},
   });
+
+  const toaNhaList = useMemo(() => {
+    if (!data) return [];
+
+    let list: any[] = [];
+    if ('data' in data && Array.isArray(data.data)) {
+      list = data.data;
+    } else if ('result' in data && Array.isArray(data.result)) {
+      list = data.result;
+    } else if (Array.isArray(data)) {
+      list = data;
+    }
+
+    return list.map((item) => ({
+      id: item.id?.toString(),
+      tenToaNha: item.tenToaNha,
+    }));
+  }, [data]);
 
   return (
     <Controller
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => (
-        <FormControl fullWidth error={!!error}>
-          <InputLabel required={required}>{label}</InputLabel>
-          <Select {...field} label={label} disabled={isLoading}>
-            {isLoading ? (
-              <MenuItem disabled>
-                <CircularProgress size={20} /> Đang tải...
+        <FormControl fullWidth error={!!error} disabled={disabled || isRefetching}>
+          <InputLabel required={required} id={`${name}-label`}>
+            {label}
+          </InputLabel>
+          <Select {...field} labelId={`${name}-label`} label={label} value={field.value || ''}>
+            {isRefetching ? (
+              <MenuItem disabled value="">
+                <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
               </MenuItem>
             ) : toaNhaList.length === 0 ? (
-              <MenuItem disabled>Không có tòa nhà nào</MenuItem>
+              <MenuItem disabled value="">
+                -- Không có dữ liệu --
+              </MenuItem>
             ) : (
-              toaNhaList.map((toaNha) => (
-                <MenuItem key={toaNha.id} value={toaNha.id}>
-                  {toaNha.tenToaNha}
+              toaNhaList.map((item) => (
+                <MenuItem key={item.id} value={item.id}>
+                  {item.tenToaNha}
                 </MenuItem>
               ))
             )}

@@ -45,7 +45,7 @@ const ToaNha = () => {
   } = useCrudPaginationModal<ToaNhaKtx, ToaNhaKtx>({
     defaultValues,
     schema: toaNhaSchema,
-    entity: 'toa-nha-ktx',
+    entity: 'ToaNhaKtx',
   });
 
   const rawRowsData: ToaNhaKtx[] = React.useMemo(() => {

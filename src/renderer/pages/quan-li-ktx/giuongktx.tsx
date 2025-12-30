@@ -1,11 +1,13 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
+
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 import { giuongKtxColumns as columns } from '@renderer/features/ktx-management/giuong-ktx/configs/table.configs';
 import { GiuongKtxForm } from '@renderer/features/ktx-management/giuong-ktx/components/GiuongKtxForm';
@@ -15,19 +17,20 @@ import {
 } from '@renderer/features/ktx-management/giuong-ktx/components/GiuongKtxFilter';
 import {
   giuongKtxSchema,
-  type GiuongKtxSchema,
+  GiuongKtxSchema,
 } from '@renderer/features/ktx-management/giuong-ktx/validation';
-import { TITLE_MODE } from '@renderer/shared/enums';
 
 const defaultValues: GiuongKtxSchema = {
   id: undefined,
   maGiuong: '',
   phongKtxId: '',
-  trangThai: 'Trong',
+  trangThai: 'TRONG',
+  ghiChu: '',
+  isVisible: true,
 };
 
-export default function GiuongKtx() {
-  const [filters, setFilters] = React.useState<GiuongKtxFilterState>({});
+export default function GiuongKtxPage() {
+  const [filters, setFilters] = useState<GiuongKtxFilterState>({});
   const [customModalOpen, setCustomModalOpen] = useState(false);
   const [isCustomAddMode, setIsCustomAddMode] = useState(true);
 
@@ -47,31 +50,15 @@ export default function GiuongKtx() {
     defaultValues,
     schema: giuongKtxSchema,
     entity: 'giuongKtx',
+    filters,
   });
-
-  const rawRowsData: GiuongKtxSchema[] = useMemo(() => {
+  const rowsData = React.useMemo(() => {
     if (!data) return [];
-    const res = (data as any).data || (data as any).result || [];
-    return Array.isArray(res) ? res : [];
+    if ('data' in data && Array.isArray(data.data)) return data.data;
+    if ('result' in data && Array.isArray(data.result)) return data.result;
+    if (Array.isArray(data)) return data;
+    return [];
   }, [data]);
-
-  const rowsData: GiuongKtxSchema[] = useMemo(() => {
-    return rawRowsData.filter((row) => {
-      const matchMaGiuong =
-        !filters.maGiuong || row.maGiuong?.toLowerCase().includes(filters.maGiuong.toLowerCase());
-      const matchPhong = !filters.phongId || row.phongKtxId === filters.phongId;
-      const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
-      return matchMaGiuong && matchPhong && matchTrangThai;
-    });
-  }, [rawRowsData, filters]);
-
-  const handleRowClick = useCallback(
-    (params: any) => {
-      const rowId = params.row.id;
-      handleRowSelectionModelChange([rowId] as any);
-    },
-    [handleRowSelectionModelChange],
-  );
 
   const handleAdd = useCallback(() => {
     formMethods.reset(defaultValues);
@@ -80,62 +67,23 @@ export default function GiuongKtx() {
   }, [formMethods]);
 
   const handleEditFromToolbar = useCallback(() => {
-    if (!selectedRows || !selectedRows.ids || selectedRows.ids.size !== 1) {
-      console.log('selectedRows:', selectedRows);
-      return;
-    }
-
-    const selectedId = Array.from(selectedRows.ids)[0];
-    const rowToEdit = rowsData.find((r) => r.id === selectedId);
+    if (!selectedRows || selectedRows.length !== 1) return;
+    const selectedId = selectedRows[0];
+    const rowToEdit = rowsData.find((r: any) => r.id === selectedId);
 
     if (rowToEdit) {
-      console.log('Found row to edit:', rowToEdit);
       formMethods.reset(rowToEdit);
       setIsCustomAddMode(false);
       setCustomModalOpen(true);
-    } else {
-      console.log('Row not found, selectedId:', selectedId);
     }
   }, [selectedRows, rowsData, formMethods]);
-
-  const handleCloseModal = useCallback(() => {
-    setCustomModalOpen(false);
-  }, []);
-
   const handleCustomSave = formMethods.handleSubmit(async (values) => {
     try {
-      const payload = { ...values };
-
-      if (isCustomAddMode) {
-        delete payload.id;
-      }
-      const apiUrl = isCustomAddMode
-        ? `http://localhost:5031/api/giuongKtx`
-        : `http://localhost:5031/api/giuongKtx/${values.id}`;
-      const method = isCustomAddMode ? 'POST' : 'PUT';
-
-      console.log('Saving:', { method, url: apiUrl, data: payload });
-
-      const response = await fetch(apiUrl, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
+      console.log('Form Values Submitted:', values);
       setCustomModalOpen(false);
       refetch?.();
-
-      alert(isCustomAddMode ? 'Thêm mới thành công' : 'Cập nhật thành công');
-    } catch (error: any) {
-      console.error('Save error:', error);
-      alert(error.message || 'Có lỗi xảy ra');
+    } catch (error) {
+      console.error(error);
     }
   });
 
@@ -162,7 +110,7 @@ export default function GiuongKtx() {
         {customModalOpen && (
           <FormDetailsModal
             title={isCustomAddMode ? 'Thêm mới Giường KTX' : 'Chỉnh sửa Giường KTX'}
-            onClose={handleCloseModal}
+            onClose={() => setCustomModalOpen(false)}
             onSave={handleCustomSave}
             maxWidth="sm"
             titleMode={TITLE_MODE.COLORED}
@@ -185,8 +133,6 @@ export default function GiuongKtx() {
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={handleRowClick}
-          getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
           height="calc(100% - 120px)"

@@ -1,20 +1,14 @@
 import {
-  Stack,
-  TextField,
   FormControl,
   FormHelperText,
   InputLabel,
   MenuItem,
   Select,
+  Stack,
+  TextField,
 } from '@mui/material';
 import { Controller, useFormContext } from 'react-hook-form';
 import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
-
-const trangThaiOptions = [
-  { value: 'Trong', label: 'Trống' },
-  { value: 'CoSinhVien', label: 'Có sinh viên' },
-  { value: 'BaoTri', label: 'Bảo trì' },
-];
 
 export const GiuongKtxForm = () => {
   const {
@@ -24,40 +18,33 @@ export const GiuongKtxForm = () => {
   } = useFormContext();
 
   return (
-    <Stack spacing={3} sx={{ mt: 1 }}>
+    <Stack spacing={3}>
       <input type="hidden" {...register('id')} />
 
-      <Controller
-        name="phongKtxId"
-        control={control}
-        render={({ field }) => <PhongSelection {...field} control={control} label="Phòng" />}
-      />
+      <PhongSelection control={control} name="phongKtxId" label="Thuộc Phòng" />
 
       <TextField
         label="Mã giường"
         fullWidth
-        placeholder="Ví dụ: 01, 02, A, B..."
         {...register('maGiuong')}
         error={!!errors.maGiuong}
-        helperText={(errors.maGiuong?.message as string) || 'Mã giường sẽ hiển thị dạng: P0101-01'}
+        helperText={errors.maGiuong?.message as string}
+        placeholder="Ví dụ: P101-01"
       />
 
       <Controller
         name="trangThai"
         control={control}
-        render={({ field }) => (
-          <FormControl fullWidth error={!!errors.trangThai}>
-            <InputLabel id="trang-thai-label">Trạng thái</InputLabel>
-            <Select labelId="trang-thai-label" {...field} label="Trạng thái *">
-              {trangThaiOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
+        defaultValue="TRONG"
+        render={({ field, fieldState: { error } }) => (
+          <FormControl fullWidth error={!!error}>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select {...field} label="Trạng thái">
+              <MenuItem value="TRONG">Trống</MenuItem>
+              <MenuItem value="CO_SV">Đã có người</MenuItem>
+              <MenuItem value="BAO_TRI">Bảo trì</MenuItem>
             </Select>
-            {errors.trangThai && (
-              <FormHelperText>{errors.trangThai.message as string}</FormHelperText>
-            )}
+            {error && <FormHelperText>{error.message}</FormHelperText>}
           </FormControl>
         )}
       />
