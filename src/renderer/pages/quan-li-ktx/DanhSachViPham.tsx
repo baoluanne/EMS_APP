@@ -4,8 +4,9 @@ import { DataGridTable } from '@renderer/components/Table';
 import { FormDetailsModal, DeleteConfirmationModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { useMemo, useState, useCallback } from 'react';
 import axios from 'axios';
-import React from 'react';
+import { env } from '@renderer/shared/configs/env.config';
 
 import {
   viPhamNoiQuyKtxSchema,
@@ -17,11 +18,10 @@ import { ViPhamKtxFilter } from '@renderer/features/ktx-management/danh-sach-vi-
 import { ViPhamKtxForm } from '@renderer/features/ktx-management/danh-sach-vi-pham/components/ViPhamKtxForm';
 import { TITLE_MODE } from '@renderer/shared/enums';
 
-const API_BASE_URL = 'http://localhost:5031/api/vi-pham-noiquy-ktx';
-
 export default function ViPhamNoiQuyKtxPage() {
+  const [filters, setFilters] = useState<ViPhamFilterState>({});
+
   const {
-    refetch,
     formMethods,
     data,
     isModalOpen,
@@ -36,7 +36,7 @@ export default function ViPhamNoiQuyKtxPage() {
     handleCloseModal,
     isAddMode,
     tableConfig,
-    mergeParams,
+    refetch,
   } = useCrudPaginationModal<ViPhamNoiQuyKtx, any>({
     defaultValues: {
       diemTru: 0,
@@ -48,7 +48,8 @@ export default function ViPhamNoiQuyKtxPage() {
     schema: viPhamNoiQuyKtxSchema,
     entity: 'vi-pham-noiquy-ktx',
   });
-  const rowsData = React.useMemo((): ViPhamNoiQuyKtx[] => {
+
+  const rawRowsData = useMemo((): ViPhamNoiQuyKtx[] => {
     const rawData = (data as any)?.data || (data as any)?.result || [];
     if (Array.isArray(rawData)) {
       return rawData.map((item: any) => ({
@@ -67,26 +68,54 @@ export default function ViPhamNoiQuyKtxPage() {
     return [];
   }, [data]);
 
-  const handleApplyFilter = (filters: ViPhamFilterState) => {
-    mergeParams({
-      ...filters,
-      page: 0,
-    } as any);
-  };
+  const rowsData = useMemo(() => {
+    if (!filters.searchTerm && !filters.noiDungViPham && !filters.tuNgay) {
+      return rawRowsData;
+    }
 
-  const handleSave = async (formData: ViPhamNoiQuyKtx) => {
+    return rawRowsData.filter((row) => {
+      const searchTerm = filters.searchTerm?.toLowerCase() || '';
+      const matchSearchTerm =
+        !searchTerm ||
+        row.maSinhVien?.toLowerCase().includes(searchTerm) ||
+        row.hoTenSinhVien?.toLowerCase().includes(searchTerm);
+
+      const matchNoiDung = !filters.noiDungViPham || row.noiDungViPham === filters.noiDungViPham;
+
+      const matchTuNgay =
+        !filters.tuNgay || new Date(row.ngayViPham).getTime() >= new Date(filters.tuNgay).getTime();
+
+      return matchSearchTerm && matchNoiDung && matchTuNgay;
+    });
+  }, [rawRowsData, filters]);
+
+  const handleFilterApply = useCallback((filterValues: ViPhamFilterState) => {
+    setFilters(filterValues);
+  }, []);
+
+  const handleFilterReset = useCallback(() => {
+    setFilters({});
+  }, []);
+
+  const onSubmit = async (formData: ViPhamNoiQuyKtx) => {
     try {
       const payload = {
         ...formData,
         ngayViPham: new Date(formData.ngayViPham).toISOString(),
       };
-      isAddMode
-        ? await axios.post(`${API_BASE_URL}/create`, payload)
-        : await axios.put(`${API_BASE_URL}/update`, payload);
-      refetch?.();
+
+      const endpoint = `${env.API_ENDPOINT}/vi-pham-noiquy-ktx`;
+
+      if (isAddMode) {
+        await axios.post(`${endpoint}/create`, payload);
+      } else {
+        await axios.put(`${endpoint}/update`, payload);
+      }
+
+      refetch();
       handleCloseModal();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Lưu thất bại');
+    } catch (error) {
+      console.error('Lỗi lưu dữ liệu:', error);
     }
   };
 
@@ -104,7 +133,7 @@ export default function ViPhamNoiQuyKtxPage() {
           onDelete={() => setIsDeleteOpenModal(true)}
         />
 
-        <ViPhamKtxFilter onApply={handleApplyFilter} />
+        <ViPhamKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
 
         <DataGridTable
           columns={columns}
@@ -122,7 +151,7 @@ export default function ViPhamNoiQuyKtxPage() {
           <FormDetailsModal
             title={isAddMode ? 'Ghi nhận vi phạm mới' : 'Cập nhật vi phạm'}
             onClose={handleCloseModal}
-            onSave={formMethods.handleSubmit(handleSave)}
+            onSave={formMethods.handleSubmit(onSubmit)}
             maxWidth="md"
             titleMode={TITLE_MODE.COLORED}
           >

@@ -16,7 +16,7 @@ const priceFormatter = (value: number) => {
   }).format(value);
 };
 
-export const phongKtxColumns: GridColDef[] = ([
+export const phongKtxColumns: GridColDef[] = [
   {
     field: 'maPhong',
     headerName: 'Mã phòng',
@@ -58,4 +58,4 @@ export const phongKtxColumns: GridColDef[] = ([
     align: 'right',
     valueFormatter: (value) => priceFormatter(value),
   },
-]);
+];

@@ -7,9 +7,10 @@ import { ControlledSelect } from '@renderer/components/controlled-fields/Control
 
 interface Props {
   onApply: (filters: ViPhamFilterState) => void;
+  onReset: () => void;
 }
 
-export const ViPhamKtxFilter = ({ onApply }: Props) => {
+export const ViPhamKtxFilter = ({ onApply, onReset }: Props) => {
   const filterMethods = useForm<ViPhamFilterState>({
     defaultValues: viPhamDefaultFilters,
   });
@@ -19,6 +20,7 @@ export const ViPhamKtxFilter = ({ onApply }: Props) => {
   const handleClear = () => {
     reset(viPhamDefaultFilters);
     onApply(viPhamDefaultFilters);
+    onReset();
   };
 
   const handleLocalApply = (data: ViPhamFilterState) => {

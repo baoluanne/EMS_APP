@@ -2,7 +2,7 @@ import { Grid, MenuItem } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
 import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { useForm } from 'react-hook-form';
-import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection'; // Giả sử đường dẫn này
+import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
 
 export interface PhongKtxFilterState {
   maPhong?: string;
@@ -10,8 +10,7 @@ export interface PhongKtxFilterState {
   trangThai?: string;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const phongKtxDefaultFilters: PhongKtxFilterState = {
+const phongKtxDefaultFilters: PhongKtxFilterState = {
   maPhong: undefined,
   toaNhaId: undefined,
   trangThai: undefined,
@@ -37,7 +36,7 @@ export const PhongKtxFilter = ({ onApply, onReset }: Props) => {
   const handleApply = (data: PhongKtxFilterState) => {
     const cleanedData: PhongKtxFilterState = {
       maPhong: data.maPhong?.trim() ? data.maPhong.trim() : undefined,
-      toaNhaId: data.toaNhaId || undefined, // ID không cần trim
+      toaNhaId: data.toaNhaId || undefined,
       trangThai: data.trangThai || undefined,
     };
 

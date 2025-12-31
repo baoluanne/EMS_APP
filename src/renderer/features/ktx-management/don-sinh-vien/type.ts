@@ -18,6 +18,7 @@ export interface DonKtxResponse {
 
   ngayBatDauHienTai: string | null;
   ngayHetHanHienTai: string | null;
+  gioiTinh?: number;
 }
 
 export interface DonKtxCreateInput {

@@ -114,7 +114,7 @@ export default function DanhSachDonSinhVien() {
   }, [rawRowsData, filters]);
 
   const columns: GridColDef<DonKtxResponse>[] = [
-    { field: 'maDon', headerName: 'Mã đơn', width: 180 },
+    { field: 'maDon', headerName: 'Mã đơn', width: 250 },
     { field: 'hoTenSinhVien', headerName: 'Họ tên SV', flex: 1, minWidth: 180 },
     { field: 'maSinhVien', headerName: 'Mã SV', width: 120 },
     {

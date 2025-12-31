@@ -1,35 +1,35 @@
+import { useState, useCallback, useMemo } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
+
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 import { TITLE_MODE } from '@renderer/shared/enums';
-import React, { useMemo, useCallback } from 'react';
 
-// Components
+import { phongKtxColumns as columns } from '../../features/ktx-management/phong-ktx/configs/table.configs';
 import { PhongKtxForm } from '../../features/ktx-management/phong-ktx/components/PhongKtxForm';
 import {
   PhongKtxFilter,
   PhongKtxFilterState,
 } from '../../features/ktx-management/phong-ktx/components/PhongKtxFilter';
-import { phongKtxColumns as columns } from '../../features/ktx-management/phong-ktx/configs/table.configs';
-import { PhongKtx, phongKtxSchema } from '../../features/ktx-management/phong-ktx/validation';
+import { phongKtxSchema, PhongKtxs } from '../../features/ktx-management/phong-ktx/validation';
 
-const defaultValues = {
+const defaultValues: PhongKtxs = {
   id: undefined,
-  idToaNha: undefined,
-  maPhong: undefined,
-  tenPhong: undefined,
-  loaiPhong: undefined,
-  soLuongGiuong: 0,
+  maPhong: '',
+  toaNhaId: '',
+  tenToaNha: '',
+  soLuongGiuong: 4,
+  soLuongDaO: 0,
+  trangThai: 'HOAT_DONG',
   giaPhong: 0,
-  ghiChu: undefined,
 };
 
-const PhongKtxComp = () => {
-  const [filters, setFilters] = React.useState<PhongKtxFilterState>({});
+export default function PhongKtxPage() {
+  const [filters, setFilters] = useState<PhongKtxFilterState>({});
 
   const {
     formMethods,
@@ -48,13 +48,13 @@ const PhongKtxComp = () => {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
-  } = useCrudPaginationModal<PhongKtx, PhongKtx>({
+  } = useCrudPaginationModal<PhongKtxs, PhongKtxs>({
     defaultValues,
     schema: phongKtxSchema,
-    entity: 'PhongKtx',
+    entity: 'phongKtx',
   });
 
-  const rawRowsData: PhongKtx[] = React.useMemo(() => {
+  const rawRowsData: PhongKtxs[] = useMemo(() => {
     if (!data) {
       return [];
     }
@@ -67,24 +67,20 @@ const PhongKtxComp = () => {
     return [];
   }, [data]);
 
-  // Client-side Filtering Logic (mô phỏng theo ToaNha)
-  const rowsData: PhongKtx[] = useMemo(() => {
-    const { maPhong, tenPhong, loaiPhong } = filters;
-
-    if (!maPhong && !tenPhong && !loaiPhong) {
+  const rowsData: PhongKtxs[] = useMemo(() => {
+    if (!filters.maPhong && !filters.toaNhaId && !filters.trangThai) {
       return rawRowsData;
     }
 
-    return rawRowsData.filter((row) => {
-      const matchMaPhong = !maPhong || row.maPhong?.toLowerCase().includes(maPhong.toLowerCase());
+    return rawRowsData.filter((row: any) => {
+      const matchMaPhong =
+        !filters.maPhong || row.maPhong?.toLowerCase().includes(filters.maPhong.toLowerCase());
 
-      const matchTenPhong =
-        !tenPhong || row.tenPhong?.toLowerCase().includes(tenPhong.toLowerCase());
+      const matchToaNhaId = !filters.toaNhaId || row.toaNhaId === filters.toaNhaId;
 
-      const matchLoaiPhong =
-        !loaiPhong || row.loaiPhong?.toLowerCase().includes(loaiPhong.toLowerCase());
+      const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
 
-      return matchMaPhong && matchTenPhong && matchLoaiPhong;
+      return matchMaPhong && matchToaNhaId && matchTrangThai;
     });
   }, [rawRowsData, filters]);
 
@@ -105,10 +101,10 @@ const PhongKtxComp = () => {
           onAdd={onAdd}
           onEdit={onEdit}
           onExport={(dataOption, columnOption) => {
-            exportPaginationToExcel<PhongKtx>({
+            exportPaginationToExcel<PhongKtxs>({
               entity: 'phong-ktx',
               filteredData: rowsData,
-              columns: columns,
+              columns,
               options: { dataOption, columnOption },
               columnVisibilityModel,
               fileName: 'Danh_sach_phong_ktx',
@@ -146,12 +142,10 @@ const PhongKtxComp = () => {
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
-          height="calc(100% - 85px)"
+          height="calc(100% - 120px)"
           {...tableConfig}
         />
       </Stack>
     </FormProvider>
   );
-};
-
-export default PhongKtxComp;
+}

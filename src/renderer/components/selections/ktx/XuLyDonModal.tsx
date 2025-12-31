@@ -1,25 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  MenuItem,
-  Typography,
-  Alert,
-  CircularProgress,
-  Stack,
-  Box,
-} from '@mui/material';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useState } from 'react';
+import { Stack, Box, Typography, TextField, Button, CircularProgress, Alert } from '@mui/material';
+import { FormProvider } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { z } from 'zod';
 import { env } from '@renderer/shared/configs/env.config';
+import { TITLE_MODE } from '@renderer/shared/enums';
+
+// Hooks
+import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+
+// Components
+import { FormDetailsModal } from '@renderer/components/modals';
+import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
+import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
+import { GiuongSelection } from '@renderer/components/selections/ktx/GiuongSelection';
+
 import { DonKtxResponse } from '@renderer/features/ktx-management/don-sinh-vien/type';
 
-const api = axios.create({
-  baseURL: env.API_ENDPOINT,
+const xuLyDonSchema = z.object({
+  toaNhaId: z.string().optional(),
+  phongId: z.string().optional(),
+  giuongId: z.string().optional(),
+  ngayBatDauDuyet: z.string().optional(),
+  ngayHetHanDuyet: z.string().optional(),
+  ghiChu: z.string().optional(),
+  lyDoTuChoi: z.string().optional(),
 });
 
 interface XuLyDonModalProps {
@@ -31,482 +37,263 @@ interface XuLyDonModalProps {
 
 const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSuccess }) => {
   const queryClient = useQueryClient();
-  const [ghiChu, setGhiChu] = useState('');
-  const [toaNhaId, setToaNhaId] = useState('');
-  const [phongId, setPhongId] = useState('');
-  const [giuongId, setGiuongId] = useState('');
-  const [lyDoTuChoi, setLyDoTuChoi] = useState('');
-  const [ngayBatDauDuyet, setNgayBatDauDuyet] = useState('');
-  const [ngayHetHanDuyet, setNgayHetHanDuyet] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isRejecting, setIsRejecting] = useState(false);
 
-  const isVaoOOrChuyenPhong = don != null && ['VaoO', 'ChuyenPhong'].includes(don.loaiDon);
-  const isVaoOOrGiaHan = don != null && ['VaoO', 'GiaHanKtx'].includes(don.loaiDon);
+  const { formMethods, isRefetching } = useCrudPaginationModal<any, any>({
+    entity: 'don-ktx',
+    schema: xuLyDonSchema,
+    defaultValues: {
+      toaNhaId: '',
+      phongId: '',
+      giuongId: '',
+      ngayBatDauDuyet: '',
+      ngayHetHanDuyet: '',
+      ghiChu: '',
+      lyDoTuChoi: '',
+    },
+  });
+
+  const { control, watch, setValue, reset, handleSubmit } = formMethods;
+
+  const [toaNhaId, phongId, ngayBatDauDuyet, ngayHetHanDuyet, lyDoTuChoi] = watch([
+    'toaNhaId',
+    'phongId',
+    'ngayBatDauDuyet',
+    'ngayHetHanDuyet',
+    'lyDoTuChoi',
+  ]);
+
+  const isVaoOOrChuyenPhong = don && ['VaoO', 'ChuyenPhong'].includes(don.loaiDon);
+  const isVaoOOrGiaHan = don && ['VaoO', 'GiaHanKtx'].includes(don.loaiDon);
 
   useEffect(() => {
-    if (don) {
-      setNgayBatDauDuyet(
-        don.ngayBatDauMongMuon
-          ? new Date(don.ngayBatDauMongMuon).toISOString().split('T')[0]
+    if (open && don) {
+      reset({
+        toaNhaId: '',
+        phongId: '',
+        giuongId: '',
+        ngayBatDauDuyet: don.ngayBatDauMongMuon
+          ? don.ngayBatDauMongMuon.split('T')[0]
           : new Date().toISOString().split('T')[0],
-      );
-      setNgayHetHanDuyet(
-        don.ngayHetHanMongMuon ? new Date(don.ngayHetHanMongMuon).toISOString().split('T')[0] : '',
-      );
-    } else {
-      setNgayBatDauDuyet('');
-      setNgayHetHanDuyet('');
-    }
-  }, [don]);
-
-  const { data: toaNhaList = [], isLoading: loadingToaNha } = useQuery({
-    queryKey: ['toa-nha-ktx-selection'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/toa-nha-ktx/pagination', {
-          params: { page: 1, pageSize: 200 },
-        });
-
-        const raw = response.data;
-        let list: any[] = [];
-
-        if (raw.result && Array.isArray(raw.result)) {
-          list = raw.result;
-        } else if (raw.data && Array.isArray(raw.data)) {
-          list = raw.data;
-        } else if (raw.items && Array.isArray(raw.items)) {
-          list = raw.items;
-        } else if (Array.isArray(raw)) {
-          list = raw;
-        }
-
-        return list
-          .map((item: any) => ({
-            id: item.id?.toString() || '',
-            tenToaNha: item.tenToaNha || 'Không tên',
-          }))
-          .filter((item) => item.id);
-      } catch (error) {
-        return [error];
-      }
-    },
-    enabled: open && isVaoOOrChuyenPhong,
-    staleTime: 0,
-  });
-
-  const {
-    data: phongList = [],
-    isLoading: loadingPhong,
-    error: errorPhong,
-  } = useQuery({
-    queryKey: ['phong-ktx', toaNhaId],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/phong-ktx/pagination', {
-          params: {
-            page: 1,
-            pageSize: 200,
-            toaNhaId: toaNhaId || undefined,
-          },
-        });
-
-        const raw = response.data;
-        let list: any[] = [];
-
-        if (raw.data && Array.isArray(raw.data)) list = raw.data;
-        else if (raw.result && Array.isArray(raw.result)) list = raw.result;
-        else if (Array.isArray(raw)) list = raw;
-
-        return list
-          .map((item: any) => ({
-            id: item.id?.toString() || '',
-            maPhong: item.maPhong || 'Không mã',
-            tenToaNha: item.tenToaNha || 'Không rõ tòa',
-          }))
-          .filter((item) => item.id);
-      } catch (error) {
-        return [error];
-      }
-    },
-    enabled: open && isVaoOOrChuyenPhong && !!toaNhaId,
-    staleTime: 0,
-  });
-
-  const {
-    data: giuongList = [],
-    isLoading: loadingGiuong,
-    error: errorGiuong,
-  } = useQuery({
-    queryKey: ['giuong-trong', phongId],
-    queryFn: async () => {
-      if (!phongId) return [];
-      try {
-        const response = await api.get('/giuongKtx/pagination', {
-          params: {
-            phongId,
-            trangThai: 'Trong',
-            page: 1,
-            pageSize: 100,
-          },
-        });
-
-        const raw = response.data;
-        let list: any[] = [];
-
-        if (raw.result && Array.isArray(raw.result)) list = raw.result;
-        else if (raw.data && Array.isArray(raw.data)) list = raw.data;
-        else if (Array.isArray(raw)) list = raw;
-
-        return list
-          .filter((item: any) => item.trangThai === 'Trong')
-          .map((item: any) => ({
-            id: item.id?.toString() || '',
-            maGiuong: item.maGiuong || 'Không mã',
-          }))
-          .filter((item) => item.id);
-      } catch (error) {
-        return [error];
-      }
-    },
-    enabled: !!phongId && isVaoOOrChuyenPhong,
-    staleTime: 0,
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (endpoint: string) => api.post(endpoint),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['don-ktx'] });
-      onSuccess();
-    },
-  });
-
-  const tuChoiMutation = useMutation({
-    mutationFn: async (lyDo: string) => {
-      return api.post(`/don-ktx/${don?.id}/tu-choi`, lyDo, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        ngayHetHanDuyet: don.ngayHetHanMongMuon ? don.ngayHetHanMongMuon.split('T')[0] : '',
+        ghiChu: '',
+        lyDoTuChoi: '',
       });
-    },
-    onSuccess: () => {
+      setErrorMessage('');
+    }
+  }, [open, don, reset]);
+
+  useEffect(() => {
+    if (toaNhaId) {
+      setValue('phongId', '');
+      setValue('giuongId', '');
+    }
+  }, [toaNhaId, setValue]);
+
+  useEffect(() => {
+    if (phongId) setValue('giuongId', '');
+  }, [phongId, setValue]);
+
+  const handleDuyet = async (data: any) => {
+    try {
+      setErrorMessage('');
+
+      if (isVaoOOrChuyenPhong) {
+        if (!data.phongId) {
+          alert('Vui lòng chọn phòng');
+          return;
+        }
+        if (!data.giuongId) {
+          alert('Vui lòng chọn giường');
+          return;
+        }
+      }
+      if (isVaoOOrGiaHan) {
+        if (!data.ngayBatDauDuyet || !data.ngayHetHanDuyet) {
+          alert('Nhập đủ ngày tháng');
+          return;
+        }
+        if (new Date(data.ngayHetHanDuyet) <= new Date(data.ngayBatDauDuyet)) {
+          alert('Ngày hết hạn phải sau ngày bắt đầu');
+          return;
+        }
+      }
+
+      let endpoint = '';
+      const params = new URLSearchParams();
+
+      switch (don?.loaiDon) {
+        case 'VaoO':
+          endpoint = `/duyet-vao-o`;
+          params.append('phongId', data.phongId);
+          params.append('giuongId', data.giuongId);
+          params.append('ngayBatDau', data.ngayBatDauDuyet);
+          params.append('ngayHetHan', data.ngayHetHanDuyet);
+          break;
+        case 'ChuyenPhong':
+          endpoint = `/duyet-chuyen-phong`;
+          params.append('phongMoiId', data.phongId);
+          params.append('giuongMoiId', data.giuongId);
+          params.append('ngayBatDau', data.ngayBatDauDuyet);
+          params.append('ngayHetHan', data.ngayHetHanDuyet);
+          break;
+        case 'GiaHanKtx':
+          endpoint = `/duyet-gia-han`;
+          params.append('ngayHetHanMoi', data.ngayHetHanDuyet);
+          break;
+        case 'RoiKtx':
+          endpoint = `/duyet-roi-ktx`;
+          break;
+      }
+
+      if (data.ghiChu?.trim()) params.append('ghiChuDuyet', data.ghiChu.trim());
+
+      await axios.post(`${env.API_ENDPOINT}/don-ktx/${don?.id}${endpoint}?${params.toString()}`);
+
       queryClient.invalidateQueries({ queryKey: ['don-ktx'] });
       onSuccess();
-    },
-  });
-
-  const handleDuyet = () => {
-    if (isVaoOOrChuyenPhong && (!phongId || !giuongId)) {
-      alert('Vui lòng chọn phòng và giường');
-      return;
+    } catch (error: any) {
+      setErrorMessage(error?.response?.data?.error || 'Lỗi khi duyệt đơn');
     }
-
-    if (isVaoOOrGiaHan) {
-      if (!ngayBatDauDuyet || !ngayHetHanDuyet) {
-        alert('Vui lòng nhập đầy đủ ngày bắt đầu và ngày hết hạn duyệt');
-        return;
-      }
-      if (new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)) {
-        alert('Ngày hết hạn phải sau ngày bắt đầu');
-        return;
-      }
-    }
-
-    let endpoint = `/don-ktx/${don?.id}`;
-
-    switch (don?.loaiDon) {
-      case 'VaoO':
-        endpoint += `/duyet-vao-o?phongId=${phongId}&giuongId=${giuongId}&ngayBatDau=${ngayBatDauDuyet}&ngayHetHan=${ngayHetHanDuyet}`;
-        break;
-      case 'ChuyenPhong':
-        endpoint += `/duyet-chuyen-phong?phongMoiId=${phongId}&giuongMoiId=${giuongId}&ngayBatDau=${ngayBatDauDuyet}&ngayHetHan=${ngayHetHanDuyet}`;
-        break;
-      case 'GiaHanKtx':
-        endpoint += `/duyet-gia-han?ngayHetHanMoi=${ngayHetHanDuyet}`;
-        break;
-      case 'RoiKtx':
-        endpoint += '/duyet-roi-ktx';
-        break;
-      default:
-        return;
-    }
-
-    if (ghiChu.trim()) {
-      endpoint += `${endpoint.includes('?') ? '&' : '?'}ghiChuDuyet=${encodeURIComponent(ghiChu.trim())}`;
-    }
-
-    mutation.mutate(endpoint);
   };
 
-  const handleTuChoi = () => {
-    if (!lyDoTuChoi.trim()) {
+  const handleTuChoi = async () => {
+    if (!lyDoTuChoi?.trim()) {
       alert('Vui lòng nhập lý do từ chối');
       return;
     }
-    tuChoiMutation.mutate(lyDoTuChoi.trim());
-  };
-
-  const getTitle = () => {
-    switch (don?.loaiDon) {
-      case 'VaoO':
-        return 'Duyệt đơn vào ở';
-      case 'ChuyenPhong':
-        return 'Duyệt chuyển phòng';
-      case 'GiaHanKtx':
-        return 'Duyệt gia hạn';
-      case 'RoiKtx':
-        return 'Duyệt rời KTX';
-      default:
-        return 'Xử lý đơn';
+    try {
+      setIsRejecting(true);
+      await axios.post(`${env.API_ENDPOINT}/don-ktx/${don?.id}/tu-choi`, lyDoTuChoi.trim(), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      queryClient.invalidateQueries({ queryKey: ['don-ktx'] });
+      onSuccess();
+    } catch (error: any) {
+      setErrorMessage(error?.response?.data?.error || 'Lỗi khi từ chối');
+    } finally {
+      setIsRejecting(false);
     }
   };
 
   if (!don) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{getTitle()}</DialogTitle>
-      <DialogContent dividers>
+    <FormDetailsModal
+      title={`Xử lý đơn: ${don.loaiDon}`}
+      titleMode={TITLE_MODE.COLORED}
+      onClose={onClose}
+      onSave={handleSubmit(handleDuyet)}
+      saveTitle="Duyệt đơn"
+      cancelTitle="Đóng"
+      isRefetching={isRefetching}
+      maxWidth="sm"
+    >
+      <FormProvider {...formMethods}>
         <Stack spacing={3}>
-          <Box>
-            <Typography variant="subtitle2">Thông tin sinh viên:</Typography>
-            <Typography>
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Thông tin sinh viên
+            </Typography>
+            <Typography variant="body1" fontWeight="bold">
               {don.maSinhVien} - {don.hoTenSinhVien}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Giới tính: {don.gioiTinh === 0 ? 'Nam' : 'Nữ'}
             </Typography>
           </Box>
 
-          {(don.loaiDon === 'VaoO' || don.loaiDon === 'GiaHanKtx') && (
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Thời hạn mong muốn trong đơn
-              </Typography>
-              <Stack direction="row" spacing={4} sx={{ mt: 1 }}>
-                <Typography>
-                  <strong>Bắt đầu:</strong>{' '}
-                  {don.ngayBatDauMongMuon
-                    ? new Date(don.ngayBatDauMongMuon).toLocaleDateString('vi-VN')
-                    : 'Không có'}
-                </Typography>
-                <Typography>
-                  <strong>Hết hạn:</strong>{' '}
-                  {don.ngayHetHanMongMuon
-                    ? new Date(don.ngayHetHanMongMuon).toLocaleDateString('vi-VN')
-                    : 'Không có'}
-                </Typography>
-              </Stack>
-            </Box>
-          )}
-
-          {don.loaiDon === 'GiaHanKtx' && (
-            <Box>
-              <Typography variant="h6" gutterBottom color="primary">
-                Thời hạn cư trú hiện tại
-              </Typography>
-              <Stack spacing={2} sx={{ pl: 2 }}>
-                <Typography>
-                  <strong>Ngày bắt đầu:</strong>{' '}
-                  <span style={{ color: don.ngayBatDauHienTai ? 'green' : 'red', fontWeight: 600 }}>
-                    {don.ngayBatDauHienTai
-                      ? new Date(don.ngayBatDauHienTai).toLocaleDateString('vi-VN')
-                      : 'Chưa có'}
-                  </span>
-                </Typography>
-                <Typography>
-                  <strong>Ngày hết hạn:</strong>{' '}
-                  <span
-                    style={{ color: don.ngayHetHanHienTai ? '#ff9800' : 'red', fontWeight: 600 }}
-                  >
-                    {don.ngayHetHanHienTai
-                      ? new Date(don.ngayHetHanHienTai).toLocaleDateString('vi-VN')
-                      : 'Chưa có'}
-                  </span>
-                </Typography>
-              </Stack>
-            </Box>
-          )}
-
           {isVaoOOrGiaHan && (
-            <Box>
-              <Typography variant="h6" gutterBottom color="primary">
-                Thời hạn duyệt thực tế (bắt buộc)
-              </Typography>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Ngày bắt đầu ở"
-                  type="date"
-                  value={ngayBatDauDuyet}
-                  onChange={(e) => setNgayBatDauDuyet(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                />
-                <TextField
-                  required
-                  fullWidth
-                  label="Ngày hết hạn"
-                  type="date"
-                  value={ngayHetHanDuyet}
-                  onChange={(e) => setNgayHetHanDuyet(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ min: ngayBatDauDuyet || new Date().toISOString().split('T')[0] }}
-                  error={
-                    !!ngayBatDauDuyet &&
-                    !!ngayHetHanDuyet &&
-                    new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)
-                  }
-                  helperText={
-                    !!ngayBatDauDuyet &&
-                    !!ngayHetHanDuyet &&
-                    new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)
-                      ? 'Ngày hết hạn phải sau ngày bắt đầu'
-                      : ''
-                  }
-                />
-              </Stack>
-            </Box>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Ngày bắt đầu"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                {...formMethods.register('ngayBatDauDuyet')}
+                inputProps={{ min: new Date().toISOString().split('T')[0] }}
+              />
+              <TextField
+                label="Ngày hết hạn"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                {...formMethods.register('ngayHetHanDuyet')}
+                error={
+                  !!ngayBatDauDuyet &&
+                  !!ngayHetHanDuyet &&
+                  new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)
+                }
+                helperText={
+                  !!ngayBatDauDuyet &&
+                  !!ngayHetHanDuyet &&
+                  new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)
+                    ? 'Lỗi ngày tháng'
+                    : ''
+                }
+              />
+            </Stack>
           )}
 
           {isVaoOOrChuyenPhong && (
             <>
-              {loadingToaNha ? (
-                <Box textAlign="center">
-                  <CircularProgress size={30} />
-                </Box>
-              ) : toaNhaList.length === 0 ? (
-                <Alert severity="warning">Không có tòa nhà nào</Alert>
-              ) : (
-                <TextField
-                  select
-                  label="Chọn tòa nhà"
-                  fullWidth
-                  value={toaNhaId}
-                  onChange={(e) => {
-                    setToaNhaId(e.target.value);
-                    setPhongId('');
-                    setGiuongId('');
-                  }}
-                >
-                  <MenuItem value="">-- Chọn tòa nhà --</MenuItem>
-                  {toaNhaList.map((toaNha: any) => (
-                    <MenuItem key={toaNha.id} value={toaNha.id}>
-                      {toaNha.tenToaNha}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-
-              {errorPhong ? (
-                <Alert severity="error">Không tải được danh sách phòng</Alert>
-              ) : loadingPhong ? (
-                <Box textAlign="center">
-                  <CircularProgress size={30} />
-                </Box>
-              ) : phongList.length === 0 ? (
-                <Alert severity="warning">Không có phòng nào trong tòa này</Alert>
-              ) : (
-                <TextField
-                  select
-                  label="Chọn phòng"
-                  fullWidth
-                  value={phongId}
-                  onChange={(e) => {
-                    setPhongId(e.target.value);
-                    setGiuongId('');
-                  }}
-                  disabled={!toaNhaId}
-                >
-                  <MenuItem value="">-- Chọn phòng --</MenuItem>
-                  {phongList.map((phong: any) => (
-                    <MenuItem key={phong.id} value={phong.id}>
-                      {phong.maPhong} - {phong.tenToaNha}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-
-              {phongId && (
-                <>
-                  {errorGiuong ? (
-                    <Alert severity="error">Không tải được danh sách giường</Alert>
-                  ) : loadingGiuong ? (
-                    <Box textAlign="center">
-                      <CircularProgress size={30} />
-                    </Box>
-                  ) : giuongList.length === 0 ? (
-                    <Alert severity="warning">Không có giường trống trong phòng này</Alert>
-                  ) : (
-                    <TextField
-                      select
-                      label="Chọn giường trống"
-                      fullWidth
-                      value={giuongId}
-                      onChange={(e) => setGiuongId(e.target.value)}
-                    >
-                      <MenuItem value="">-- Chọn giường --</MenuItem>
-                      {giuongList.map((giuong: any) => (
-                        <MenuItem key={giuong.id} value={giuong.id}>
-                          Giường {giuong.maGiuong}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  )}
-                </>
-              )}
+              <ToaNhaSelection control={control} name="toaNhaId" label="Chọn tòa nhà" />
+              <PhongSelection
+                control={control}
+                name="phongId"
+                label="Chọn phòng"
+                disabled={!toaNhaId}
+                toaNhaId={toaNhaId}
+              />
+              <GiuongSelection
+                control={control}
+                name="giuongId"
+                label="Giường trống"
+                disabled={!phongId}
+                phongId={phongId}
+              />
             </>
           )}
 
           <TextField
-            label="Ghi chú duyệt (tùy chọn)"
+            label="Ghi chú duyệt"
             fullWidth
             multiline
-            rows={3}
-            value={ghiChu}
-            onChange={(e) => setGhiChu(e.target.value)}
+            rows={2}
+            {...formMethods.register('ghiChu')}
           />
 
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Hoặc từ chối đơn
-            </Typography>
-            <TextField
-              label="Lý do từ chối (bắt buộc nếu từ chối)"
-              fullWidth
-              multiline
-              rows={2}
-              value={lyDoTuChoi}
-              onChange={(e) => setLyDoTuChoi(e.target.value)}
-            />
-          </Box>
+          {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
-          {(mutation.isError || tuChoiMutation.isError) && (
-            <Alert severity="error">
-              Lỗi:{' '}
-              {(mutation.error as any)?.response?.data?.message ||
-                (tuChoiMutation.error as any)?.response?.data?.message ||
-                'Không thể xử lý đơn'}
-            </Alert>
-          )}
+          <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed grey' }}>
+            <Typography variant="subtitle2" color="error" gutterBottom>
+              Hoặc từ chối đơn này
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="flex-start">
+              <TextField
+                label="Lý do từ chối"
+                fullWidth
+                multiline
+                rows={1}
+                size="small"
+                {...formMethods.register('lyDoTuChoi')}
+                placeholder="Nhập lý do..."
+              />
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleTuChoi}
+                disabled={isRejecting || !lyDoTuChoi?.trim()}
+                sx={{ height: 40, whiteSpace: 'nowrap' }}
+              >
+                {isRejecting ? <CircularProgress size={20} color="error" /> : 'Từ chối'}
+              </Button>
+            </Stack>
+          </Box>
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Hủy</Button>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleTuChoi}
-          disabled={tuChoiMutation.isPending || !lyDoTuChoi.trim()}
-        >
-          {tuChoiMutation.isPending ? <CircularProgress size={20} /> : 'Từ chối'}
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleDuyet}
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? <CircularProgress size={20} /> : 'Duyệt'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </FormProvider>
+    </FormDetailsModal>
   );
 };
 

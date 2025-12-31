@@ -73,7 +73,7 @@ export const GiuongKtxFilter = ({ onApply, onReset }: Props) => {
             <MenuItem value="">
               <em>-- Tất cả --</em>
             </MenuItem>
-            <MenuItem value="TRONG">Trống</MenuItem>
+            <MenuItem value="Trong">Trống</MenuItem>
             <MenuItem value="CoSV">Đã có người</MenuItem>
             <MenuItem value="BaoTri">Ngừng hoạt động</MenuItem>
           </ControlledTextField>
