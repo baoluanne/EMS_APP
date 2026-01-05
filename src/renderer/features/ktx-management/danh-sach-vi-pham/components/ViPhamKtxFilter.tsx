@@ -37,6 +37,7 @@ export const ViPhamKtxFilter = ({ onApply, onReset }: Props) => {
     { value: 'Gây mất trật tự sau 23h', label: 'Gây mất trật tự sau 23h' },
     { value: 'Không vệ sinh phòng ở sạch sẽ', label: 'Không vệ sinh phòng ở sạch sẽ' },
     { value: 'Cho người ngoài vào ở trái phép', label: 'Cho người ngoài ở trái phép' },
+    { value: 'Vi phạm giờ giấc (về muộn)', label: 'Vi phạm giờ giấc (về muộn)' },
   ];
 
   return (

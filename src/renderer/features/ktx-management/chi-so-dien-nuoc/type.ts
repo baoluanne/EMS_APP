@@ -14,10 +14,30 @@ export interface ChiSoDienNuocRow {
   daChot: boolean;
 }
 
-export interface ChiSoDienNuocFilterState {
+export interface ChiSoDienNuocFormData {
+  id?: string;
+  toaNhaId: string;
+  phongKtxId: string;
+  thangNam: Date | null;
+  dienCu: number;
+  dienMoi: number;
+  nuocCu: number;
+  nuocMoi: number;
+  daChot: boolean;
+}
+
+export interface ChiSoDienNuocFilter {
   toaNhaId?: string;
   phongId?: string;
   thang?: number;
   nam?: number;
   daChot?: boolean;
 }
+
+export const defaultChiSoDienNuocFilter: ChiSoDienNuocFilter = {
+  toaNhaId: '',
+  phongId: '',
+  thang: undefined,
+  nam: undefined,
+  daChot: undefined,
+};

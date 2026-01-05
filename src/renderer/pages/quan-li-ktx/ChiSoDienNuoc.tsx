@@ -1,30 +1,21 @@
-import { Stack, Alert, AlertTitle } from '@mui/material';
-import { FormProvider } from 'react-hook-form';
-import { DataGridTable } from '@renderer/components/Table';
+import { Stack } from '@mui/material';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
+import { DataGridTable } from '@renderer/components/Table';
 import { ActionsToolbar } from '@renderer/components/toolbars';
-import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
-import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
-import React, { useState, useEffect } from 'react';
-import dayjs from 'dayjs';
-import axiosInstance from '@renderer/features/ktx-management/chi-so-dien-nuoc/configs/axiosInstance';
-
 import { columns } from '@renderer/features/ktx-management/chi-so-dien-nuoc/configs/table.configs';
-import {
-  ChiSoDienNuocFilter,
-  ChiSoDienNuocFilterState,
-} from '@renderer/features/ktx-management/chi-so-dien-nuoc/components/ChiSoDienNuocFilter';
+import { ChiSoDienNuocFilter } from '@renderer/features/ktx-management/chi-so-dien-nuoc/components/ChiSoDienNuocFilter';
 import { ChiSoDienNuocForm } from '@renderer/features/ktx-management/chi-so-dien-nuoc/components/ChiSoDienNuocForm';
 import {
   chiSoDienNuocSchema,
   defaultValues,
-  ChiSoDienNuocKtx,
 } from '@renderer/features/ktx-management/chi-so-dien-nuoc/validation';
-import { TITLE_MODE } from '@renderer/shared/enums';
+import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
+import { FormProvider } from 'react-hook-form';
+import { useMemo } from 'react';
+import dayjs from 'dayjs';
 
-const ChiSoDienNuoc = () => {
-  const [error, setError] = useState<string | null>(null);
-
+export default function DanhSachChiSoDienNuoc() {
   const {
     formMethods,
     data,
@@ -34,120 +25,81 @@ const ChiSoDienNuoc = () => {
     isDeleteOpenModal,
     onAdd,
     onEdit,
+    onSave,
     handleDeleteRecord,
     selectedRows,
     setIsDeleteOpenModal,
     handleCloseModal,
     isAddMode,
     tableConfig,
-    columnVisibilityModel,
     mergeParams,
-    refetch,
-  } = useCrudPaginationModal<ChiSoDienNuocKtx, any>({
+  } = useCrudPaginationModal({
     defaultValues,
     schema: chiSoDienNuocSchema,
-    entity: 'chi-so-dien-nuoc',
+    entity: 'ChiSoDienNuoc',
+    beforeEdit: (row: any) => {
+      return {
+        ...row,
+        dienCu: row.dienMoi,
+        nuocCu: row.nuocMoi,
+        dienMoi: 0,
+        nuocMoi: 0,
+        daChot: false,
+      };
+    },
+    beforeSubmit: (formData) => {
+      const dayjsDate = dayjs(formData.thangNam);
+      return {
+        id: formData.id,
+        toaNhaId: formData.toaNhaId,
+        phongKtxId: formData.phongKtxId,
+        thangNam: formData.thangNam,
+        dienCu: formData.dienCu,
+        dienMoi: formData.dienMoi,
+        nuocCu: formData.nuocCu,
+        nuocMoi: formData.nuocMoi,
+        daChot: formData.daChot,
+        thang: dayjsDate.month() + 1,
+        nam: dayjsDate.year(),
+      } as any;
+    },
   });
 
-  const handleModalSave = async () => {
-    const isValid = await formMethods.trigger();
-    if (!isValid) return;
-
-    const formData = formMethods.getValues();
-
-    const payload = {
-      id: formData.id || undefined,
-      phongKtxId: formData.phongKtxId,
-      thang: formData.thangNam.month() + 1,
-      nam: formData.thangNam.year(),
-      dienCu: formData.dienCu,
-      dienMoi: formData.dienMoi,
-      nuocCu: formData.nuocCu,
-      nuocMoi: formData.nuocMoi,
-      daChot: formData.daChot,
-    };
-
-    try {
-      if (payload.id) {
-        await axiosInstance.put('/api/chi-so-dien-nuoc', payload);
-      } else {
-        await axiosInstance.post('/api/chi-so-dien-nuoc', payload);
-      }
-
-      await refetch?.();
-      handleCloseModal();
-    } catch (err: any) {
-      if (err.response?.data?.message?.includes('duplicate key value')) {
-        setError(
-          'Phòng này đã có chỉ số điện nước trong tháng/năm đã chọn. Vui lòng kiểm tra lại!',
-        );
-      } else {
-        setError(err.response?.data?.message || 'Có lỗi khi lưu dữ liệu');
-      }
-      setTimeout(() => setError(null), 6000);
-    }
-  };
-
-  useEffect(() => {
-    if (data && typeof data === 'object' && 'message' in data) {
-      setError((data as any).message || 'Có lỗi xảy ra');
-      setTimeout(() => setError(null), 5000);
-    }
-  }, [data]);
-
-  const rowsData = React.useMemo(() => {
-    if (!data) return [];
-
-    let items: any[] = [];
-
-    if ('data' in data && Array.isArray(data.data)) {
-      items = data.data;
-    } else if (Array.isArray(data)) {
-      items = data;
-    }
-
-    return items.map((item: any) => ({
-      ...item,
-      tieuThuDien: (item.dienMoi || 0) - (item.dienCu || 0),
-      tieuThuNuoc: (item.nuocMoi || 0) - (item.nuocCu || 0),
-      thangNam: dayjs()
-        .year(item.nam)
-        .month(item.thang - 1),
+  const rows = useMemo(() => {
+    const result = data?.data ?? [];
+    return result.map((item: any) => ({
+      id: item.id,
+      tenToaNha: item.tenToaNha || '',
+      maPhong: item.maPhong || '',
+      thang: item.thang,
+      nam: item.nam,
+      thangNam: item.thangNam || `Tháng ${item.thang}/${item.nam}`,
+      dienCu: item.dienCu,
+      dienMoi: item.dienMoi,
+      tieuThuDien: item.tieuThuDien || item.dienMoi - item.dienCu,
+      nuocCu: item.nuocCu,
+      nuocMoi: item.nuocMoi,
+      tieuThuNuoc: item.tieuThuNuoc || item.nuocMoi - item.nuocCu,
+      daChot: item.daChot,
     }));
   }, [data]);
-
-  const handleFilterApply = (filters: ChiSoDienNuocFilterState) => {
-    mergeParams(filters);
-  };
-
-  const handleDelete = async () => {
-    await handleDeleteRecord();
-    setTimeout(() => refetch?.(), 500);
-  };
 
   return (
     <FormProvider {...formMethods}>
       <Stack height="100%" width="100%" p={2}>
-        {error && (
-          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-            <AlertTitle>Lỗi</AlertTitle>
-            {error}
-          </Alert>
-        )}
-
         <ActionsToolbar
           selectedRowIds={selectedRows}
           onDelete={() => setIsDeleteOpenModal(true)}
           onAdd={onAdd}
           onEdit={onEdit}
           onExport={(dataOption, columnOption) => {
-            exportPaginationToExcel<ChiSoDienNuocKtx>({
-              entity: 'chi-so-dien-nuoc',
-              filteredData: rowsData,
-              columns: columns,
+            exportPaginationToExcel({
+              entity: 'ChiSoDienNuoc',
+              filteredData: rows,
+              columns,
               options: { dataOption, columnOption },
-              columnVisibilityModel,
-              fileName: 'Danh_sach_chi_so_dien_nuoc',
+              columnVisibilityModel: {},
+              fileName: 'danh_sach_chi_so_dien_nuoc',
             });
           }}
         />
@@ -156,9 +108,8 @@ const ChiSoDienNuoc = () => {
           <FormDetailsModal
             title={isAddMode ? 'Thêm mới chỉ số điện nước' : 'Chỉnh sửa chỉ số điện nước'}
             onClose={handleCloseModal}
-            onSave={handleModalSave}
+            onSave={onSave}
             maxWidth="md"
-            titleMode={TITLE_MODE.COLORED}
           >
             <ChiSoDienNuocForm />
           </FormDetailsModal>
@@ -167,27 +118,18 @@ const ChiSoDienNuoc = () => {
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDelete}
+            onDelete={handleDeleteRecord}
           />
         )}
 
-        <ChiSoDienNuocFilter onApply={handleFilterApply} />
+        <ChiSoDienNuocFilter onApply={(value) => mergeParams(value)} />
 
         <DataGridTable
           columns={columns}
-          rows={rowsData}
+          rows={rows}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => {
-            const row = params.row;
-            formMethods.reset({
-              ...row,
-              thangNam: dayjs()
-                .year(row.nam)
-                .month(row.thang - 1),
-            });
-          }}
-          getRowId={(row) => row.id}
+          onRowClick={(params) => formMethods.reset(params.row)}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
           height="calc(100% - 85px)"
@@ -196,6 +138,4 @@ const ChiSoDienNuoc = () => {
       </Stack>
     </FormProvider>
   );
-};
-
-export default ChiSoDienNuoc;
+}

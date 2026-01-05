@@ -1,12 +1,11 @@
-// src/renderer/src/features/ktx-management/chi-so-dien-nuoc/validation.ts
 import { z } from 'zod';
 import dayjs from 'dayjs';
 
 export const chiSoDienNuocSchema = z.object({
-  id: z.string().optional().nullable(),
+  id: z.string().optional(),
   toaNhaId: z.string().optional(),
   phongKtxId: z.string().min(1, 'Vui lòng chọn phòng'),
-  thangNam: z.any().refine((val) => dayjs.isDayjs(val) && val.isValid(), {
+  thangNam: z.date().refine((val) => val instanceof Date && !isNaN(val.getTime()), {
     message: 'Vui lòng chọn tháng năm hợp lệ',
   }),
   dienCu: z.number().min(0),
@@ -16,16 +15,33 @@ export const chiSoDienNuocSchema = z.object({
   daChot: z.boolean(),
 });
 
-export type ChiSoDienNuocKtx = z.infer<typeof chiSoDienNuocSchema>;
+export type ChiSoDienNuocFormData = z.infer<typeof chiSoDienNuocSchema>;
 
-export const defaultValues: Partial<ChiSoDienNuocKtx> = {
-  id: null,
+export const defaultValues: ChiSoDienNuocFormData = {
+  id: undefined,
   toaNhaId: '',
   phongKtxId: '',
-  thangNam: dayjs(),
+  thangNam: new Date(),
   dienCu: 0,
   dienMoi: 0,
   nuocCu: 0,
   nuocMoi: 0,
   daChot: false,
+};
+
+// Transform function để gửi lên backend
+export const transformChiSoDienNuoc = (formData: ChiSoDienNuocFormData): Record<string, any> => {
+  const dayjsDate = dayjs(formData.thangNam);
+
+  return {
+    id: formData.id,
+    phongKtxId: formData.phongKtxId,
+    thang: dayjsDate.month() + 1, // month() trả về 0-11, cần +1
+    nam: dayjsDate.year(),
+    dienCu: formData.dienCu,
+    dienMoi: formData.dienMoi,
+    nuocCu: formData.nuocCu,
+    nuocMoi: formData.nuocMoi,
+    daChot: formData.daChot,
+  };
 };

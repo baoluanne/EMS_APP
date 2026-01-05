@@ -1,5 +1,4 @@
 import { GridColDef } from '@mui/x-data-grid';
-// import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 import { Chip } from '@mui/material';
 
 const statusChip = (daChot: boolean) => (
@@ -10,17 +9,16 @@ const statusChip = (daChot: boolean) => (
   />
 );
 
-export const chiSoDienNuocColumns = [
+export const columns: GridColDef[] = [
+  {
+    field: 'thangNam',
+    headerName: 'Tháng/Năm',
+    width: 120,
+    align: 'center',
+    headerAlign: 'center',
+  },
   { field: 'tenToaNha', headerName: 'Tòa nhà', minWidth: 160, flex: 1 },
   { field: 'maPhong', headerName: 'Mã phòng', minWidth: 120, align: 'center' },
-  {
-    field: 'thang',
-    headerName: 'Tháng',
-    width: 90,
-    align: 'center',
-    valueFormatter: (v) => `Tháng ${v}`,
-  },
-  { field: 'nam', headerName: 'Năm', width: 90, align: 'center' },
   { field: 'dienCu', headerName: 'Điện cũ', width: 110, align: 'center' },
   { field: 'dienMoi', headerName: 'Điện mới', width: 110, align: 'center' },
   {
@@ -46,6 +44,4 @@ export const chiSoDienNuocColumns = [
     align: 'center',
     renderCell: (params) => statusChip(params.value),
   },
-] as GridColDef[];
-
-export { chiSoDienNuocColumns as columns };
+];

@@ -101,8 +101,8 @@ export const ChiSoDienNuocFilter = ({ onApply }: Props) => {
             label="Trạng thái chốt"
             options={[
               { value: '', label: '-- Tất cả --' },
-              { value: 'true', label: '✓ Đã chốt' },
-              { value: 'false', label: '✗ Chưa chốt' },
+              { value: 'true', label: ' Đã chốt' },
+              { value: 'false', label: ' Chưa chốt' },
             ]}
           />
         </Grid>

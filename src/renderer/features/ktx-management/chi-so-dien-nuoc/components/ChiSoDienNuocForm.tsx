@@ -5,24 +5,20 @@ import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelecti
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 import { useEffect } from 'react';
-import axiosInstance from '@renderer/features/ktx-management/chi-so-dien-nuoc/configs/axiosInstance';
 
 export const ChiSoDienNuocForm = () => {
   const {
     control,
     register,
     setValue,
-    trigger,
     formState: { errors },
   } = useFormContext();
 
   const { isSubmitting } = useFormState({ control });
 
-  const id = useWatch({ control, name: 'id' });
   const toaNhaId = useWatch({ control, name: 'toaNhaId' });
-  const phongKtxId = useWatch({ control, name: 'phongKtxId' });
-  const thangNam = useWatch({ control, name: 'thangNam' });
   const daChot = useWatch({ control, name: 'daChot' });
 
   const dienCu = useWatch({ control, name: 'dienCu' }) ?? 0;
@@ -33,106 +29,90 @@ export const ChiSoDienNuocForm = () => {
   const tieuThuDien = dienMoi >= dienCu ? dienMoi - dienCu : 0;
   const tieuThuNuoc = nuocMoi >= nuocCu ? nuocMoi - nuocCu : 0;
 
-  const isEditMode = !!id;
   const isFormDisabled = daChot || isSubmitting;
 
   useEffect(() => {
     setValue('phongKtxId', '');
   }, [toaNhaId, setValue]);
 
-  useEffect(() => {
-    const loadChiSoCu = async () => {
-      if (!phongKtxId || !thangNam || isEditMode) {
-        setValue('dienCu', 0);
-        setValue('nuocCu', 0);
-        return;
-      }
-
-      const prevDate = thangNam.subtract(1, 'month');
-      const prevThang = prevDate.month() + 1;
-      const prevNam = prevDate.year();
-
-      try {
-        const res = await axiosInstance.get('/api/chi-so-dien-nuoc/pagination', {
-          params: {
-            page: 1,
-            pageSize: 1,
-            phongId: phongKtxId,
-            thang: prevThang,
-            nam: prevNam,
-          },
-        });
-
-        if (res.data?.data?.length > 0) {
-          const prev = res.data.data[0];
-          setValue('dienCu', prev.dienMoi || 0);
-          setValue('nuocCu', prev.nuocMoi || 0);
-        } else {
-          setValue('dienCu', 0);
-          setValue('nuocCu', 0);
-        }
-        trigger(['dienCu', 'nuocCu']);
-      } catch (error) {
-        console.error('Lỗi khi tải chỉ số cũ:', error);
-        setValue('dienCu', 0);
-        setValue('nuocCu', 0);
-      }
-    };
-
-    loadChiSoCu();
-  }, [phongKtxId, thangNam, isEditMode, setValue, trigger]);
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Stack spacing={3}>
-        {daChot && <Alert severity="warning">⚠️ Bản ghi đã chốt, không thể chỉnh sửa.</Alert>}
+        {daChot && <Alert severity="warning"> Bản ghi đã chốt, không thể chỉnh sửa.</Alert>}
 
         <input type="hidden" {...register('id')} />
 
-        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà *" required />
+        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà " />
 
-        <PhongSelection control={control} name="phongKtxId" label="Phòng *" required />
+        <PhongSelection
+          control={control}
+          name="phongKtxId"
+          label="Phòng"
+          disabled={!toaNhaId}
+          toaNhaId={toaNhaId}
+        />
 
         <Controller
           name="thangNam"
           control={control}
-          rules={{ required: 'Vui lòng chọn tháng năm' }}
-          render={({ field, fieldState }) => (
-            <DatePicker
-              {...field}
-              label="Tháng/Năm *"
-              views={['month', 'year']}
-              format="MM/YYYY"
-              disabled={isFormDisabled}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  error: !!fieldState.error,
-                  helperText: fieldState.error?.message,
-                },
-              }}
-            />
-          )}
+          render={({ field, fieldState }) => {
+            let dayjsValue: any = null;
+            if (field.value) {
+              if (dayjs.isDayjs(field.value)) {
+                dayjsValue = field.value;
+              } else if (field.value instanceof Date) {
+                dayjsValue = dayjs(field.value);
+              }
+            }
+
+            return (
+              <DatePicker
+                value={dayjsValue}
+                onChange={(newValue: any) => {
+                  if (newValue) {
+                    const dayjsObj = dayjs.isDayjs(newValue) ? newValue : dayjs(newValue);
+                    field.onChange(dayjsObj.toDate());
+                  } else {
+                    field.onChange(null);
+                  }
+                }}
+                label="Tháng/Năm"
+                views={['month', 'year']}
+                format="MM/YYYY"
+                disabled={isFormDisabled}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!fieldState.error,
+                    helperText: fieldState.error?.message,
+                  },
+                }}
+              />
+            );
+          }}
         />
 
         <Grid container spacing={2}>
           <Grid size={6}>
             <TextField
-              label="Chỉ số điện cũ (tự động)"
+              label="Chỉ số điện cũ"
               type="number"
               fullWidth
-              disabled
-              value={dienCu}
+              disabled={isFormDisabled}
+              {...register('dienCu', {
+                valueAsNumber: true,
+              })}
+              error={!!errors.dienCu}
+              helperText={errors.dienCu?.message as string}
             />
           </Grid>
           <Grid size={6}>
             <TextField
-              label="Chỉ số điện mới *"
+              label="Chỉ số điện mới"
               type="number"
               fullWidth
               disabled={isFormDisabled}
               {...register('dienMoi', {
-                required: 'Bắt buộc',
                 valueAsNumber: true,
                 min: { value: dienCu, message: `Phải ≥ ${dienCu}` },
               })}
@@ -153,25 +133,27 @@ export const ChiSoDienNuocForm = () => {
           </Grid>
         </Grid>
 
-        {/* Nhập chỉ số nước */}
         <Grid container spacing={2}>
           <Grid size={6}>
             <TextField
-              label="Chỉ số nước cũ (tự động)"
+              label="Chỉ số nước cũ"
               type="number"
               fullWidth
-              disabled
-              value={nuocCu}
+              disabled={isFormDisabled}
+              {...register('nuocCu', {
+                valueAsNumber: true,
+              })}
+              error={!!errors.nuocCu}
+              helperText={errors.nuocCu?.message as string}
             />
           </Grid>
           <Grid size={6}>
             <TextField
-              label="Chỉ số nước mới *"
+              label="Chỉ số nước mới"
               type="number"
               fullWidth
               disabled={isFormDisabled}
               {...register('nuocMoi', {
-                required: 'Bắt buộc',
                 valueAsNumber: true,
                 min: { value: nuocCu, message: `Phải ≥ ${nuocCu}` },
               })}
