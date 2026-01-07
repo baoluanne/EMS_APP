@@ -2139,8 +2139,38 @@ const _appRoutes = [
     icon: <FcParallelTasks />,
     label: 'Quản lý tài sản thiết bị',
     path: 'asset-equipment-management',
-    disabled: true,
-    children: [],
+    Component: Lazy(lazy(() => import('@renderer/pages/quan-li-tai-san-tb/equip-management'))),
+    children: [
+      {
+        label: 'Quản lí danh mục hồ sơ tài sản',
+        icon: <FcFolder />,
+        path: 'asset-record-catalog-management',
+        children: [
+          {
+            label: 'Danh sách thiết bị',
+            icon: <FcFolder />,
+            path: 'danh-sach-thiet-bi',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/danh-sach-thiet-bi')),
+            ),
+          },
+          {
+            label: 'Loại thiết bị',
+            icon: <FcFolder />,
+            path: 'loai-thiet-bi',
+            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-tai-san-tb/loai-thiet-bi'))),
+          },
+          {
+            label: 'Nhà cung cấp thiết bị',
+            icon: <FcFolder />,
+            path: 'nha-cung-cap-thiet-bi',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/nha-cung-cap-thiet-bi')),
+            ),
+          },
+        ],
+      },
+    ],
   },
   {
     icon: <FcDepartment />,
