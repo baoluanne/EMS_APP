@@ -18,7 +18,7 @@ export const danhSachThietBiSchema = z.object({
     .min(0, 'Giá trị khấu hao phải lớn hơn hoặc bằng 0')
     .optional()
     .nullable(),
-  trangThai: z.string().optional().nullable(),
+  trangThai: z.number().optional().nullable(),
   ghiChu: z.string().optional().nullable(),
   hinhAnh: z.string().optional().nullable(),
   hinhAnhUrl: z.string().optional().nullable(),

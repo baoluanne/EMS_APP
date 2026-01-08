@@ -15,6 +15,7 @@ import {
 } from '../../features/equip-management/danh-sach-thiet-bi/validation';
 import React, { useMemo, useCallback } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
+import { TrangThaiThietBiEnum } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
 
 const defaultValues = {
   id: undefined,
@@ -25,19 +26,38 @@ const defaultValues = {
   model: undefined,
   serialNumber: undefined,
   thongSoKiThuat: undefined,
-  NamSanXuat: undefined,
-  NgayMua: undefined,
+  namSanXuat: undefined,
+  ngayMua: undefined,
   ngayHetHanBaoHanh: undefined,
   nguyenGia: undefined,
   giaTriKhauHao: undefined,
   ghiChu: undefined,
   hinhAnh: undefined,
   phongHocId: undefined,
+  trangThai: TrangThaiThietBiEnum.MoiNhap,
+};
+
+const formatDateForInput = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
+};
+
+const formatDateForSave = (dateString: string | null | undefined): string | null => {
+  if (!dateString) return null;
+  if (dateString.includes('T')) return dateString;
+  return `${dateString}T00:00:00Z`;
 };
 
 const DanhSachThietBiPage = () => {
   const [filters, setFilters] = React.useState<DanhSachThietBiFilterState>({});
-
   const {
     formMethods,
     data,
@@ -61,18 +81,18 @@ const DanhSachThietBiPage = () => {
     entity: 'ThietBi',
   });
 
-  // Transform datetime trước khi save
   const onSave = useCallback(async () => {
     const formData = formMethods.getValues();
     const transformedData = {
       ...formData,
-      ngayMua: formData.ngayMua ? `${formData.ngayMua}T00:00:00Z` : null,
-      ngayHetHanBaoHanh: formData.ngayHetHanBaoHanh
-        ? `${formData.ngayHetHanBaoHanh}T00:00:00Z`
-        : null,
+      ngayMua: formatDateForSave(formData.ngayMua),
+      ngayHetHanBaoHanh: formatDateForSave(formData.ngayHetHanBaoHanh),
+      trangThai:
+        formData.trangThai !== null && formData.trangThai !== undefined
+          ? Number(formData.trangThai)
+          : null,
     };
 
-    // Update form values với transformed data
     Object.keys(transformedData).forEach((key) => {
       formMethods.setValue(key as any, transformedData[key as keyof typeof transformedData]);
     });
@@ -109,21 +129,16 @@ const DanhSachThietBiPage = () => {
       const matchMaThietBi =
         !filters.maThietBi ||
         row.maThietBi?.toLowerCase().includes(filters.maThietBi.toLowerCase());
-
       const matchTenThietBi =
         !filters.tenThietBi ||
         row.tenThietBi?.toLowerCase().includes(filters.tenThietBi.toLowerCase());
-
       const matchModel =
         !filters.model || row.model?.toLowerCase().includes(filters.model.toLowerCase());
-
       const matchSerialNumber =
         !filters.serialNumber ||
         row.serialNumber?.toLowerCase().includes(filters.serialNumber.toLowerCase());
-
       const matchLoaiThietBiId =
         !filters.loaiThietBiId || row.loaiThietBiId === filters.loaiThietBiId;
-
       const matchNhaCungCapId = !filters.nhaCungCapId || row.nhaCungCapId === filters.nhaCungCapId;
 
       return (
@@ -145,6 +160,20 @@ const DanhSachThietBiPage = () => {
     setFilters({});
   }, []);
 
+  const handleRowClick = useCallback(
+    (params: any) => {
+      const rowData = {
+        ...params.row,
+        ngayMua: formatDateForInput(params.row.ngayMua),
+        ngayHetHanBaoHanh: formatDateForInput(params.row.ngayHetHanBaoHanh),
+        trangThai:
+          params.row.trangThai !== undefined ? params.row.trangThai : defaultValues.trangThai,
+      };
+      formMethods.reset(rowData);
+    },
+    [formMethods],
+  );
+
   return (
     <FormProvider {...formMethods}>
       <Stack height="100%" width="100%" p={2}>
@@ -164,7 +193,6 @@ const DanhSachThietBiPage = () => {
             });
           }}
         />
-
         {isModalOpen && (
           <FormDetailsModal
             title={isAddMode ? 'Thêm mới thiết bị' : 'Chỉnh sửa thiết bị'}
@@ -176,22 +204,19 @@ const DanhSachThietBiPage = () => {
             <DanhSachThietBiForm />
           </FormDetailsModal>
         )}
-
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
             onDelete={handleDeleteRecord}
           />
         )}
-
         <DanhSachThietBiFilter onApply={handleFilterApply} onReset={handleFilterReset} />
-
         <DataGridTable
           columns={columns}
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => formMethods.reset(params.row)}
+          onRowClick={handleRowClick}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}

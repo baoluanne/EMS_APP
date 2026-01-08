@@ -1,5 +1,6 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { DanhSachThietBi } from '../validation';
+import { getTrangThaiLabel } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
 
 export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
   {
@@ -95,5 +96,12 @@ export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
     headerName: 'Ghi chú',
     minWidth: 200,
     flex: 1,
+  },
+  {
+    field: 'trangThai',
+    headerName: 'Trạng thái',
+    minWidth: 150,
+    flex: 1,
+    valueGetter: (_, row: any) => getTrangThaiLabel(row.trangThai),
   },
 ];

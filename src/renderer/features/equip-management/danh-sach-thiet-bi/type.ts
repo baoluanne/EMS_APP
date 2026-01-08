@@ -7,7 +7,7 @@ export interface DanhSachThietBiFilterState {
   model?: string;
   serialNumber?: string;
   thongSoKyThuat?: string;
-  NamSanXuat?: string;
+  namSanXuat?: string;
   ngayMua?: string;
   ngayHetHanBaoHanh?: string;
   nguyenGia?: string;
