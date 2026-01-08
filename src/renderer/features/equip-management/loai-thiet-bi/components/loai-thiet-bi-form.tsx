@@ -6,6 +6,7 @@ export const LoaiThietBiForm = () => {
     register,
     formState: { errors },
   } = useFormContext();
+
   return (
     <Stack spacing={3}>
       <input type="hidden" {...register('id')} />
@@ -14,17 +15,17 @@ export const LoaiThietBiForm = () => {
         label="Mã loại thiết bị"
         fullWidth
         placeholder="Ví dụ: LT001, LT002..."
-        {...register('maLoai')}
+        {...register('maLoai', { required: 'Mã loại thiết bị không được để trống' })}
         error={!!errors.maLoai?.message}
-        helperText={errors.maLoai?.message as string}
+        helperText={errors.maLoai?.message ? (errors.maLoai.message as string) : ''}
       />
 
       <TextField
         label="Tên loại thiết bị"
         placeholder="Ví dụ: Máy tính, Máy in..."
-        {...register('tenLoai')}
+        {...register('tenLoai', { required: 'Tên loại thiết bị không được để trống' })}
         error={!!errors.tenLoai?.message}
-        helperText={errors.tenLoai?.message as string}
+        helperText={errors.tenLoai?.message ? (errors.tenLoai.message as string) : ''}
       />
 
       <TextField
@@ -34,7 +35,7 @@ export const LoaiThietBiForm = () => {
         rows={4}
         {...register('moTa')}
         error={!!errors.moTa?.message}
-        helperText={errors.moTa?.message as string}
+        helperText={errors.moTa?.message ? (errors.moTa.message as string) : ''}
       />
     </Stack>
   );
