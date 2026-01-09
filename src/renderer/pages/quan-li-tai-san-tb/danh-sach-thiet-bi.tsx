@@ -1,3 +1,4 @@
+import React, { useCallback, useMemo, useState } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
@@ -13,9 +14,13 @@ import {
   DanhSachThietBi,
   danhSachThietBiSchema,
 } from '../../features/equip-management/danh-sach-thiet-bi/validation';
-import React, { useMemo, useCallback } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
 import { TrangThaiThietBiEnum } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
+import { NhapHangLoatForm } from '../../features/equip-management/danh-sach-thiet-bi/components/nhap-hang-loat-form';
+import {
+  NhapHangLoat,
+  nhapHangLoatSchema,
+} from '../../features/equip-management/danh-sach-thiet-bi/validation';
 
 const defaultValues = {
   id: undefined,
@@ -37,6 +42,18 @@ const defaultValues = {
   trangThai: TrangThaiThietBiEnum.MoiNhap,
 };
 
+const defaultNhapHangLoatValues = {
+  id: null,
+  soLuong: 1,
+  tenThietBi: '',
+  loaiThietBiId: '',
+  nhaCungCapId: '',
+  model: undefined,
+  thongSoKyThuat: undefined,
+  nguyenGia: undefined,
+  prefixMaThietBi: undefined,
+};
+
 const formatDateForInput = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   try {
@@ -56,8 +73,52 @@ const formatDateForSave = (dateString: string | null | undefined): string | null
   return `${dateString}T00:00:00Z`;
 };
 
+const NhapHangLoatModal = ({
+  open,
+  onClose,
+  onSavedSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSavedSuccess: () => void;
+}) => {
+  const { formMethods, onSave: handleNhapHangLoatSave } = useCrudPaginationModal<
+    NhapHangLoat,
+    NhapHangLoat
+  >({
+    defaultValues: defaultNhapHangLoatValues,
+    schema: nhapHangLoatSchema,
+    entity: 'ThietBi/nhap-hang-loat',
+  });
+
+  const handleNhapHangLoatSubmit = useCallback(async () => {
+    await handleNhapHangLoatSave();
+    onSavedSuccess();
+    onClose();
+  }, [handleNhapHangLoatSave, onSavedSuccess, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <FormProvider {...formMethods}>
+      <FormDetailsModal
+        open={open}
+        onClose={onClose}
+        title="Nhập thiết bị hàng loạt"
+        onSave={handleNhapHangLoatSubmit}
+        maxWidth="md"
+        titleMode={TITLE_MODE.COLORED}
+      >
+        <NhapHangLoatForm />
+      </FormDetailsModal>
+    </FormProvider>
+  );
+};
+
 const DanhSachThietBiPage = () => {
   const [filters, setFilters] = React.useState<DanhSachThietBiFilterState>({});
+  const [openNhapHangLoat, setOpenNhapHangLoat] = useState(false);
+
   const {
     formMethods,
     data,
@@ -75,6 +136,7 @@ const DanhSachThietBiPage = () => {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
+    refetch,
   } = useCrudPaginationModal<DanhSachThietBi, DanhSachThietBi>({
     defaultValues,
     schema: danhSachThietBiSchema,
@@ -174,6 +236,10 @@ const DanhSachThietBiPage = () => {
     [formMethods],
   );
 
+  const openNhapHangLoatModal = useCallback(() => {
+    setOpenNhapHangLoat(true);
+  }, []);
+
   return (
     <FormProvider {...formMethods}>
       <Stack height="100%" width="100%" p={2}>
@@ -182,6 +248,7 @@ const DanhSachThietBiPage = () => {
           onDelete={() => setIsDeleteOpenModal(true)}
           onAdd={onAdd}
           onEdit={onEdit}
+          customStartActions={<button onClick={openNhapHangLoatModal}>Nhập hàng loạt</button>}
           onExport={(dataOption, columnOption) => {
             exportPaginationToExcel<DanhSachThietBi>({
               entity: 'danh-sach-thiet-bi',
@@ -210,6 +277,11 @@ const DanhSachThietBiPage = () => {
             onDelete={handleDeleteRecord}
           />
         )}
+        <NhapHangLoatModal
+          open={openNhapHangLoat}
+          onClose={() => setOpenNhapHangLoat(false)}
+          onSavedSuccess={refetch}
+        />
         <DanhSachThietBiFilter onApply={handleFilterApply} onReset={handleFilterReset} />
         <DataGridTable
           columns={columns}

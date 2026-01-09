@@ -2170,6 +2170,39 @@ const _appRoutes = [
           },
         ],
       },
+      {
+        label: 'Nghiệp vụ vận hành tài sản thiết bị',
+        icon: <FcFolder />,
+        path: 'asset-equipment-operation-tasks',
+        children: [],
+      },
+      {
+        label: 'Kiểm kê và bảo trì tài sản thiết bị',
+        icon: <FcFolder />,
+        path: 'asset-equipment-inventory-and-maintenance',
+        children: [
+          {
+            label: 'Kiểm kê tài sản thiết bị',
+            icon: <FcFolder />,
+            path: 'kiem-ke-tai-san-thiet-bi',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/kiem-ke-tai-san-thiet-bi')),
+            ),
+          },
+          {
+            label: 'Bảo trì tài sản thiết bị',
+            icon: <FcFolder />,
+          },
+          {
+            label: 'Kiểm kê chi tiết',
+            icon: <FcFolder />,
+            path: 'kiem-ke-chi-tiet',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/kiem-ke-chi-tiet')),
+            ),
+          },
+        ],
+      },
     ],
   },
   {
