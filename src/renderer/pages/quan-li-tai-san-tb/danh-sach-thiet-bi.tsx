@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Stack } from '@mui/material';
+import React, { useCallback, useMemo } from 'react';
+import { Button, Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
@@ -8,6 +8,7 @@ import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-paginati
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 import { DanhSachThietBiForm } from '../../features/equip-management/danh-sach-thiet-bi/components/danh-sach-thiet-bi-form';
 import { DanhSachThietBiFilter } from '../../features/equip-management/danh-sach-thiet-bi/components/danh-sach-thiet-bi-filter';
+import { NhapHangLoatModal } from '../../features/equip-management/danh-sach-thiet-bi/NhapHangLoatModal';
 import { danhSachThietBiColumns as columns } from '../../features/equip-management/danh-sach-thiet-bi/configs/table.configs';
 import { DanhSachThietBiFilterState } from '../../features/equip-management/danh-sach-thiet-bi/type';
 import {
@@ -16,11 +17,7 @@ import {
 } from '../../features/equip-management/danh-sach-thiet-bi/validation';
 import { TITLE_MODE } from '@renderer/shared/enums';
 import { TrangThaiThietBiEnum } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
-import { NhapHangLoatForm } from '../../features/equip-management/danh-sach-thiet-bi/components/nhap-hang-loat-form';
-import {
-  NhapHangLoat,
-  nhapHangLoatSchema,
-} from '../../features/equip-management/danh-sach-thiet-bi/validation';
+import { Add } from '@mui/icons-material';
 
 const defaultValues = {
   id: undefined,
@@ -30,7 +27,7 @@ const defaultValues = {
   tenThietBi: undefined,
   model: undefined,
   serialNumber: undefined,
-  thongSoKiThuat: undefined,
+  thongSoKyThuat: undefined,
   namSanXuat: undefined,
   ngayMua: undefined,
   ngayHetHanBaoHanh: undefined,
@@ -40,18 +37,6 @@ const defaultValues = {
   hinhAnh: undefined,
   phongHocId: undefined,
   trangThai: TrangThaiThietBiEnum.MoiNhap,
-};
-
-const defaultNhapHangLoatValues = {
-  id: null,
-  soLuong: 1,
-  tenThietBi: '',
-  loaiThietBiId: '',
-  nhaCungCapId: '',
-  model: undefined,
-  thongSoKyThuat: undefined,
-  nguyenGia: undefined,
-  prefixMaThietBi: undefined,
 };
 
 const formatDateForInput = (dateString: string | null | undefined): string => {
@@ -73,51 +58,9 @@ const formatDateForSave = (dateString: string | null | undefined): string | null
   return `${dateString}T00:00:00Z`;
 };
 
-const NhapHangLoatModal = ({
-  open,
-  onClose,
-  onSavedSuccess,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSavedSuccess: () => void;
-}) => {
-  const { formMethods, onSave: handleNhapHangLoatSave } = useCrudPaginationModal<
-    NhapHangLoat,
-    NhapHangLoat
-  >({
-    defaultValues: defaultNhapHangLoatValues,
-    schema: nhapHangLoatSchema,
-    entity: 'ThietBi/nhap-hang-loat',
-  });
-
-  const handleNhapHangLoatSubmit = useCallback(async () => {
-    await handleNhapHangLoatSave();
-    onSavedSuccess();
-    onClose();
-  }, [handleNhapHangLoatSave, onSavedSuccess, onClose]);
-
-  if (!open) return null;
-
-  return (
-    <FormProvider {...formMethods}>
-      <FormDetailsModal
-        open={open}
-        onClose={onClose}
-        title="Nhập thiết bị hàng loạt"
-        onSave={handleNhapHangLoatSubmit}
-        maxWidth="md"
-        titleMode={TITLE_MODE.COLORED}
-      >
-        <NhapHangLoatForm />
-      </FormDetailsModal>
-    </FormProvider>
-  );
-};
-
 const DanhSachThietBiPage = () => {
   const [filters, setFilters] = React.useState<DanhSachThietBiFilterState>({});
-  const [openNhapHangLoat, setOpenNhapHangLoat] = useState(false);
+  const [nhapHangLoatOpen, setNhapHangLoatOpen] = React.useState(false);
 
   const {
     formMethods,
@@ -147,6 +90,9 @@ const DanhSachThietBiPage = () => {
     const formData = formMethods.getValues();
     const transformedData = {
       ...formData,
+      namSanXuat: formData.namSanXuat ? Number(formData.namSanXuat) : null,
+      nguyenGia: formData.nguyenGia ? Number(formData.nguyenGia) : null,
+      giaTriKhauHao: formData.giaTriKhauHao ? Number(formData.giaTriKhauHao) : null,
       ngayMua: formatDateForSave(formData.ngayMua),
       ngayHetHanBaoHanh: formatDateForSave(formData.ngayHetHanBaoHanh),
       trangThai:
@@ -236,9 +182,43 @@ const DanhSachThietBiPage = () => {
     [formMethods],
   );
 
-  const openNhapHangLoatModal = useCallback(() => {
-    setOpenNhapHangLoat(true);
+  const handleNhapHangLoatSubmit = useCallback(async (data: any) => {
+    try {
+      const response = await fetch('http://localhost:5031/api/ThietBi/nhap-hang-loat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      return result.data || result;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
   }, []);
+
+  const handleNhapHangLoatSuccess = useCallback(() => {
+    setNhapHangLoatOpen(false);
+    // Refetch data khi thêm hàng loạt thành công
+    if (refetch) {
+      setTimeout(() => {
+        refetch();
+      }, 500);
+    }
+  }, [refetch]);
+
+  // Thêm wrapper cho handleDeleteRecord để refetch sau khi xóa
+  const handleDeleteRecordWithRefetch = useCallback(async () => {
+    await handleDeleteRecord();
+    // Refetch sau khi xóa thành công
+    if (refetch) {
+      setTimeout(() => {
+        refetch();
+      }, 300);
+    }
+  }, [handleDeleteRecord, refetch]);
 
   return (
     <FormProvider {...formMethods}>
@@ -248,7 +228,16 @@ const DanhSachThietBiPage = () => {
           onDelete={() => setIsDeleteOpenModal(true)}
           onAdd={onAdd}
           onEdit={onEdit}
-          customStartActions={<button onClick={openNhapHangLoatModal}>Nhập hàng loạt</button>}
+          customStartActions={
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<Add />}
+              onClick={() => setNhapHangLoatOpen(true)}
+            >
+              Nhập hàng loạt
+            </Button>
+          }
           onExport={(dataOption, columnOption) => {
             exportPaginationToExcel<DanhSachThietBi>({
               entity: 'danh-sach-thiet-bi',
@@ -271,17 +260,20 @@ const DanhSachThietBiPage = () => {
             <DanhSachThietBiForm />
           </FormDetailsModal>
         )}
+
+        <NhapHangLoatModal
+          open={nhapHangLoatOpen}
+          onClose={() => setNhapHangLoatOpen(false)}
+          onSuccess={handleNhapHangLoatSuccess}
+          onSubmitBulk={handleNhapHangLoatSubmit}
+          refetch={refetch}
+        />
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDeleteRecord}
+            onDelete={handleDeleteRecordWithRefetch}
           />
         )}
-        <NhapHangLoatModal
-          open={openNhapHangLoat}
-          onClose={() => setOpenNhapHangLoat(false)}
-          onSavedSuccess={refetch}
-        />
         <DanhSachThietBiFilter onApply={handleFilterApply} onReset={handleFilterReset} />
         <DataGridTable
           columns={columns}

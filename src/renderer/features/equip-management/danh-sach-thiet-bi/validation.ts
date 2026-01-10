@@ -37,6 +37,11 @@ export const nhapHangLoatSchema = z.object({
   thongSoKyThuat: z.string().optional().nullable(),
   nguyenGia: z.number().min(0, 'Nguyên giá phải lớn hơn hoặc bằng 0').optional().nullable(),
   prefixMaThietBi: z.string().optional().nullable(),
+  namSanXuat: z.string().optional().nullable(),
+  ngayMua: z.string().optional().nullable(),
+  ngayHetHanBaoHanh: z.string().optional().nullable(),
+  ghiChu: z.string().optional().nullable(),
+  trangThai: z.number().optional().nullable(),
 });
 
 export type NhapHangLoat = z.infer<typeof nhapHangLoatSchema>;

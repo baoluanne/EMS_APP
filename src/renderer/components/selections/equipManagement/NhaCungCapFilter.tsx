@@ -1,15 +1,9 @@
 import { useMemo } from 'react';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  CircularProgress,
-} from '@mui/material';
-import { Control, Controller } from 'react-hook-form';
+import { CircularProgress, Box } from '@mui/material';
+import { Control } from 'react-hook-form';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { nhaCungCapSchema } from '@renderer/features/equip-management/nha-cung-cap-thiet-bi/validation';
+import { FilterSelect } from '@renderer/components/fields';
 
 interface Props {
   control: Control<any>;
@@ -39,7 +33,7 @@ export const NhaCungCapSelection = ({
     },
   });
 
-  const items = useMemo(() => {
+  const options = useMemo(() => {
     if (!data) return [];
 
     let list: any[] = [];
@@ -52,50 +46,30 @@ export const NhaCungCapSelection = ({
     }
 
     return list.map((item) => ({
-      id: item.id?.toString(),
-      tenNhaCungCap: item.tenNhaCungCap,
+      label: item.tenNhaCungCap,
+      value: item.id?.toString() || '',
     }));
   }, [data]);
 
+  if (isRefetching) {
+    return (
+      <Box sx={{ position: 'relative', height: '40px' }}>
+        <CircularProgress
+          size={24}
+          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
+        />
+      </Box>
+    );
+  }
+
   return (
-    <Controller
+    <FilterSelect
+      label={label}
+      options={options}
       name={name}
       control={control}
-      rules={{ required: required ? `${label} không được để trống` : false }}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl
-          fullWidth
-          error={!!error}
-          disabled={disabled || isRefetching}
-          sx={{ height: '56px' }}
-        >
-          <InputLabel required={required} id={`${name}-label`}>
-            {label}
-          </InputLabel>
-          <Select
-            labelId={`${name}-label`}
-            label={label}
-            {...field}
-            onChange={(e) => field.onChange(e.target.value)}
-          >
-            <MenuItem value="">
-              <em>Chọn {label}</em>
-            </MenuItem>
-            {items.map((item) => (
-              <MenuItem key={item.id} value={item.id}>
-                {item.tenNhaCungCap}
-              </MenuItem>
-            ))}
-          </Select>
-          {isRefetching && (
-            <CircularProgress
-              size={24}
-              style={{ position: 'absolute', top: '50%', right: '40px', marginTop: -12 }}
-            />
-          )}
-          <FormHelperText>{error ? error.message : ''}</FormHelperText>
-        </FormControl>
-      )}
+      required={required}
+      disabled={disabled}
     />
   );
 };
