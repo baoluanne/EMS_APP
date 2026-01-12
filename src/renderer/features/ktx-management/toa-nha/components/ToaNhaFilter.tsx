@@ -2,11 +2,7 @@ import { Grid } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
 import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { useForm } from 'react-hook-form';
-
-export interface ToaNhaFilterState {
-  tenToaNha?: string;
-  loaiToaNha?: string;
-}
+import { ToaNhaFilterState } from '../type';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const toaNhaDefaultFilters: ToaNhaFilterState = {
@@ -36,7 +32,6 @@ export const ToaNhaFilter = ({ onApply, onReset }: Props) => {
       tenToaNha: data.tenToaNha?.trim() ? data.tenToaNha.trim() : undefined,
       loaiToaNha: data.loaiToaNha?.trim() ? data.loaiToaNha.trim() : undefined,
     };
-
     onApply(cleanedData);
   };
 
@@ -52,7 +47,7 @@ export const ToaNhaFilter = ({ onApply, onReset }: Props) => {
             control={control}
             name="tenToaNha"
             label="Tên tòa nhà"
-            placeholder="Nhập để tìm kiếm"
+            placeholder="Nhập tên tòa nhà để tìm kiếm"
           />
         </Grid>
         <Grid size={6}>

@@ -1,5 +1,4 @@
 import { GridColDef } from '@mui/x-data-grid';
-//import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 
 export const toaNhaColumns: GridColDef[] = [
   {
@@ -20,5 +19,12 @@ export const toaNhaColumns: GridColDef[] = [
     width: 150,
     align: 'center',
     headerAlign: 'center',
+    valueGetter: (value) => value || 0,
+  },
+  {
+    field: 'ghiChu',
+    headerName: 'Ghi chú',
+    minWidth: 200,
+    flex: 1,
   },
 ];

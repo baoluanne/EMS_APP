@@ -1,32 +1,40 @@
-import { Stack, TextField } from '@mui/material';
+import { Stack } from '@mui/material';
+import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { useFormContext } from 'react-hook-form';
 
 export const ToaNhaForm = () => {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext();
+  const { register, control } = useFormContext();
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2}>
       <input type="hidden" {...register('id')} />
 
-      <TextField
-        label="Tên tòa nhà"
-        fullWidth
-        placeholder="Ví dụ: Tòa A, Tòa Nam, Tòa Nữ..."
-        {...register('tenToaNha')}
-        error={!!errors.tenToaNha}
-        helperText={errors.tenToaNha?.message as string}
-      />
+      <Stack direction="row" spacing={1}>
+        <ControlledTextField
+          label="Tên tòa nhà"
+          control={control}
+          name="tenToaNha"
+          placeholder="Ví dụ: Tòa A, Block B..."
+          helperText={''}
+        />
 
-      <TextField
-        label="Loại tòa nhà"
-        fullWidth
-        placeholder="Ví dụ: Nam, Nữ, Hỗn hợp (tùy chọn)"
-        {...register('loaiToaNha')}
-        error={!!errors.loaiToaNha}
-        helperText={errors.loaiToaNha?.message as string}
+        <ControlledTextField
+          label="Loại tòa nhà"
+          control={control}
+          placeholder="Ví dụ: Nam, Nữ hoặc Hỗn hợp"
+          name="loaiToaNha"
+          helperText={''}
+        />
+      </Stack>
+
+      <ControlledTextField
+        label="Ghi chú"
+        control={control}
+        name="ghiChu"
+        helperText={''}
+        multiline
+        minRows={3}
+        placeholder="Nhập thông tin mô tả thêm..."
       />
     </Stack>
   );

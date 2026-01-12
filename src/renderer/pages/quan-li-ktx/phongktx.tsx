@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
-
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
@@ -9,13 +8,14 @@ import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-paginati
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 import { TITLE_MODE } from '@renderer/shared/enums';
 
-import { phongKtxColumns as columns } from '../../features/ktx-management/phong-ktx/configs/table.configs';
-import { PhongKtxForm } from '../../features/ktx-management/phong-ktx/components/PhongKtxForm';
+import { phongKtxColumns as columns } from '@renderer/features/ktx-management/phong-ktx/configs/table.configs';
+import { PhongKtxForm } from '@renderer/features/ktx-management/phong-ktx/components/PhongKtxForm';
 import {
   PhongKtxFilter,
   PhongKtxFilterState,
-} from '../../features/ktx-management/phong-ktx/components/PhongKtxFilter';
-import { phongKtxSchema, PhongKtxs } from '../../features/ktx-management/phong-ktx/validation';
+  phongKtxDefaultFilters,
+} from '@renderer/features/ktx-management/phong-ktx/components/PhongKtxFilter';
+import { phongKtxSchema, PhongKtxs } from '@renderer/features/ktx-management/phong-ktx/validation';
 
 const defaultValues: PhongKtxs = {
   id: undefined,
@@ -29,7 +29,7 @@ const defaultValues: PhongKtxs = {
 };
 
 export default function PhongKtxPage() {
-  const [filters, setFilters] = useState<PhongKtxFilterState>({});
+  const [filters, setFilters] = useState<PhongKtxFilterState>(phongKtxDefaultFilters);
 
   const {
     formMethods,
@@ -48,49 +48,30 @@ export default function PhongKtxPage() {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
+    refetch,
   } = useCrudPaginationModal<PhongKtxs, PhongKtxs>({
     defaultValues,
     schema: phongKtxSchema,
     entity: 'phongKtx',
   });
 
-  const rawRowsData: PhongKtxs[] = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    if ('result' in data && Array.isArray(data.result)) {
-      return data.result;
-    }
-    return [];
-  }, [data]);
+  const rowsData = useMemo(() => {
+    const rawData = (data as any)?.data || (data as any)?.result || [];
+    if (!filters.maPhong && !filters.toaNhaId && !filters.trangThai) return rawData;
 
-  const rowsData: PhongKtxs[] = useMemo(() => {
-    if (!filters.maPhong && !filters.toaNhaId && !filters.trangThai) {
-      return rawRowsData;
-    }
-
-    return rawRowsData.filter((row: any) => {
-      const matchMaPhong =
+    return rawData.filter((row: any) => {
+      const matchMa =
         !filters.maPhong || row.maPhong?.toLowerCase().includes(filters.maPhong.toLowerCase());
-
-      const matchToaNhaId = !filters.toaNhaId || row.toaNhaId === filters.toaNhaId;
-
-      const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
-
-      return matchMaPhong && matchToaNhaId && matchTrangThai;
+      const matchToa = !filters.toaNhaId || row.toaNhaId === filters.toaNhaId;
+      const matchStatus = !filters.trangThai || row.trangThai === filters.trangThai;
+      return matchMa && matchToa && matchStatus;
     });
-  }, [rawRowsData, filters]);
+  }, [data, filters]);
 
-  const handleFilterApply = useCallback((filterValues: PhongKtxFilterState) => {
-    setFilters(filterValues);
-  }, []);
-
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
+  const handleRefresh = useCallback(() => {
+    handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
+    if (refetch) setTimeout(() => refetch(), 300);
+  }, [handleRowSelectionModelChange, refetch]);
 
   return (
     <FormProvider {...formMethods}>
@@ -127,18 +108,24 @@ export default function PhongKtxPage() {
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDeleteRecord}
+            onDelete={async () => {
+              await handleDeleteRecord();
+              handleRefresh();
+            }}
           />
         )}
 
-        <PhongKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+        <PhongKtxFilter onApply={setFilters} onReset={() => setFilters(phongKtxDefaultFilters)} />
 
         <DataGridTable
           columns={columns}
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => formMethods.reset(params.row)}
+          onRowClick={(params) => {
+            handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
+            formMethods.reset(params.row);
+          }}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}

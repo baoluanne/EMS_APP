@@ -10,7 +10,8 @@ export interface PhongKtxFilterState {
   trangThai?: string;
 }
 
-const phongKtxDefaultFilters: PhongKtxFilterState = {
+// eslint-disable-next-line react-refresh/only-export-components
+export const phongKtxDefaultFilters: PhongKtxFilterState = {
   maPhong: undefined,
   toaNhaId: undefined,
   trangThai: undefined,
@@ -34,13 +35,11 @@ export const PhongKtxFilter = ({ onApply, onReset }: Props) => {
   };
 
   const handleApply = (data: PhongKtxFilterState) => {
-    const cleanedData: PhongKtxFilterState = {
-      maPhong: data.maPhong?.trim() ? data.maPhong.trim() : undefined,
+    onApply({
+      maPhong: data.maPhong?.trim() || undefined,
       toaNhaId: data.toaNhaId || undefined,
       trangThai: data.trangThai || undefined,
-    };
-
-    onApply(cleanedData);
+    });
   };
 
   return (
@@ -48,6 +47,7 @@ export const PhongKtxFilter = ({ onApply, onReset }: Props) => {
       onApply={handleApply}
       onClear={handleClear}
       methods={filterMethods}
+      title="Bộ lọc Phòng KTX"
     >
       <Grid container spacing={2}>
         <Grid size={4}>
@@ -55,26 +55,17 @@ export const PhongKtxFilter = ({ onApply, onReset }: Props) => {
             control={control}
             name="maPhong"
             label="Mã phòng"
-            placeholder="Nhập mã phòng"
+            placeholder="Tìm mã phòng..."
           />
         </Grid>
         <Grid size={4}>
           <ToaNhaSelection control={control} name="toaNhaId" label="Thuộc tòa nhà" />
         </Grid>
         <Grid size={4}>
-          <ControlledTextField
-            control={control}
-            name="trangThai"
-            label="Trạng thái"
-            select
-            placeholder="Chọn trạng thái"
-          >
-            <MenuItem value="">
-              <em>-- Tất cả --</em>
-            </MenuItem>
+          <ControlledTextField control={control} name="trangThai" label="Trạng thái" select>
+            <MenuItem value="">-- Tất cả --</MenuItem>
             <MenuItem value="HOAT_DONG">Hoạt động</MenuItem>
             <MenuItem value="NGUNG_HOAT_DONG">Ngừng hoạt động</MenuItem>
-            <MenuItem value="BAO_TRI">Bảo trì</MenuItem>
           </ControlledTextField>
         </Grid>
       </Grid>

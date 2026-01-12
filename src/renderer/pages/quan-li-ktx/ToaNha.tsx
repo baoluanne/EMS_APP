@@ -1,30 +1,27 @@
-import { Stack } from '@mui/material';
+import { useMemo, useCallback, useState } from 'react';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
-
-import { ToaNhaForm } from '../../features/ktx-management/toa-nha/components/ToaNhaForm';
-import {
-  ToaNhaFilter,
-  ToaNhaFilterState,
-} from '../../features/ktx-management/toa-nha/components/ToaNhaFilter';
-import { toaNhaColumns as columns } from '../../features/ktx-management/toa-nha/configs/table.configs';
-import { ToaNhaKtx, toaNhaSchema } from '../../features/ktx-management/toa-nha/validation';
-import React, { useMemo, useCallback } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
 
-const defaultValues = {
+import { ToaNhaForm } from '@renderer/features/ktx-management/toa-nha/components/ToaNhaForm';
+import { ToaNhaFilter } from '@renderer/features/ktx-management/toa-nha/components/ToaNhaFilter';
+import { toaNhaColumns as columns } from '@renderer/features/ktx-management/toa-nha/configs/table.configs';
+import { ToaNhaKtx, toaNhaSchema } from '@renderer/features/ktx-management/toa-nha/validation';
+import { ToaNhaFilterState } from '@renderer/features/ktx-management/toa-nha/type';
+import { Stack } from '@mui/material';
+const defaultValues: ToaNhaKtx = {
   id: undefined,
-  tenToaNha: undefined,
-  loaiToaNha: undefined,
+  tenToaNha: '',
+  loaiToaNha: '',
+  ghiChu: '',
 };
 
-const ToaNha = () => {
-  const [filters, setFilters] = React.useState<ToaNhaFilterState>({});
-
+const ToaNhaPage = () => {
+  const [filters, setFilters] = useState<ToaNhaFilterState>({}); // Bỏ React.
   const {
     formMethods,
     data,
@@ -48,17 +45,10 @@ const ToaNha = () => {
     entity: 'ToaNhaKtx',
   });
 
-  const rawRowsData: ToaNhaKtx[] = React.useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    if ('result' in data && Array.isArray(data.result)) {
-      return data.result;
-    }
-    return [];
+  const rawRowsData: ToaNhaKtx[] = useMemo(() => {
+    if (!data) return [];
+    const results = (data as any).data || (data as any).result || [];
+    return Array.isArray(results) ? results : [];
   }, [data]);
 
   const rowsData: ToaNhaKtx[] = useMemo(() => {
@@ -97,7 +87,7 @@ const ToaNha = () => {
           onEdit={onEdit}
           onExport={(dataOption, columnOption) => {
             exportPaginationToExcel<ToaNhaKtx>({
-              entity: 'toa-nha-ktx',
+              entity: 'ToaNhaKtx',
               filteredData: rowsData,
               columns: columns,
               options: { dataOption, columnOption },
@@ -109,7 +99,7 @@ const ToaNha = () => {
 
         {isModalOpen && (
           <FormDetailsModal
-            title={isAddMode ? 'Thêm mới Tòa nhà KTX' : 'Chỉnh sửa Tòa nhà KTX'}
+            title={isAddMode ? 'Thêm mới tòa nhà' : 'Chỉnh sửa tòa nhà'}
             onClose={handleCloseModal}
             onSave={onSave}
             maxWidth="sm"
@@ -145,4 +135,4 @@ const ToaNha = () => {
   );
 };
 
-export default ToaNha;
+export default ToaNhaPage;
