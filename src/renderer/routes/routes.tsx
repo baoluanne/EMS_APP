@@ -2193,14 +2193,6 @@ const _appRoutes = [
             label: 'Bảo trì tài sản thiết bị',
             icon: <FcFolder />,
           },
-          {
-            label: 'Kiểm kê chi tiết',
-            icon: <FcFolder />,
-            path: 'kiem-ke-chi-tiet',
-            Component: Lazy(
-              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/kiem-ke-chi-tiet')),
-            ),
-          },
         ],
       },
     ],

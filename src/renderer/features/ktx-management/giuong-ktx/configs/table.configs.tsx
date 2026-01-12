@@ -1,48 +1,54 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { GiuongKtxSchema } from '../validation';
+import { Chip } from '@mui/material';
 
-export const giuongKtxColumns: GridColDef<GiuongKtxSchema>[] = [
+export const giuongKtxColumns: GridColDef[] = [
   {
     field: 'maGiuong',
     headerName: 'Mã giường',
-    width: 150,
+    width: 130,
   },
   {
     field: 'maPhong',
     headerName: 'Thuộc phòng',
-    width: 150,
-    valueGetter: (value: any, row: any) => {
-      const rowData = row || value?.row;
-      return rowData?.maPhong || '---';
-    },
+    width: 130,
+    valueGetter: (_, row) => row.maPhong || '---',
   },
   {
     field: 'tenToaNha',
     headerName: 'Tòa nhà',
-    width: 180,
-    valueGetter: (value: any, row: any) => {
-      const rowData = row || value?.row;
-      return rowData?.tenToaNha || '---';
-    },
+    width: 150,
+    valueGetter: (_, row) => row.tenToaNha || '---',
   },
   {
     field: 'trangThai',
     headerName: 'Trạng thái',
     width: 150,
-    valueFormatter: (value: any) => {
-      if (value === 'Trong') return 'Trống';
-      if (value === 'CoSV') return 'Đã có người';
-      if (value === 'BaoTri') return 'Bảo trì';
-      return value;
+    renderCell: (params) => {
+      const status = params.value;
+      let color: 'default' | 'success' | 'warning' | 'error' = 'default';
+      let label = status;
+
+      if (status === 'Trong') {
+        color = 'success';
+        label = 'Trống';
+      }
+      if (status === 'CoSV') {
+        color = 'warning';
+        label = 'Đã có người';
+      }
+      if (status === 'BaoTri') {
+        color = 'error';
+        label = 'Bảo trì';
+      }
+
+      return <Chip label={label} color={color} size="small" variant="outlined" />;
     },
   },
   {
     field: 'tenSinhVien',
     headerName: 'Sinh viên đang ở',
-    width: 200,
-    valueGetter: (value: any, row: any) => {
-      const rowData = row || value?.row;
-      return rowData?.tenSinhVien || '---';
-    },
+    flex: 1,
+    minWidth: 200,
+    valueGetter: (_, row) => row.tenSinhVien || '---',
   },
 ];

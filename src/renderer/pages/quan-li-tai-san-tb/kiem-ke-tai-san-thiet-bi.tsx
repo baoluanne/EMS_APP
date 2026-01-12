@@ -1,3 +1,4 @@
+import { useMemo, useCallback, useState } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
@@ -5,47 +6,53 @@ import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
+import { TITLE_MODE } from '@renderer/shared/enums';
+
 import { KiemKeTaiSanForm } from '../../features/equip-management/kiem-ke-tai-san/components/kiem-ke-tai-san-form';
 import { KiemKeTaiSanFilter } from '../../features/equip-management/kiem-ke-tai-san/components/kiem-ke-tai-san-filter';
-import { kiemKeTaiSanTableColumns as columns } from '../../features/equip-management/kiem-ke-tai-san/configs/table.configs';
+import { kiemKeTaiSanTableColumns } from '../../features/equip-management/kiem-ke-tai-san/configs/table.configs';
 import { KiemKeTaiSanFilterState } from '../../features/equip-management/kiem-ke-tai-san/type';
 import {
   KiemKeTaiSan,
   kiemKeTaiSanSchema,
 } from '../../features/equip-management/kiem-ke-tai-san/validation';
-import React, { useMemo, useCallback } from 'react';
-import { TITLE_MODE } from '@renderer/shared/enums';
+import { ChiTietKiemKeModal } from '../../features/equip-management/kiem-ke-tai-san/ChiTietKiemKe/ChiTietKiemKeModal';
 
 const defaultValues = {
   id: undefined,
-  tenDotKiemKe: undefined,
-  ngayBatDau: undefined,
-  ngayKetThuc: undefined,
-  daHoanThanh: undefined,
-  ghiChu: undefined,
+  tenDotKiemKe: '',
+  ngayBatDau: '',
+  ngayKetThuc: '',
+  daHoanThanh: false,
+  ghiChu: '',
 };
 
-const formatDateForInput = (dateString: string | null | undefined): string => {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  } catch {
-    return '';
-  }
+const getLocalDateFormat = (date: Date | string | null | undefined): string | undefined => {
+  if (!date) return undefined;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return undefined;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const formatDateForSave = (dateString: string | null | undefined): string | null => {
   if (!dateString) return null;
-  if (dateString.includes('T')) return dateString;
-  return `${dateString}T00:00:00Z`;
+  return dateString.includes('T') ? dateString : `${dateString}T00:00:00Z`;
 };
 
 const KiemKeTaiSanPage = () => {
-  const [filters, setFilters] = React.useState<KiemKeTaiSanFilterState>({});
+  const [filters, setFilters] = useState<KiemKeTaiSanFilterState>({});
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    id: string | null;
+    name: string;
+  }>({
+    open: false,
+    id: null,
+    name: '',
+  });
 
   const {
     formMethods,
@@ -70,6 +77,22 @@ const KiemKeTaiSanPage = () => {
     entity: 'DotKiemKe',
   });
 
+  const rawRowsData: KiemKeTaiSan[] = useMemo(() => {
+    if (!data) return [];
+    const responseData = (data as any).data || (data as any).result;
+    return Array.isArray(responseData) ? responseData : [];
+  }, [data]);
+
+  const handleViewDetail = useCallback(
+    (id: string) => {
+      const row = rawRowsData.find((r) => r.id === id);
+      setDetailModal({ open: true, id, name: row?.tenDotKiemKe || '' });
+    },
+    [rawRowsData],
+  );
+
+  const columns = useMemo(() => kiemKeTaiSanTableColumns(handleViewDetail), [handleViewDetail]);
+
   const onSave = useCallback(async () => {
     const formData = formMethods.getValues();
     const transformedData = {
@@ -77,46 +100,31 @@ const KiemKeTaiSanPage = () => {
       ngayBatDau: formatDateForSave(formData.ngayBatDau),
       ngayKetThuc: formatDateForSave(formData.ngayKetThuc),
     };
-
     Object.keys(transformedData).forEach((key) => {
       formMethods.setValue(key as any, transformedData[key as keyof typeof transformedData]);
     });
-
     await originalOnSave();
   }, [formMethods, originalOnSave]);
 
-  const rawRowsData: KiemKeTaiSan[] = React.useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    if ('result' in data && Array.isArray(data.result)) {
-      return data.result;
-    }
-    return [];
-  }, [data]);
-
   const rowsData: KiemKeTaiSan[] = useMemo(() => {
-    if (!filters.tenDotKiemKe && !filters.ngayBatDau && !filters.ngayKetThuc) {
+    if (
+      !filters.tenDotKiemKe &&
+      !filters.ngayBatDau &&
+      !filters.ngayKetThuc &&
+      !filters.daHoanThanh
+    ) {
       return rawRowsData;
     }
-
     return rawRowsData.filter((row) => {
-      const matchTenDotKiemKe =
+      const matchName =
         !filters.tenDotKiemKe ||
         row.tenDotKiemKe?.toLowerCase().includes(filters.tenDotKiemKe.toLowerCase());
-
-      const matchNgayBatDau =
-        !filters.ngayBatDau ||
-        row.ngayBatDau?.toLowerCase().includes(filters.ngayBatDau.toLowerCase());
-
-      const matchNgayKetThuc =
-        !filters.ngayKetThuc ||
-        row.ngayKetThuc?.toLowerCase().includes(filters.ngayKetThuc.toLowerCase());
-
-      return matchTenDotKiemKe && matchNgayBatDau && matchNgayKetThuc;
+      const rowStart = getLocalDateFormat(row.ngayBatDau);
+      const rowEnd = getLocalDateFormat(row.ngayKetThuc);
+      const matchStart = !filters.ngayBatDau || rowStart === filters.ngayBatDau;
+      const matchEnd = !filters.ngayKetThuc || rowEnd === filters.ngayKetThuc;
+      const matchStatus = !filters.daHoanThanh || String(row.daHoanThanh) === filters.daHoanThanh;
+      return matchName && matchStart && matchEnd && matchStatus;
     });
   }, [rawRowsData, filters]);
 
@@ -130,12 +138,11 @@ const KiemKeTaiSanPage = () => {
 
   const handleRowClick = useCallback(
     (params: any) => {
-      const rowData = {
+      formMethods.reset({
         ...params.row,
-        ngayBatDau: formatDateForInput(params.row.ngayBatDau),
-        ngayKetThuc: formatDateForInput(params.row.ngayKetThuc),
-      };
-      formMethods.reset(rowData);
+        ngayBatDau: getLocalDateFormat(params.row.ngayBatDau),
+        ngayKetThuc: getLocalDateFormat(params.row.ngayKetThuc),
+      });
     },
     [formMethods],
   );
@@ -152,10 +159,10 @@ const KiemKeTaiSanPage = () => {
             exportPaginationToExcel<KiemKeTaiSan>({
               entity: 'kiem-ke-tai-san',
               filteredData: rowsData,
-              columns: columns,
+              columns,
               options: { dataOption, columnOption },
               columnVisibilityModel,
-              fileName: 'Danh_sach_kiem_ke_tai_san',
+              fileName: 'Danh_sach_kiem_ke',
             });
           }}
         />
@@ -170,6 +177,15 @@ const KiemKeTaiSanPage = () => {
           >
             <KiemKeTaiSanForm />
           </FormDetailsModal>
+        )}
+
+        {detailModal.open && (
+          <ChiTietKiemKeModal
+            open={detailModal.open}
+            dotKiemKeId={detailModal.id}
+            tenDotKiemKe={detailModal.name}
+            onClose={() => setDetailModal({ ...detailModal, open: false })}
+          />
         )}
 
         {isDeleteOpenModal && (

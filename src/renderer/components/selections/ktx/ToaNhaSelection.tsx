@@ -1,15 +1,9 @@
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  CircularProgress,
-} from '@mui/material';
-import { Control, Controller } from 'react-hook-form';
 import { useMemo } from 'react';
+import { CircularProgress, Box } from '@mui/material';
+import { Control } from 'react-hook-form';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { toaNhaSchema } from '@renderer/features/ktx-management/toa-nha/validation';
+import { FilterSelect } from '@renderer/components/fields';
 
 interface Props {
   control: Control<any>;
@@ -29,10 +23,13 @@ export const ToaNhaSelection = ({
   const { data, isRefetching } = useCrudPaginationModal({
     entity: 'ToaNhaKtx',
     schema: toaNhaSchema,
-    defaultValues: {},
+    defaultValues: {
+      id: undefined,
+      tenToaNha: undefined,
+    },
   });
 
-  const toaNhaList = useMemo(() => {
+  const options = useMemo(() => {
     if (!data) return [];
 
     let list: any[] = [];
@@ -45,40 +42,30 @@ export const ToaNhaSelection = ({
     }
 
     return list.map((item) => ({
-      id: item.id?.toString(),
-      tenToaNha: item.tenToaNha,
+      label: item.tenToaNha,
+      value: item.id?.toString() || '',
     }));
   }, [data]);
 
+  if (isRefetching) {
+    return (
+      <Box sx={{ position: 'relative', height: '40px' }}>
+        <CircularProgress
+          size={24}
+          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
+        />
+      </Box>
+    );
+  }
+
   return (
-    <Controller
+    <FilterSelect
+      label={label}
+      options={options}
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl fullWidth error={!!error} disabled={disabled || isRefetching}>
-          <InputLabel required={required} id={`${name}-label`}>
-            {label}
-          </InputLabel>
-          <Select {...field} labelId={`${name}-label`} label={label} value={field.value || ''}>
-            {isRefetching ? (
-              <MenuItem disabled value="">
-                <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
-              </MenuItem>
-            ) : toaNhaList.length === 0 ? (
-              <MenuItem disabled value="">
-                -- Không có dữ liệu --
-              </MenuItem>
-            ) : (
-              toaNhaList.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
-                  {item.tenToaNha}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-          {error && <FormHelperText>{error.message}</FormHelperText>}
-        </FormControl>
-      )}
+      required={required}
+      disabled={disabled}
     />
   );
 };

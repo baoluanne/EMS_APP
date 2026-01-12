@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button, Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
@@ -9,6 +9,7 @@ import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 import { DanhSachThietBiForm } from '../../features/equip-management/danh-sach-thiet-bi/components/danh-sach-thiet-bi-form';
 import { DanhSachThietBiFilter } from '../../features/equip-management/danh-sach-thiet-bi/components/danh-sach-thiet-bi-filter';
 import { NhapHangLoatModal } from '../../features/equip-management/danh-sach-thiet-bi/NhapHangLoatModal';
+import { AssignRoomModal } from '../../features/equip-management/danh-sach-thiet-bi/components/AssignRoomModal';
 import { danhSachThietBiColumns as columns } from '../../features/equip-management/danh-sach-thiet-bi/configs/table.configs';
 import { DanhSachThietBiFilterState } from '../../features/equip-management/danh-sach-thiet-bi/type';
 import {
@@ -17,14 +18,14 @@ import {
 } from '../../features/equip-management/danh-sach-thiet-bi/validation';
 import { TITLE_MODE } from '@renderer/shared/enums';
 import { TrangThaiThietBiEnum } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
-import { Add } from '@mui/icons-material';
+import { Add, Business } from '@mui/icons-material';
 
 const defaultValues = {
   id: undefined,
-  loaiThietBiId: undefined,
-  nhaCungCapId: undefined,
-  maThietBi: undefined,
-  tenThietBi: undefined,
+  loaiThietBiId: '',
+  nhaCungCapId: '',
+  maThietBi: '',
+  tenThietBi: '',
   model: undefined,
   serialNumber: undefined,
   thongSoKyThuat: undefined,
@@ -43,10 +44,7 @@ const formatDateForInput = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   try {
     const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   } catch {
     return '';
   }
@@ -54,13 +52,13 @@ const formatDateForInput = (dateString: string | null | undefined): string => {
 
 const formatDateForSave = (dateString: string | null | undefined): string | null => {
   if (!dateString) return null;
-  if (dateString.includes('T')) return dateString;
-  return `${dateString}T00:00:00Z`;
+  return dateString.includes('T') ? dateString : `${dateString}T00:00:00Z`;
 };
 
 const DanhSachThietBiPage = () => {
-  const [filters, setFilters] = React.useState<DanhSachThietBiFilterState>({});
-  const [nhapHangLoatOpen, setNhapHangLoatOpen] = React.useState(false);
+  const [filters, setFilters] = useState<DanhSachThietBiFilterState>({});
+  const [nhapHangLoatOpen, setNhapHangLoatOpen] = useState(false);
+  const [assignRoomOpen, setAssignRoomOpen] = useState(false);
 
   const {
     formMethods,
@@ -86,6 +84,15 @@ const DanhSachThietBiPage = () => {
     entity: 'ThietBi',
   });
 
+  const selectedCount = useMemo(() => {
+    return (selectedRows as any)?.ids?.size || 0;
+  }, [selectedRows]);
+
+  const selectedIdsArray = useMemo(() => {
+    const idsSet = (selectedRows as any)?.ids;
+    return idsSet ? Array.from(idsSet).map((id) => String(id)) : [];
+  }, [selectedRows]);
+
   const onSave = useCallback(async () => {
     const formData = formMethods.getValues();
     const transformedData = {
@@ -100,125 +107,54 @@ const DanhSachThietBiPage = () => {
           ? Number(formData.trangThai)
           : null,
     };
-
     Object.keys(transformedData).forEach((key) => {
       formMethods.setValue(key as any, transformedData[key as keyof typeof transformedData]);
     });
-
     await originalOnSave();
   }, [formMethods, originalOnSave]);
 
-  const rawRowsData: DanhSachThietBi[] = React.useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    if ('result' in data && Array.isArray(data.result)) {
-      return data.result;
-    }
-    return [];
-  }, [data]);
-
   const rowsData: DanhSachThietBi[] = useMemo(() => {
-    if (
-      !filters.maThietBi &&
-      !filters.tenThietBi &&
-      !filters.model &&
-      !filters.serialNumber &&
-      !filters.loaiThietBiId &&
-      !filters.nhaCungCapId
-    ) {
-      return rawRowsData;
-    }
+    const rawData = (data as any)?.data || (data as any)?.result || [];
+    const isFilterActive =
+      !!filters.maThietBi ||
+      !!filters.tenThietBi ||
+      (filters.trangThai !== undefined && filters.trangThai !== null);
 
-    return rawRowsData.filter((row) => {
-      const matchMaThietBi =
+    if (!isFilterActive) return rawData as DanhSachThietBi[];
+
+    return (rawData as DanhSachThietBi[]).filter((row) => {
+      const matchMa =
         !filters.maThietBi ||
         row.maThietBi?.toLowerCase().includes(filters.maThietBi.toLowerCase());
-      const matchTenThietBi =
+      const matchTen =
         !filters.tenThietBi ||
         row.tenThietBi?.toLowerCase().includes(filters.tenThietBi.toLowerCase());
-      const matchModel =
-        !filters.model || row.model?.toLowerCase().includes(filters.model.toLowerCase());
-      const matchSerialNumber =
-        !filters.serialNumber ||
-        row.serialNumber?.toLowerCase().includes(filters.serialNumber.toLowerCase());
-      const matchLoaiThietBiId =
-        !filters.loaiThietBiId || row.loaiThietBiId === filters.loaiThietBiId;
-      const matchNhaCungCapId = !filters.nhaCungCapId || row.nhaCungCapId === filters.nhaCungCapId;
-
-      return (
-        matchMaThietBi &&
-        matchTenThietBi &&
-        matchModel &&
-        matchSerialNumber &&
-        matchLoaiThietBiId &&
-        matchNhaCungCapId
-      );
+      const matchTrangThai =
+        filters.trangThai === undefined ||
+        filters.trangThai === null ||
+        Number(row.trangThai) === Number(filters.trangThai);
+      return matchMa && matchTen && matchTrangThai;
     });
-  }, [rawRowsData, filters]);
+  }, [data, filters]);
 
-  const handleFilterApply = useCallback((filterValues: DanhSachThietBiFilterState) => {
-    setFilters(filterValues);
-  }, []);
-
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
-
-  const handleRowClick = useCallback(
-    (params: any) => {
-      const rowData = {
-        ...params.row,
-        ngayMua: formatDateForInput(params.row.ngayMua),
-        ngayHetHanBaoHanh: formatDateForInput(params.row.ngayHetHanBaoHanh),
-        trangThai:
-          params.row.trangThai !== undefined ? params.row.trangThai : defaultValues.trangThai,
-      };
-      formMethods.reset(rowData);
-    },
-    [formMethods],
-  );
-
-  const handleNhapHangLoatSubmit = useCallback(async (data: any) => {
+  const handleNhapHangLoatSubmit = useCallback(async (formData: any) => {
     try {
       const response = await fetch('http://localhost:5031/api/ThietBi/nhap-hang-loat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
       const result = await response.json();
       return result.data || result;
     } catch (error) {
-      console.error('Error:', error);
+      console.error(error);
       throw error;
     }
   }, []);
 
-  const handleNhapHangLoatSuccess = useCallback(() => {
-    setNhapHangLoatOpen(false);
-    // Refetch data khi thêm hàng loạt thành công
-    if (refetch) {
-      setTimeout(() => {
-        refetch();
-      }, 500);
-    }
+  const handleRefresh = useCallback(() => {
+    if (refetch) setTimeout(() => refetch(), 300);
   }, [refetch]);
-
-  // Thêm wrapper cho handleDeleteRecord để refetch sau khi xóa
-  const handleDeleteRecordWithRefetch = useCallback(async () => {
-    await handleDeleteRecord();
-    // Refetch sau khi xóa thành công
-    if (refetch) {
-      setTimeout(() => {
-        refetch();
-      }, 300);
-    }
-  }, [handleDeleteRecord, refetch]);
 
   return (
     <FormProvider {...formMethods}>
@@ -229,14 +165,26 @@ const DanhSachThietBiPage = () => {
           onAdd={onAdd}
           onEdit={onEdit}
           customStartActions={
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<Add />}
-              onClick={() => setNhapHangLoatOpen(true)}
-            >
-              Nhập hàng loạt
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<Add />}
+                onClick={() => setNhapHangLoatOpen(true)}
+              >
+                Nhập hàng loạt
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                color="secondary"
+                startIcon={<Business />}
+                disabled={selectedCount === 0}
+                onClick={() => setAssignRoomOpen(true)}
+              >
+                Phân vào phòng
+              </Button>
+            </Stack>
           }
           onExport={(dataOption, columnOption) => {
             exportPaginationToExcel<DanhSachThietBi>({
@@ -249,6 +197,7 @@ const DanhSachThietBiPage = () => {
             });
           }}
         />
+
         {isModalOpen && (
           <FormDetailsModal
             title={isAddMode ? 'Thêm mới thiết bị' : 'Chỉnh sửa thiết bị'}
@@ -261,26 +210,49 @@ const DanhSachThietBiPage = () => {
           </FormDetailsModal>
         )}
 
-        <NhapHangLoatModal
-          open={nhapHangLoatOpen}
-          onClose={() => setNhapHangLoatOpen(false)}
-          onSuccess={handleNhapHangLoatSuccess}
-          onSubmitBulk={handleNhapHangLoatSubmit}
-          refetch={refetch}
-        />
+        {nhapHangLoatOpen && (
+          <NhapHangLoatModal
+            open={nhapHangLoatOpen}
+            onClose={() => setNhapHangLoatOpen(false)}
+            onSuccess={handleRefresh}
+            onSubmitBulk={handleNhapHangLoatSubmit}
+            refetch={refetch}
+          />
+        )}
+
+        {assignRoomOpen && (
+          <AssignRoomModal
+            selectedIds={selectedIdsArray}
+            onClose={() => setAssignRoomOpen(false)}
+            onSuccess={handleRefresh}
+          />
+        )}
+
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDeleteRecordWithRefetch}
+            onDelete={async () => {
+              await handleDeleteRecord();
+              handleRefresh();
+            }}
           />
         )}
-        <DanhSachThietBiFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+
+        <DanhSachThietBiFilter onApply={setFilters} onReset={() => setFilters({})} />
+
         <DataGridTable
           columns={columns}
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={handleRowClick}
+          onRowClick={(params) => {
+            const rowData = {
+              ...params.row,
+              ngayMua: formatDateForInput(params.row.ngayMua),
+              ngayHetHanBaoHanh: formatDateForInput(params.row.ngayHetHanBaoHanh),
+            };
+            formMethods.reset(rowData);
+          }}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}

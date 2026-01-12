@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { LoaiThietBiSelection } from '@renderer/components/selections/equipManagement/LoaiThietBiSelection';
 import { DanhSachThietBiFilterState } from '../type';
 import { NhaCungCapSelection } from '@renderer/components/selections/equipManagement/NhaCungCapFilter';
+import { FilterSelect } from '@renderer/components/fields';
+import { TrangThaiThietBiOptions } from '../TrangThaiThietBiEnum';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const danhSachThietBiDefaultFilters: DanhSachThietBiFilterState = {
@@ -15,34 +17,43 @@ export const danhSachThietBiDefaultFilters: DanhSachThietBiFilterState = {
   tenThietBi: undefined,
   model: undefined,
   serialNumber: undefined,
+  trangThai: undefined,
 };
 
 interface Props {
   onApply: (filters: DanhSachThietBiFilterState) => void;
   onReset: () => void;
 }
+
 export const DanhSachThietBiFilter = ({ onApply, onReset }: Props) => {
   const filterMethods = useForm<DanhSachThietBiFilterState>({
     defaultValues: danhSachThietBiDefaultFilters,
   });
 
   const { control } = filterMethods;
+
   const handleClear = () => {
     filterMethods.reset(danhSachThietBiDefaultFilters);
     onReset();
   };
+
   const handleApply = (data: DanhSachThietBiFilterState) => {
     const cleanedData: DanhSachThietBiFilterState = {
-      loaiThietBiId: data.loaiThietBiId?.trim() ? data.loaiThietBiId.trim() : undefined,
-      nhaCungCapId: data.nhaCungCapId?.trim() ? data.nhaCungCapId.trim() : undefined,
-      maThietBi: data.maThietBi?.trim() ? data.maThietBi.trim() : undefined,
-      tenThietBi: data.tenThietBi?.trim() ? data.tenThietBi.trim() : undefined,
-      model: data.model?.trim() ? data.model.trim() : undefined,
-      serialNumber: data.serialNumber?.trim() ? data.serialNumber.trim() : undefined,
+      loaiThietBiId: data.loaiThietBiId?.trim() || undefined,
+      nhaCungCapId: data.nhaCungCapId?.trim() || undefined,
+      maThietBi: data.maThietBi?.trim() || undefined,
+      tenThietBi: data.tenThietBi?.trim() || undefined,
+      model: data.model?.trim() || undefined,
+      serialNumber: data.serialNumber?.trim() || undefined,
+      trangThai:
+        data.trangThai !== undefined && data.trangThai !== null && data.trangThai !== ('' as any)
+          ? Number(data.trangThai)
+          : undefined,
     };
 
     onApply(cleanedData);
   };
+
   return (
     <FilterDrawerBottom<DanhSachThietBiFilterState>
       onApply={handleApply}
@@ -86,6 +97,14 @@ export const DanhSachThietBiFilter = ({ onApply, onReset }: Props) => {
             name="serialNumber"
             label="Serial Number"
             placeholder="Nhập để tìm kiếm"
+          />
+        </Grid>
+        <Grid size={6}>
+          <FilterSelect
+            control={control}
+            name="trangThai"
+            label="Trạng Thái"
+            options={TrangThaiThietBiOptions}
           />
         </Grid>
       </Grid>

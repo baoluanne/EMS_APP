@@ -12,7 +12,7 @@ export interface DanhSachThietBiFilterState {
   ngayHetHanBaoHanh?: string;
   nguyenGia?: string;
   giaTriKhauHao?: string;
-  trangThai?: string;
+  trangThai?: number;
   ghiChu?: string;
   hinhAnh?: string;
   phongHocId?: string;

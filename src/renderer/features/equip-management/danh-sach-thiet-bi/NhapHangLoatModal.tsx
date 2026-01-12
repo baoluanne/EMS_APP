@@ -144,7 +144,7 @@ export const NhapHangLoatModal = ({
       onClose={handleClose}
       onSave={formMethods.handleSubmit(onSubmit)}
       isRefetching={isSubmitting}
-      maxWidth="md"
+      maxWidth="sm"
       saveTitle="Tạo thiết bị"
       cancelTitle="Hủy"
     >
@@ -153,11 +153,15 @@ export const NhapHangLoatModal = ({
           <LoaiThietBiSelection control={control} name="loaiThietBiId" label="Loại thiết bị" />
           <NhaCungCapSelection control={control} name="nhaCungCapId" label="Nhà cung cấp" />
 
-          {/* Tên thiết bị */}
           <Stack direction="row" spacing={2}>
-            <ControlledTextField name="tenThietBi" control={control} label="Tên thiết bị" />
+            <ControlledTextField
+              name="tenThietBi"
+              control={control}
+              label="Tên thiết bị"
+              helperText=""
+            />
           </Stack>
-          {/* Số lượng và Tiền tố */}
+
           <Stack direction="row" spacing={2}>
             <ControlledTextField
               name="soLuong"
@@ -165,6 +169,7 @@ export const NhapHangLoatModal = ({
               label="Số lượng"
               type="number"
               inputProps={{ min: 1, max: 1000 }}
+              helperText=""
             />
             <ControlledTextField
               name="prefixMaThietBi"
@@ -174,7 +179,6 @@ export const NhapHangLoatModal = ({
             />
           </Stack>
 
-          {/* Model và Thông số */}
           <Stack direction="row" spacing={2}>
             <ControlledTextField name="model" control={control} label="Model" />
             <ControlledTextField
@@ -184,7 +188,6 @@ export const NhapHangLoatModal = ({
             />
           </Stack>
 
-          {/* Năm sản xuất và Nguyên giá */}
           <Stack direction="row" spacing={2}>
             <ControlledTextField
               name="namSanXuat"
@@ -200,7 +203,6 @@ export const NhapHangLoatModal = ({
             />
           </Stack>
 
-          {/* Trạng thái */}
           <FilterSelect
             label="Trạng thái"
             options={TrangThaiThietBiOptions.map((opt) => ({
@@ -209,9 +211,8 @@ export const NhapHangLoatModal = ({
             }))}
             name="trangThai"
             control={control}
+            disabled
           />
-
-          {/* Ghi chú */}
           <ControlledTextField name="ghiChu" control={control} label="Ghi chú" multiline rows={2} />
         </Stack>
       </FormProvider>

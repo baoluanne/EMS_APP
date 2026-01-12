@@ -19,11 +19,11 @@ import { TITLE_MODE } from '@renderer/shared/enums';
 
 const defaultValues = {
   id: undefined,
-  tenNhaCungCap: undefined,
-  dienThoai: undefined,
-  email: undefined,
-  diaChi: undefined,
-  ghiChu: undefined,
+  tenNhaCungCap: '',
+  dienThoai: '',
+  email: '',
+  diaChi: '',
+  ghiChu: '',
 };
 
 const NhaCungCapPage = () => {

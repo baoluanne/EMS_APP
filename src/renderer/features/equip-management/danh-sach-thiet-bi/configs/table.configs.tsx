@@ -21,6 +21,8 @@ export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
     headerName: 'Nhà cung cấp',
     minWidth: 200,
     flex: 1,
+    align: 'left',
+    headerAlign: 'left',
     valueGetter: (_, row: any) => row.nhaCungCap?.tenNhaCungCap || '',
   },
   {
@@ -58,7 +60,7 @@ export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
     headerName: 'Ngày mua',
     minWidth: 130,
     flex: 1,
-    valueGetter: (_, row: any) => {
+    valueFormatter: (_, row: any) => {
       if (!row.ngayMua) return '';
       return new Date(row.ngayMua).toLocaleDateString('vi-VN');
     },
@@ -68,7 +70,7 @@ export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
     headerName: 'Ngày hết hạn bảo hành',
     minWidth: 160,
     flex: 1,
-    valueGetter: (_, row: any) => {
+    valueFormatter: (_, row: any) => {
       if (!row.ngayHetHanBaoHanh) return '';
       return new Date(row.ngayHetHanBaoHanh).toLocaleDateString('vi-VN');
     },
@@ -76,26 +78,51 @@ export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
   {
     field: 'nguyenGia',
     headerName: 'Nguyên giá',
+    type: 'number',
     minWidth: 130,
     flex: 1,
+    align: 'right',
+    headerAlign: 'right',
+    valueFormatter: (value) => {
+      if (!value) return '0 ₫';
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(Number(value));
+    },
   },
   {
     field: 'giaTriKhauHao',
     headerName: 'Giá trị khấu hao',
     minWidth: 150,
     flex: 1,
+    align: 'right',
+    headerAlign: 'right',
+    valueFormatter: (value) => {
+      if (!value) return '0 ₫';
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(Number(value));
+    },
   },
   {
     field: 'hinhAnhUrl',
     headerName: 'Hình ảnh',
-    minWidth: 150,
-    flex: 1,
-  },
-  {
-    field: 'ghiChu',
-    headerName: 'Ghi chú',
-    minWidth: 200,
-    flex: 1,
+    minWidth: 100,
+    flex: 0.5,
+    align: 'center',
+    headerAlign: 'center',
+    renderCell: (params) =>
+      params.value ? (
+        <img
+          src={params.value}
+          alt="thiết bị"
+          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+        />
+      ) : (
+        <span style={{ color: '#ccc', fontSize: '12px' }}>Không có ảnh</span>
+      ),
   },
   {
     field: 'trangThai',
@@ -103,5 +130,18 @@ export const danhSachThietBiColumns: GridColDef<DanhSachThietBi>[] = [
     minWidth: 150,
     flex: 1,
     valueGetter: (_, row: any) => getTrangThaiLabel(row.trangThai),
+  },
+  {
+    field: 'phongHocId',
+    headerName: 'Phòng',
+    minWidth: 150,
+    flex: 1,
+    valueGetter: (_, row: any) => row.phongHoc?.tenPhong || 'Chưa phân phòng',
+  },
+  {
+    field: 'ghiChu',
+    headerName: 'Ghi chú',
+    minWidth: 200,
+    flex: 1,
   },
 ];

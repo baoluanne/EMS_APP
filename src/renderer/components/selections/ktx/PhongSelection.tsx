@@ -1,16 +1,9 @@
 import { useMemo } from 'react';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  CircularProgress,
-} from '@mui/material';
-import { Control, Controller } from 'react-hook-form';
+import { CircularProgress, Box } from '@mui/material';
+import { Control } from 'react-hook-form';
 import { z } from 'zod';
-
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { FilterSelect } from '@renderer/components/fields';
 
 interface Props {
   control: Control<any>;
@@ -34,10 +27,14 @@ export const PhongSelection = ({
   const { data, isRefetching } = useCrudPaginationModal({
     entity: 'PhongKtx',
     schema: dummySchema,
-    defaultValues: {},
+    defaultValues: {
+      id: undefined,
+      maPhong: undefined,
+      toaNhaId: undefined,
+    },
   });
 
-  const phongList = useMemo(() => {
+  const options = useMemo(() => {
     if (!data) return [];
 
     let list: any[] = [];
@@ -49,46 +46,39 @@ export const PhongSelection = ({
       list = data;
     }
 
+    // Lọc theo tòa nhà nếu có truyền toaNhaId
     if (toaNhaId) {
       list = list.filter((item) => item.toaNhaId === toaNhaId || item.idToaNha === toaNhaId);
     }
 
-    return list.map((item) => ({
-      id: item.id?.toString(),
-      maPhong: item.maPhong,
-      tenToaNha: item.tenToaNha || item.toaNha?.tenToaNha || '',
-    }));
+    return list.map((item) => {
+      const tenToaNha = item.tenToaNha || item.toaNha?.tenToaNha || '';
+      return {
+        label: `${item.maPhong}${tenToaNha ? ` - ${tenToaNha}` : ''}`,
+        value: item.id?.toString() || '',
+      };
+    });
   }, [data, toaNhaId]);
 
+  if (isRefetching) {
+    return (
+      <Box sx={{ position: 'relative', height: '40px' }}>
+        <CircularProgress
+          size={24}
+          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
+        />
+      </Box>
+    );
+  }
+
   return (
-    <Controller
+    <FilterSelect
+      label={label}
+      options={options}
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl fullWidth error={!!error} disabled={disabled || isRefetching}>
-          <InputLabel required={required} id={`${name}-label`}>
-            {label}
-          </InputLabel>
-          <Select {...field} labelId={`${name}-label`} label={label} value={field.value || ''}>
-            {isRefetching ? (
-              <MenuItem disabled value="">
-                <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải dữ liệu...
-              </MenuItem>
-            ) : phongList.length === 0 ? (
-              <MenuItem disabled value="">
-                -- Không có dữ liệu --
-              </MenuItem>
-            ) : (
-              phongList.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
-                  {item.maPhong} {item.tenToaNha ? `- ${item.tenToaNha}` : ''}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-          {error && <FormHelperText>{error.message}</FormHelperText>}
-        </FormControl>
-      )}
+      required={required}
+      disabled={disabled}
     />
   );
 };

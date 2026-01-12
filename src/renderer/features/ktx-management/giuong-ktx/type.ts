@@ -1,5 +1,5 @@
 export interface GiuongKtx {
-  id?: string | null;
+  id: string;
   maGiuong: string;
   phongKtxId: string;
   maPhong: string;
@@ -7,10 +7,5 @@ export interface GiuongKtx {
   sinhVienId?: string | null;
   tenSinhVien?: string | null;
   trangThai: string;
-}
-
-export interface GiuongKtxFilterState {
-  maGiuong?: string;
-  phongId?: string;
-  trangThai?: string;
+  ghiChu?: string;
 }

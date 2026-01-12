@@ -1,16 +1,9 @@
 import { useMemo } from 'react';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  CircularProgress,
-} from '@mui/material';
-import { Control, Controller } from 'react-hook-form';
-import { z } from 'zod';
-
+import { CircularProgress, Box } from '@mui/material';
+import { Control } from 'react-hook-form';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { FilterSelect } from '@renderer/components/fields';
+import { z } from 'zod';
 
 interface Props {
   control: Control<any>;
@@ -37,7 +30,7 @@ export const GiuongSelection = ({
     defaultValues: {},
   });
 
-  const giuongList = useMemo(() => {
+  const options = useMemo(() => {
     if (!data) return [];
 
     let list: any[] = [];
@@ -58,45 +51,30 @@ export const GiuongSelection = ({
     }
 
     return list.map((item) => ({
-      id: item.id?.toString() || item.Id?.toString(),
-      maGiuong: item.maGiuong || item.MaGiuong || '',
-      trangThai: item.trangThai || item.TrangThai || '',
+      label: `Giường ${item.maGiuong || item.MaGiuong}`,
+      value: (item.id || item.Id)?.toString() || '',
     }));
   }, [data, phongId]);
 
+  if (isRefetching) {
+    return (
+      <Box sx={{ position: 'relative', height: '40px' }}>
+        <CircularProgress
+          size={24}
+          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
+        />
+      </Box>
+    );
+  }
+
   return (
-    <Controller
+    <FilterSelect
+      label={label}
+      options={options}
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl fullWidth error={!!error} disabled={disabled || isRefetching || !phongId}>
-          <InputLabel required={required} id={`${name}-label`}>
-            {label}
-          </InputLabel>
-          <Select {...field} labelId={`${name}-label`} label={label} value={field.value || ''}>
-            {isRefetching ? (
-              <MenuItem disabled value="">
-                <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
-              </MenuItem>
-            ) : !phongId ? (
-              <MenuItem disabled value="">
-                -- Vui lòng chọn phòng trước --
-              </MenuItem>
-            ) : giuongList.length === 0 ? (
-              <MenuItem disabled value="">
-                -- Không có giường trống --
-              </MenuItem>
-            ) : (
-              giuongList.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
-                  Giường {item.maGiuong}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-          {error && <FormHelperText>{error.message}</FormHelperText>}
-        </FormControl>
-      )}
+      required={required}
+      disabled={disabled || !phongId}
     />
   );
 };

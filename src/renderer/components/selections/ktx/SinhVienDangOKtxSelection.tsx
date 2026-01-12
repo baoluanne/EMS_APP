@@ -1,50 +1,70 @@
-import { ControlledSelect } from '@renderer/components/controlled-fields/ControlledSelect';
-import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { CircularProgress, Box } from '@mui/material';
 import { Control } from 'react-hook-form';
+import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { FilterSelect } from '@renderer/components/fields';
+import { z } from 'zod';
 
 interface Props {
   control: Control<any>;
   name: string;
-  label: string;
+  label?: string;
+  required?: boolean;
   disabled?: boolean;
 }
 
-export const SinhVienDangOKtxSelection = ({ control, name, label, disabled }: Props) => {
-  const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
-  const [loading, setLoading] = useState(false);
+const dummySchema = z.object({});
 
-  useEffect(() => {
-    const fetchSinhVien = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get('http://localhost:5031/api/cu-tru-ktx/pagination', {
-          params: { page: 1, pageSize: 1000 },
-        });
-        const data = response.data.data || [];
+export const SinhVienDangOKtxSelection = ({
+  control,
+  name,
+  label = 'Sinh viên đang ở KTX',
+  required = false,
+  disabled = false,
+}: Props) => {
+  const { data, isRefetching } = useCrudPaginationModal({
+    entity: 'CuTruKtx', // Sử dụng entity tương ứng trong hệ thống
+    schema: dummySchema,
+    defaultValues: {},
+  });
 
-        const mappedOptions = data.map((sv: any) => ({
-          value: sv.sinhVienId,
-          label: `${sv.maSinhVien} - ${sv.hoTen} (${sv.maPhong})`,
-        }));
-        setOptions(mappedOptions);
-      } catch (error) {
-        console.error('Lỗi tải danh sách sinh viên:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const options = useMemo(() => {
+    if (!data) return [];
 
-    fetchSinhVien();
-  }, []);
+    let list: any[] = [];
+    if ('data' in data && Array.isArray(data.data)) {
+      list = data.data;
+    } else if ('result' in data && Array.isArray(data.result)) {
+      list = data.result;
+    } else if (Array.isArray(data)) {
+      list = data;
+    }
+
+    return list.map((sv) => ({
+      label: `${sv.maSinhVien} - ${sv.hoTen} (${sv.maPhong || 'N/A'})`,
+      value: sv.sinhVienId?.toString() || '',
+    }));
+  }, [data]);
+
+  if (isRefetching) {
+    return (
+      <Box sx={{ position: 'relative', height: '40px' }}>
+        <CircularProgress
+          size={24}
+          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
+        />
+      </Box>
+    );
+  }
 
   return (
-    <ControlledSelect
-      control={control}
-      name={name}
+    <FilterSelect
       label={label}
       options={options}
-      disabled={disabled || loading}
+      name={name}
+      control={control}
+      required={required}
+      disabled={disabled}
     />
   );
 };

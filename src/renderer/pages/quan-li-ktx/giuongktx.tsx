@@ -24,7 +24,8 @@ const defaultValues: GiuongKtxSchema = {
   id: undefined,
   maGiuong: '',
   phongKtxId: '',
-  trangThai: 'TRONG',
+  trangThai: 'Trong',
+  ghiChu: '',
 };
 
 export default function GiuongKtxPage() {
@@ -47,49 +48,30 @@ export default function GiuongKtxPage() {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
+    refetch,
   } = useCrudPaginationModal<GiuongKtxSchema, GiuongKtxSchema>({
     defaultValues,
     schema: giuongKtxSchema,
     entity: 'giuongKtx',
   });
 
-  const rawRowsData: GiuongKtxSchema[] = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    if ('result' in data && Array.isArray(data.result)) {
-      return data.result;
-    }
-    return [];
-  }, [data]);
+  const rowsData = useMemo(() => {
+    const rawData = (data as any)?.data || (data as any)?.result || [];
+    if (!filters.maGiuong && !filters.phongKtxId && !filters.trangThai) return rawData;
 
-  const rowsData: GiuongKtxSchema[] = useMemo(() => {
-    if (!filters.maGiuong && !filters.phongKtxId && !filters.trangThai) {
-      return rawRowsData;
-    }
-
-    return rawRowsData.filter((row: any) => {
-      const matchMaGiuong =
+    return rawData.filter((row: any) => {
+      const matchMa =
         !filters.maGiuong || row.maGiuong?.toLowerCase().includes(filters.maGiuong.toLowerCase());
-
-      const matchPhongKtxId = !filters.phongKtxId || row.phongKtxId === filters.phongKtxId;
-
+      const matchPhong = !filters.phongKtxId || row.phongKtxId === filters.phongKtxId;
       const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
-
-      return matchMaGiuong && matchPhongKtxId && matchTrangThai;
+      return matchMa && matchPhong && matchTrangThai;
     });
-  }, [rawRowsData, filters]);
+  }, [data, filters]);
 
-  const handleFilterApply = useCallback((filterValues: GiuongKtxFilterState) => {
-    setFilters(filterValues);
-  }, []);
-
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
+  const handleRefresh = useCallback(() => {
+    handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
+    if (refetch) setTimeout(() => refetch(), 300);
+  }, [handleRowSelectionModelChange, refetch]);
 
   return (
     <FormProvider {...formMethods}>
@@ -126,18 +108,24 @@ export default function GiuongKtxPage() {
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDeleteRecord}
+            onDelete={async () => {
+              await handleDeleteRecord();
+              handleRefresh();
+            }}
           />
         )}
 
-        <GiuongKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+        <GiuongKtxFilter onApply={setFilters} onReset={() => setFilters({})} />
 
         <DataGridTable
           columns={columns}
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => formMethods.reset(params.row)}
+          onRowClick={(params) => {
+            handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
+            formMethods.reset(params.row);
+          }}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}

@@ -8,7 +8,7 @@ export const nhaCungCapSchema = z.object({
     .min(1, 'Điện thoại không được để trống')
     .regex(/^\d+$/, 'Điện thoại phải là số'),
   email: z.string().min(1, 'Email không được để trống').email('Email không hợp lệ'),
-  diaChi: z.string().nullable().optional(),
+  diaChi: z.string().min(1, 'Địa chỉ không được để trống'),
   ghiChu: z.string().nullable().optional(),
 });
 

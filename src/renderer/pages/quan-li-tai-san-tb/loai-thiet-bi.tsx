@@ -19,9 +19,9 @@ import { TITLE_MODE } from '@renderer/shared/enums';
 
 const defaultValues = {
   id: undefined,
-  maLoai: undefined,
-  tenLoai: undefined,
-  moTa: undefined,
+  maLoai: '',
+  tenLoai: '',
+  moTa: '',
 };
 
 const LoaiThietBiPage = () => {

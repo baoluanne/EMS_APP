@@ -1,8 +1,9 @@
 import { Grid } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
-import { ControlledTextField } from '@renderer/components/controlled-fields';
+import { ControlledDatePicker, ControlledTextField } from '@renderer/components/controlled-fields';
 import { useForm } from 'react-hook-form';
 import { KiemKeTaiSanFilterState } from '../type';
+import { FilterSelect } from '@renderer/components/fields';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const kiemKeTaiSanDefaultFilters: KiemKeTaiSanFilterState = {
@@ -27,14 +28,22 @@ export const KiemKeTaiSanFilter = ({ onApply, onReset }: Props) => {
     filterMethods.reset(kiemKeTaiSanDefaultFilters);
     onReset();
   };
+  const getLocalDateFormat = (date: Date | string | null | undefined) => {
+    if (!date) return undefined;
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const handleApply = (data: KiemKeTaiSanFilterState) => {
     const cleanedData: KiemKeTaiSanFilterState = {
-      tenDotKiemKe: data.tenDotKiemKe?.trim() ? data.tenDotKiemKe.trim() : undefined,
-      ngayBatDau: data.ngayBatDau?.trim() ? data.ngayBatDau.trim() : undefined,
-      ngayKetThuc: data.ngayKetThuc?.trim() ? data.ngayKetThuc.trim() : undefined,
-      daHoanThanh: data.daHoanThanh?.trim() ? data.daHoanThanh.trim() : undefined,
+      tenDotKiemKe: data.tenDotKiemKe?.trim() || undefined,
+      ngayBatDau: getLocalDateFormat(data.ngayBatDau),
+      ngayKetThuc: getLocalDateFormat(data.ngayKetThuc),
+      daHoanThanh: data.daHoanThanh || undefined,
     };
-
     onApply(cleanedData);
   };
   return (
@@ -53,31 +62,20 @@ export const KiemKeTaiSanFilter = ({ onApply, onReset }: Props) => {
           />
         </Grid>
         <Grid size={6}>
-          <ControlledTextField
-            control={control}
-            name="ngayBatDau"
-            label="Ngày bắt đầu"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            placeholder="Chọn ngày"
-          />
+          <ControlledDatePicker control={control} name="ngayBatDau" label="Ngày bắt đầu" />
         </Grid>
         <Grid size={6}>
-          <ControlledTextField
-            control={control}
-            name="ngayKetThuc"
-            label="Ngày kết thúc"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            placeholder="Chọn ngày"
-          />
+          <ControlledDatePicker control={control} name="ngayKetThuc" label="Ngày kết thúc" />
         </Grid>
         <Grid size={6}>
-          <ControlledTextField
+          <FilterSelect
             control={control}
             name="daHoanThanh"
             label="Đã hoàn thành"
-            placeholder="Nhập để tìm kiếm"
+            options={[
+              { label: 'Có', value: 'true' },
+              { label: 'Không', value: 'false' },
+            ]}
           />
         </Grid>
       </Grid>
