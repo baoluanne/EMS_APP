@@ -97,6 +97,14 @@ const DanhSachThietBiPage = () => {
     const formData = formMethods.getValues();
     const transformedData = {
       ...formData,
+      loaiThietBi:
+        formData.loaiThietBiId !== null && formData.loaiThietBiId !== undefined
+          ? formData.loaiThietBiId
+          : null,
+      nhaCungCap:
+        formData.nhaCungCapId !== null && formData.nhaCungCapId !== undefined
+          ? formData.nhaCungCapId
+          : null,
       namSanXuat: formData.namSanXuat ? Number(formData.namSanXuat) : null,
       nguyenGia: formData.nguyenGia ? Number(formData.nguyenGia) : null,
       giaTriKhauHao: formData.giaTriKhauHao ? Number(formData.giaTriKhauHao) : null,
@@ -116,6 +124,10 @@ const DanhSachThietBiPage = () => {
   const rowsData: DanhSachThietBi[] = useMemo(() => {
     const rawData = (data as any)?.data || (data as any)?.result || [];
     const isFilterActive =
+      !!filters.thongSoKyThuat ||
+      !!filters.model ||
+      !!filters.loaiThietBiId ||
+      !!filters.nhaCungCapId ||
       !!filters.maThietBi ||
       !!filters.tenThietBi ||
       (filters.trangThai !== undefined && filters.trangThai !== null);
@@ -123,6 +135,13 @@ const DanhSachThietBiPage = () => {
     if (!isFilterActive) return rawData as DanhSachThietBi[];
 
     return (rawData as DanhSachThietBi[]).filter((row) => {
+      const matchthongSoKyThuat =
+        !filters.thongSoKyThuat || row.thongSoKyThuat?.includes(filters.thongSoKyThuat);
+      const matchModel = !filters.model || row.model?.includes(filters.model);
+      const matchLoai =
+        !filters.loaiThietBiId || row.loaiThietBiId?.includes(filters.loaiThietBiId);
+      const matchNhaCungCap =
+        !filters.nhaCungCapId || row.nhaCungCapId?.includes(filters.nhaCungCapId);
       const matchMa =
         !filters.maThietBi ||
         row.maThietBi?.toLowerCase().includes(filters.maThietBi.toLowerCase());
@@ -133,7 +152,15 @@ const DanhSachThietBiPage = () => {
         filters.trangThai === undefined ||
         filters.trangThai === null ||
         Number(row.trangThai) === Number(filters.trangThai);
-      return matchMa && matchTen && matchTrangThai;
+      return (
+        matchMa &&
+        matchTen &&
+        matchTrangThai &&
+        matchLoai &&
+        matchNhaCungCap &&
+        matchModel &&
+        matchthongSoKyThuat
+      );
     });
   }, [data, filters]);
 

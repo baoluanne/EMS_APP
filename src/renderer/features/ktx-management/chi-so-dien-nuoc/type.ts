@@ -1,32 +1,4 @@
-export interface ChiSoDienNuocRow {
-  id: string;
-  phongKtxId: string;
-  maPhong: string;
-  tenToaNha: string;
-  thang: number;
-  nam: number;
-  dienCu: number;
-  dienMoi: number;
-  tieuThuDien: number;
-  nuocCu: number;
-  nuocMoi: number;
-  tieuThuNuoc: number;
-  daChot: boolean;
-}
-
-export interface ChiSoDienNuocFormData {
-  id?: string;
-  toaNhaId: string;
-  phongKtxId: string;
-  thangNam: Date | null;
-  dienCu: number;
-  dienMoi: number;
-  nuocCu: number;
-  nuocMoi: number;
-  daChot: boolean;
-}
-
-export interface ChiSoDienNuocFilter {
+export interface ChiSoDienNuocFilterState {
   toaNhaId?: string;
   phongId?: string;
   thang?: number;
@@ -34,9 +6,9 @@ export interface ChiSoDienNuocFilter {
   daChot?: boolean;
 }
 
-export const defaultChiSoDienNuocFilter: ChiSoDienNuocFilter = {
-  toaNhaId: '',
-  phongId: '',
+export const chiSoDienNuocDefaultFilters: ChiSoDienNuocFilterState = {
+  toaNhaId: undefined,
+  phongId: undefined,
   thang: undefined,
   nam: undefined,
   daChot: undefined,

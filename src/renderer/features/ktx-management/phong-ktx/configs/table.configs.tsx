@@ -1,5 +1,4 @@
 import { GridColDef } from '@mui/x-data-grid';
-// import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
 
 const statusFormatter = (value: string) => {
   const statusMap: Record<string, string> = {

@@ -98,7 +98,7 @@ export default function PhongKtxPage() {
             title={isAddMode ? 'Thêm mới Phòng KTX' : 'Chỉnh sửa Phòng KTX'}
             onClose={handleCloseModal}
             onSave={onSave}
-            maxWidth="md"
+            maxWidth="sm"
             titleMode={TITLE_MODE.COLORED}
           >
             <PhongKtxForm />

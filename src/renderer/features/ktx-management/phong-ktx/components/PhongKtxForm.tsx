@@ -7,14 +7,12 @@ import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelec
 export const PhongKtxForm = () => {
   const { control, register, setError, clearErrors } = useFormContext();
 
-  // Chỉ watch những biến cần thiết để xử lý logic tính toán
   const id = useWatch({ control, name: 'id' });
   const soLuongDaO = useWatch({ control, name: 'soLuongDaO' }) || 0;
   const soLuongGiuong = useWatch({ control, name: 'soLuongGiuong' });
 
   const isEditMode = !!id;
 
-  // Logic kiểm tra số giường
   useEffect(() => {
     if (isEditMode && soLuongGiuong !== undefined && soLuongGiuong < soLuongDaO) {
       setError('soLuongGiuong', {
@@ -30,7 +28,6 @@ export const PhongKtxForm = () => {
     <Stack spacing={2.5} sx={{ mt: 1 }}>
       <input type="hidden" {...register('id')} />
 
-      {/* NHÓM 1: VỊ TRÍ */}
       <Box>
         <Typography variant="subtitle2" fontWeight={700} gutterBottom color="primary">
           THÔNG TIN VỊ TRÍ
@@ -42,7 +39,7 @@ export const PhongKtxForm = () => {
                 <ControlledTextField
                   label="Tòa nhà"
                   control={control}
-                  name="tenToaNha" // ControlledTextField tự lấy giá trị từ form qua name
+                  name="tenToaNha"
                   disabled
                   helperText={''}
                 />
@@ -65,7 +62,6 @@ export const PhongKtxForm = () => {
 
       <Divider />
 
-      {/* NHÓM 2: CẤU HÌNH & TRẠNG THÁI */}
       <Box>
         <Typography variant="subtitle2" fontWeight={700} gutterBottom color="primary">
           CẤU HÌNH & TRẠNG THÁI
@@ -126,7 +122,6 @@ export const PhongKtxForm = () => {
 
       <Divider />
 
-      {/* NHÓM 3: GHI CHÚ */}
       <Box>
         <Typography variant="subtitle2" fontWeight={700} gutterBottom color="primary">
           GHI CHÚ BỔ SUNG

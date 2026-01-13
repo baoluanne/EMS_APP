@@ -2266,8 +2266,8 @@ const _appRoutes = [
           {
             label: 'Báo cáo tài sản & sửa chữa',
             path: 'bao-cao-co-so-vat-chat',
-            //Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
-            disabled: true,
+            icon: <FcFolder/>
+            // Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
           },
         ],
       },

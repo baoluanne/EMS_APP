@@ -35,13 +35,11 @@ export const TaiSanKtxFilter = ({ onApply, onReset }: Props) => {
   };
 
   const handleApply = (data: TaiSanKtxFilterState) => {
-    const cleanedData: TaiSanKtxFilterState = {
-      tenTaiSan: data.tenTaiSan?.trim() ? data.tenTaiSan.trim() : undefined,
-      tinhTrang: data.tinhTrang?.trim() ? data.tinhTrang.trim() : undefined,
-      phongKtxId: data.phongKtxId?.trim() ? data.phongKtxId.trim() : undefined,
-    };
-
-    onApply(cleanedData);
+    onApply({
+      tenTaiSan: data.tenTaiSan?.trim() || undefined,
+      tinhTrang: data.tinhTrang || undefined,
+      phongKtxId: data.phongKtxId || undefined,
+    });
   };
 
   return (
@@ -49,6 +47,7 @@ export const TaiSanKtxFilter = ({ onApply, onReset }: Props) => {
       onApply={handleApply}
       onClear={handleClear}
       methods={filterMethods}
+      title="Bộ lọc Tài sản KTX"
     >
       <Grid container spacing={2}>
         <Grid size={4}>
@@ -56,15 +55,15 @@ export const TaiSanKtxFilter = ({ onApply, onReset }: Props) => {
             control={control}
             name="tenTaiSan"
             label="Tên tài sản"
-            placeholder="Nhập để tìm kiếm"
+            placeholder="Tìm tên tài sản..."
           />
         </Grid>
         <Grid size={4}>
-          <PhongSelection control={control} name="phongKtxId" label="Phòng KTX" />
+          <PhongSelection control={control} name="phongKtxId" label="Thuộc phòng" />
         </Grid>
         <Grid size={4}>
           <ControlledTextField control={control} name="tinhTrang" label="Tình trạng" select>
-            <MenuItem value="">Tất cả</MenuItem>
+            <MenuItem value="">-- Tất cả --</MenuItem>
             <MenuItem value="Tot">Tốt</MenuItem>
             <MenuItem value="BinhThuong">Bình thường</MenuItem>
             <MenuItem value="CanSuaChua">Cần sửa chữa</MenuItem>

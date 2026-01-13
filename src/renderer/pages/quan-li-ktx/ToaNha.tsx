@@ -17,7 +17,6 @@ const defaultValues: ToaNhaKtx = {
   id: undefined,
   tenToaNha: '',
   loaiToaNha: '',
-  ghiChu: '',
 };
 
 const ToaNhaPage = () => {

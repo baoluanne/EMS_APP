@@ -1,3 +1,4 @@
+import { useState, useCallback, useMemo } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
@@ -5,29 +6,32 @@ import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
+import { TITLE_MODE } from '@renderer/shared/enums';
 
 import { TaiSanKtxForm } from '../../features/ktx-management/tai-san-ktx/components/TaiSanKtxForm';
 import {
+  taiSanKtxDefaultFilters,
   TaiSanKtxFilter,
   TaiSanKtxFilterState,
 } from '../../features/ktx-management/tai-san-ktx/components/TaiSanKtxFilter';
 import { taiSanKtxColumns as columns } from '../../features/ktx-management/tai-san-ktx/configs/table.configs';
-import { TaiSanKtx, taiSanKtxSchema } from '../../features/ktx-management/tai-san-ktx/validation';
-import React, { useMemo, useCallback } from 'react';
-import { TITLE_MODE } from '@renderer/shared/enums';
+import {
+  taiSanKtxSchema,
+  TaiSanKtxSchema,
+} from '../../features/ktx-management/tai-san-ktx/validation';
 
-const defaultValues = {
+const defaultValues: TaiSanKtxSchema = {
   id: undefined,
-  maTaiSan: undefined,
-  tenTaiSan: undefined,
-  tinhTrang: undefined,
-  giaTri: undefined,
-  ghiChu: undefined,
-  phongKtxId: undefined,
+  maTaiSan: '',
+  tenTaiSan: '',
+  tinhTrang: 'Tot',
+  giaTri: 0,
+  ghiChu: '',
+  phongKtxId: '',
 };
 
-const TaiSanKtxPage = () => {
-  const [filters, setFilters] = React.useState<TaiSanKtxFilterState>({});
+export default function TaiSanKtxPage() {
+  const [filters, setFilters] = useState<TaiSanKtxFilterState>(taiSanKtxDefaultFilters);
 
   const {
     formMethods,
@@ -46,52 +50,31 @@ const TaiSanKtxPage = () => {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
-  } = useCrudPaginationModal<TaiSanKtx, TaiSanKtx>({
+    refetch,
+  } = useCrudPaginationModal<TaiSanKtxSchema, TaiSanKtxSchema>({
     defaultValues,
     schema: taiSanKtxSchema,
     entity: 'tai-san-ktx',
   });
 
-  const rawRowsData: TaiSanKtx[] = React.useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    if ('result' in data && Array.isArray(data.result)) {
-      return data.result;
-    }
-    return [];
-  }, [data]);
+  const rowsData = useMemo(() => {
+    const rawData = (data as any)?.data || (data as any)?.result || [];
+    if (!filters.tenTaiSan && !filters.tinhTrang && !filters.phongKtxId) return rawData;
 
-  const rowsData: TaiSanKtx[] = useMemo(() => {
-    if (!filters.tenTaiSan && !filters.tinhTrang && !filters.phongKtxId) {
-      return rawRowsData;
-    }
-
-    return rawRowsData.filter((row) => {
-      const matchTenTaiSan =
+    return rawData.filter((row: any) => {
+      const matchTen =
         !filters.tenTaiSan ||
         row.tenTaiSan?.toLowerCase().includes(filters.tenTaiSan.toLowerCase());
-
-      const matchTinhTrang =
-        !filters.tinhTrang ||
-        row.tinhTrang?.toLowerCase().includes(filters.tinhTrang.toLowerCase());
-
-      const matchPhongKtx = !filters.phongKtxId || row.phongKtxId === filters.phongKtxId;
-
-      return matchTenTaiSan && matchTinhTrang && matchPhongKtx;
+      const matchTinhTrang = !filters.tinhTrang || row.tinhTrang === filters.tinhTrang;
+      const matchPhong = !filters.phongKtxId || row.phongKtxId === filters.phongKtxId;
+      return matchTen && matchTinhTrang && matchPhong;
     });
-  }, [rawRowsData, filters]);
+  }, [data, filters]);
 
-  const handleFilterApply = useCallback((filterValues: TaiSanKtxFilterState) => {
-    setFilters(filterValues);
-  }, []);
-
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
+  const handleRefresh = useCallback(() => {
+    handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
+    if (refetch) setTimeout(() => refetch(), 300);
+  }, [handleRowSelectionModelChange, refetch]);
 
   return (
     <FormProvider {...formMethods}>
@@ -102,10 +85,10 @@ const TaiSanKtxPage = () => {
           onAdd={onAdd}
           onEdit={onEdit}
           onExport={(dataOption, columnOption) => {
-            exportPaginationToExcel<TaiSanKtx>({
+            exportPaginationToExcel<TaiSanKtxSchema>({
               entity: 'tai-san-ktx',
               filteredData: rowsData,
-              columns: columns,
+              columns,
               options: { dataOption, columnOption },
               columnVisibilityModel,
               fileName: 'Danh_sach_tai_san_ktx',
@@ -128,27 +111,31 @@ const TaiSanKtxPage = () => {
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDeleteRecord}
+            onDelete={async () => {
+              await handleDeleteRecord();
+              handleRefresh();
+            }}
           />
         )}
 
-        <TaiSanKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+        <TaiSanKtxFilter onApply={setFilters} onReset={() => setFilters(taiSanKtxDefaultFilters)} />
 
         <DataGridTable
           columns={columns}
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => formMethods.reset(params.row)}
+          onRowClick={(params) => {
+            handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
+            formMethods.reset(params.row);
+          }}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
-          height="calc(100% - 85px)"
+          height="calc(100% - 120px)"
           {...tableConfig}
         />
       </Stack>
     </FormProvider>
   );
-};
-
-export default TaiSanKtxPage;
+}

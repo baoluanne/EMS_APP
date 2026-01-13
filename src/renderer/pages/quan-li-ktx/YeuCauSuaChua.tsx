@@ -1,23 +1,20 @@
-import { Stack } from '@mui/material';
-import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
-
 import { YeuCauSuaChuaForm } from '@renderer/features/ktx-management/yeu-cau-sua-chua/components/YeuCauSuaChuaForm';
-import {
-  YeuCauSuaChuaFilter,
-  YeuCauSuaChuaFilterState,
-} from '@renderer/features/ktx-management/yeu-cau-sua-chua/components/YeuCauSuaChuaFilter';
+import { YeuCauSuaChuaFilter } from '@renderer/features/ktx-management/yeu-cau-sua-chua/components/YeuCauSuaChuaFilter';
 import { yeuCauSuaChuaColumns } from '@renderer/features/ktx-management/yeu-cau-sua-chua/configs/table.configs';
+import { YeuCauSuaChuaFilterState } from '@renderer/features/ktx-management/yeu-cau-sua-chua/type';
 import {
   YeuCauSuaChua,
   yeuCauSuaChuaSchema,
 } from '@renderer/features/ktx-management/yeu-cau-sua-chua/validation';
 import { useMemo, useState, useCallback } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
+import { FormProvider } from 'react-hook-form';
+import { Stack } from '@mui/material';
 
 const defaultValues: YeuCauSuaChua = {
   id: undefined,
@@ -26,7 +23,7 @@ const defaultValues: YeuCauSuaChua = {
   sinhVienId: '',
   phongKtxId: '',
   taiSanKtxId: '',
-  trangThai: 'MoiGui' as const,
+  trangThai: 'MoiGui',
   ghiChuXuLy: '',
   ngayGui: '',
   ngayXuLy: '',
@@ -42,14 +39,10 @@ const defaultValues: YeuCauSuaChua = {
 
 const convertDateToIsoDateTime = (dateString: string): string => {
   if (!dateString) return '';
-
   try {
-    if (dateString.includes('T')) {
-      return dateString;
-    }
-
-    const date = new Date(dateString + 'T00:00:00Z');
-    return date.toISOString();
+    return dateString.includes('T')
+      ? dateString
+      : new Date(dateString + 'T00:00:00Z').toISOString();
   } catch {
     return '';
   }
@@ -57,7 +50,6 @@ const convertDateToIsoDateTime = (dateString: string): string => {
 
 const YeuCauSuaChuaPage = () => {
   const [filters, setFilters] = useState<YeuCauSuaChuaFilterState>({});
-
   const {
     formMethods,
     data,
@@ -66,7 +58,7 @@ const YeuCauSuaChuaPage = () => {
     handleRowSelectionModelChange,
     isDeleteOpenModal,
     onAdd,
-    onEdit: originalOnEdit,
+    onEdit,
     onSave: originalOnSave,
     handleDeleteRecord,
     selectedRows,
@@ -81,62 +73,36 @@ const YeuCauSuaChuaPage = () => {
     entity: 'yeu-cau-sua-chua',
   });
 
-  const rawRowsData = useMemo(() => {
-    if (!data) return [];
-    return 'data' in data && Array.isArray(data.data) ? data.data : [];
-  }, [data]);
-
   const rowsData = useMemo(() => {
-    if (!filters.tieuDe && !filters.trangThai && !filters.phongKtxId && !filters.sinhVienId) {
-      return rawRowsData;
-    }
+    const raw = data && 'data' in data && Array.isArray(data.data) ? data.data : [];
+    if (!filters.tieuDe && !filters.trangThai && !filters.phongKtxId && !filters.sinhVienId)
+      return raw;
+    return raw.filter(
+      (row: any) =>
+        (!filters.tieuDe || row.tieuDe?.toLowerCase().includes(filters.tieuDe.toLowerCase())) &&
+        (!filters.trangThai || row.trangThai === filters.trangThai) &&
+        (!filters.phongKtxId || row.phongKtxId === filters.phongKtxId) &&
+        (!filters.sinhVienId || row.sinhVienId === filters.sinhVienId),
+    );
+  }, [data, filters]);
 
-    return rawRowsData.filter((row) => {
-      const matchTieuDe =
-        !filters.tieuDe || row.tieuDe?.toLowerCase().includes(filters.tieuDe.toLowerCase());
-
-      const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
-
-      const matchPhong = !filters.phongKtxId || row.phongKtxId === filters.phongKtxId;
-
-      const matchSinhVien = !filters.sinhVienId || row.sinhVienId === filters.sinhVienId;
-
-      return matchTieuDe && matchTrangThai && matchPhong && matchSinhVien;
-    });
-  }, [rawRowsData, filters]);
-
-  const handleFilterApply = useCallback((filterValues: YeuCauSuaChuaFilterState) => {
-    setFilters(filterValues);
-  }, []);
-
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
-
-  const handleRowClick = useCallback(
-    (params: any) => {
-      const mergedData: YeuCauSuaChua = {
-        ...defaultValues,
-        ...params.row,
-      };
-      formMethods.reset(mergedData);
-    },
-    [formMethods],
-  );
   const onSave = useCallback(async () => {
     const formData = formMethods.getValues();
-
-    const preparedData = {
+    formMethods.reset({
       ...formData,
       ngayGui: convertDateToIsoDateTime(formData.ngayGui || ''),
       ngayXuLy: convertDateToIsoDateTime(formData.ngayXuLy || ''),
       ngayHoanThanh: convertDateToIsoDateTime(formData.ngayHoanThanh || ''),
-    };
-
-    formMethods.reset(preparedData);
-
+    });
     return originalOnSave();
   }, [formMethods, originalOnSave]);
+
+  const handleRowClick = useCallback(
+    (params: any) => {
+      formMethods.reset({ ...defaultValues, ...params.row });
+    },
+    [formMethods],
+  );
 
   return (
     <FormProvider {...formMethods}>
@@ -145,7 +111,7 @@ const YeuCauSuaChuaPage = () => {
           selectedRowIds={selectedRows}
           onDelete={() => setIsDeleteOpenModal(true)}
           onAdd={onAdd}
-          onEdit={originalOnEdit}
+          onEdit={onEdit}
           onExport={(dataOption, columnOption) =>
             exportPaginationToExcel<YeuCauSuaChua>({
               entity: 'yeu-cau-sua-chua',
@@ -153,43 +119,39 @@ const YeuCauSuaChuaPage = () => {
               columns: yeuCauSuaChuaColumns,
               options: { dataOption, columnOption },
               columnVisibilityModel,
-              fileName: 'Danh_sach_yeu_cau_sua_chua',
+              fileName: 'Danh_sach_sua_chua',
             })
           }
         />
-
         {isModalOpen && (
           <FormDetailsModal
-            title={isAddMode ? 'Tạo yêu cầu sửa chữa mới' : 'Chỉnh sửa yêu cầu sửa chữa'}
+            title={isAddMode ? 'Tạo yêu cầu mới' : 'Chỉnh sửa yêu cầu'}
             onClose={handleCloseModal}
             onSave={onSave}
-            maxWidth="md"
+            maxWidth="sm"
             titleMode={TITLE_MODE.COLORED}
           >
             <YeuCauSuaChuaForm />
           </FormDetailsModal>
         )}
-
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
             onDelete={handleDeleteRecord}
           />
         )}
-
-        <YeuCauSuaChuaFilter onApply={handleFilterApply} onReset={handleFilterReset} />
-
+        <YeuCauSuaChuaFilter onApply={setFilters} onReset={() => setFilters({})} />
         <DataGridTable
           columns={yeuCauSuaChuaColumns}
           rows={rowsData}
-          checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => handleRowClick(params)}
+          onRowClick={handleRowClick}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
           height="calc(100% - 85px)"
           {...tableConfig}
+          checkboxSelection
         />
       </Stack>
     </FormProvider>

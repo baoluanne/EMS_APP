@@ -1,7 +1,8 @@
-import { Stack, Grid, TextField, FormControlLabel, Checkbox, Alert } from '@mui/material';
-import { Controller, useFormContext, useWatch, useFormState } from 'react-hook-form';
+import { Stack, Box, Typography, Alert, Checkbox, FormControlLabel } from '@mui/material';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
 import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
+import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -9,18 +10,10 @@ import dayjs from 'dayjs';
 import { useEffect } from 'react';
 
 export const ChiSoDienNuocForm = () => {
-  const {
-    control,
-    register,
-    setValue,
-    formState: { errors },
-  } = useFormContext();
-
-  const { isSubmitting } = useFormState({ control });
+  const { control, register, setValue } = useFormContext();
 
   const toaNhaId = useWatch({ control, name: 'toaNhaId' });
   const daChot = useWatch({ control, name: 'daChot' });
-
   const dienCu = useWatch({ control, name: 'dienCu' }) ?? 0;
   const dienMoi = useWatch({ control, name: 'dienMoi' }) ?? 0;
   const nuocCu = useWatch({ control, name: 'nuocCu' }) ?? 0;
@@ -29,155 +22,148 @@ export const ChiSoDienNuocForm = () => {
   const tieuThuDien = dienMoi >= dienCu ? dienMoi - dienCu : 0;
   const tieuThuNuoc = nuocMoi >= nuocCu ? nuocMoi - nuocCu : 0;
 
-  const isFormDisabled = daChot || isSubmitting;
-
   useEffect(() => {
-    setValue('phongKtxId', '');
+    if (toaNhaId) {
+      setValue('phongKtxId', '');
+    }
   }, [toaNhaId, setValue]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Stack spacing={3}>
-        {daChot && <Alert severity="warning"> Bản ghi đã chốt, không thể chỉnh sửa.</Alert>}
+      <Stack spacing={2.5}>
+        {daChot && <Alert severity="warning">Bản ghi đã chốt, không thể chỉnh sửa.</Alert>}
 
         <input type="hidden" {...register('id')} />
 
-        <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà " />
-
-        <PhongSelection
-          control={control}
-          name="phongKtxId"
-          label="Phòng"
-          disabled={!toaNhaId}
-          toaNhaId={toaNhaId}
-        />
-
-        <Controller
-          name="thangNam"
-          control={control}
-          render={({ field, fieldState }) => {
-            let dayjsValue: any = null;
-            if (field.value) {
-              if (dayjs.isDayjs(field.value)) {
-                dayjsValue = field.value;
-              } else if (field.value instanceof Date) {
-                dayjsValue = dayjs(field.value);
-              }
-            }
-
-            return (
-              <DatePicker
-                value={dayjsValue}
-                onChange={(newValue: any) => {
-                  if (newValue) {
-                    const dayjsObj = dayjs.isDayjs(newValue) ? newValue : dayjs(newValue);
-                    field.onChange(dayjsObj.toDate());
-                  } else {
-                    field.onChange(null);
-                  }
-                }}
-                label="Tháng/Năm"
-                views={['month', 'year']}
-                format="MM/YYYY"
-                disabled={isFormDisabled}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: !!fieldState.error,
-                    helperText: fieldState.error?.message,
-                  },
-                }}
-              />
-            );
-          }}
-        />
-
-        <Grid container spacing={2}>
-          <Grid size={6}>
-            <TextField
-              label="Chỉ số điện cũ"
-              type="number"
-              fullWidth
-              disabled={isFormDisabled}
-              {...register('dienCu', {
-                valueAsNumber: true,
-              })}
-              error={!!errors.dienCu}
-              helperText={errors.dienCu?.message as string}
+        <Stack direction="row" spacing={2}>
+          <Box sx={{ flex: 1 }}>
+            <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà" disabled={daChot} />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <PhongSelection
+              control={control}
+              name="phongKtxId"
+              label="Phòng"
+              disabled={!toaNhaId || daChot}
+              toaNhaId={toaNhaId}
             />
-          </Grid>
-          <Grid size={6}>
-            <TextField
-              label="Chỉ số điện mới"
-              type="number"
-              fullWidth
-              disabled={isFormDisabled}
-              {...register('dienMoi', {
-                valueAsNumber: true,
-                min: { value: dienCu, message: `Phải ≥ ${dienCu}` },
-              })}
-              error={!!errors.dienMoi}
-              helperText={errors.dienMoi?.message as string}
+          </Box>
+        </Stack>
+
+        <Stack direction="row" spacing={2}>
+          <Box sx={{ flex: 1 }}>
+            <Controller
+              name="thangNam"
+              control={control}
+              render={({ field, fieldState }) => (
+                <DatePicker
+                  label="Tháng/Năm áp dụng"
+                  views={['month', 'year']}
+                  format="MM/YYYY"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(newValue: any) => {
+                    if (newValue) {
+                      const d = dayjs(newValue);
+                      field.onChange(d.isValid() ? d.toDate() : null);
+                    } else {
+                      field.onChange(null);
+                    }
+                  }}
+                  disabled={daChot}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!fieldState.error,
+                      helperText: fieldState.error?.message,
+                    },
+                  }}
+                />
+              )}
             />
-          </Grid>
-          <Grid size={12}>
-            <TextField
-              label="Tiêu thụ điện (kWh)"
+          </Box>
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            <FormControlLabel
+              control={<Checkbox {...register('daChot')} disabled={daChot} />}
+              label="Xác nhận chốt chỉ số"
+            />
+          </Box>
+        </Stack>
+
+        <Typography
+          variant="subtitle2"
+          sx={{ color: 'primary.main', fontWeight: 700, borderBottom: '1px dashed', pb: 0.5 }}
+        >
+          ⚡ ĐIỆN (kWh)
+        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Box sx={{ flex: 1 }}>
+            <ControlledTextField
+              label="Chỉ số cũ"
+              control={control}
+              name="dienCu"
+              type="number"
+              disabled={daChot}
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <ControlledTextField
+              label="Chỉ số mới"
+              control={control}
+              name="dienMoi"
+              type="number"
+              disabled={daChot}
+              helperText={''}
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <ControlledTextField
+              label="Tiêu thụ"
+              control={control}
+              name="tieuThuDienDisplay"
               value={tieuThuDien}
-              fullWidth
               disabled
-              InputProps={{
-                style: { fontWeight: 'bold', color: '#1976d2' },
-              }}
+              InputProps={{ style: { fontWeight: 'bold' } }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
 
-        <Grid container spacing={2}>
-          <Grid size={6}>
-            <TextField
-              label="Chỉ số nước cũ"
+        <Typography
+          variant="subtitle2"
+          sx={{ color: 'primary.main', fontWeight: 700, borderBottom: '1px dashed', pb: 0.5 }}
+        >
+          💧 NƯỚC (m³)
+        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Box sx={{ flex: 1 }}>
+            <ControlledTextField
+              label="Chỉ số cũ"
+              control={control}
+              name="nuocCu"
               type="number"
-              fullWidth
-              disabled={isFormDisabled}
-              {...register('nuocCu', {
-                valueAsNumber: true,
-              })}
-              error={!!errors.nuocCu}
-              helperText={errors.nuocCu?.message as string}
+              disabled={daChot}
             />
-          </Grid>
-          <Grid size={6}>
-            <TextField
-              label="Chỉ số nước mới"
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <ControlledTextField
+              label="Chỉ số mới"
+              control={control}
+              name="nuocMoi"
               type="number"
-              fullWidth
-              disabled={isFormDisabled}
-              {...register('nuocMoi', {
-                valueAsNumber: true,
-                min: { value: nuocCu, message: `Phải ≥ ${nuocCu}` },
-              })}
-              error={!!errors.nuocMoi}
-              helperText={errors.nuocMoi?.message as string}
+              disabled={daChot}
+              helperText={''}
             />
-          </Grid>
-          <Grid size={12}>
-            <TextField
-              label="Tiêu thụ nước (m³)"
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <ControlledTextField
+              label="Tiêu thụ"
+              control={control}
+              name="tieuThuNuocDisplay"
               value={tieuThuNuoc}
-              fullWidth
               disabled
-              InputProps={{
-                style: { fontWeight: 'bold', color: '#1976d2' },
-              }}
+              InputProps={{ style: { fontWeight: 'bold' } }}
             />
-          </Grid>
-        </Grid>
-
-        <FormControlLabel
-          control={<Checkbox {...register('daChot')} disabled={isFormDisabled} />}
-          label="✓ Đã chốt chỉ số"
-        />
+          </Box>
+        </Stack>
       </Stack>
     </LocalizationProvider>
   );

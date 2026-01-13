@@ -26,16 +26,6 @@ export const ToaNhaForm = () => {
           helperText={''}
         />
       </Stack>
-
-      <ControlledTextField
-        label="Ghi chú"
-        control={control}
-        name="ghiChu"
-        helperText={''}
-        multiline
-        minRows={3}
-        placeholder="Nhập thông tin mô tả thêm..."
-      />
     </Stack>
   );
 };

@@ -23,7 +23,7 @@ export const SinhVienDangOKtxSelection = ({
   disabled = false,
 }: Props) => {
   const { data, isRefetching } = useCrudPaginationModal({
-    entity: 'CuTruKtx', // Sử dụng entity tương ứng trong hệ thống
+    entity: 'cu-tru-ktx',
     schema: dummySchema,
     defaultValues: {},
   });

@@ -152,7 +152,7 @@ export default function ViPhamNoiQuyKtxPage() {
             title={isAddMode ? 'Ghi nhận vi phạm mới' : 'Cập nhật vi phạm'}
             onClose={handleCloseModal}
             onSave={formMethods.handleSubmit(onSubmit)}
-            maxWidth="md"
+            maxWidth="sm"
             titleMode={TITLE_MODE.COLORED}
           >
             <ViPhamKtxForm />

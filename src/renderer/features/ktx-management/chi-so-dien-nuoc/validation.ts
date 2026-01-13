@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import dayjs from 'dayjs';
 
 export const chiSoDienNuocSchema = z.object({
   id: z.string().optional(),
@@ -8,10 +7,10 @@ export const chiSoDienNuocSchema = z.object({
   thangNam: z.date().refine((val) => val instanceof Date && !isNaN(val.getTime()), {
     message: 'Vui lòng chọn tháng năm hợp lệ',
   }),
-  dienCu: z.number().min(0),
-  dienMoi: z.number().min(0),
-  nuocCu: z.number().min(0),
-  nuocMoi: z.number().min(0),
+  dienCu: z.coerce.number().min(0, 'Chỉ số cũ không được âm'),
+  dienMoi: z.coerce.number().min(0, 'Chỉ số mới không được âm'),
+  nuocCu: z.coerce.number().min(0, 'Chỉ số cũ không được âm'),
+  nuocMoi: z.coerce.number().min(0, 'Chỉ số mới không được âm'),
   daChot: z.boolean(),
 });
 
@@ -27,21 +26,4 @@ export const defaultValues: ChiSoDienNuocFormData = {
   nuocCu: 0,
   nuocMoi: 0,
   daChot: false,
-};
-
-// Transform function để gửi lên backend
-export const transformChiSoDienNuoc = (formData: ChiSoDienNuocFormData): Record<string, any> => {
-  const dayjsDate = dayjs(formData.thangNam);
-
-  return {
-    id: formData.id,
-    phongKtxId: formData.phongKtxId,
-    thang: dayjsDate.month() + 1, // month() trả về 0-11, cần +1
-    nam: dayjsDate.year(),
-    dienCu: formData.dienCu,
-    dienMoi: formData.dienMoi,
-    nuocCu: formData.nuocCu,
-    nuocMoi: formData.nuocMoi,
-    daChot: formData.daChot,
-  };
 };

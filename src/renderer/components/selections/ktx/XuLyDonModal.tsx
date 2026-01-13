@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, Box, Typography, TextField, Button, CircularProgress, Alert } from '@mui/material';
+import { Stack, Box, Typography, Button, CircularProgress, Alert, Divider } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
@@ -15,6 +15,8 @@ import { FormDetailsModal } from '@renderer/components/modals';
 import { ToaNhaSelection } from '@renderer/components/selections/ktx/ToaNhaSelection';
 import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
 import { GiuongSelection } from '@renderer/components/selections/ktx/GiuongSelection';
+import { ControlledTextField } from '@renderer/components/controlled-fields'; // Import mới
+import ControlledDatePicker from '@renderer/components/controlled-fields/ControlledDatePicker'; // Import mới
 
 import { DonKtxResponse } from '@renderer/features/ktx-management/don-sinh-vien/type';
 
@@ -22,8 +24,8 @@ const xuLyDonSchema = z.object({
   toaNhaId: z.string().optional(),
   phongId: z.string().optional(),
   giuongId: z.string().optional(),
-  ngayBatDauDuyet: z.string().optional(),
-  ngayHetHanDuyet: z.string().optional(),
+  ngayBatDauDuyet: z.any().optional(),
+  ngayHetHanDuyet: z.any().optional(),
   ghiChu: z.string().optional(),
   lyDoTuChoi: z.string().optional(),
 });
@@ -47,8 +49,8 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
       toaNhaId: '',
       phongId: '',
       giuongId: '',
-      ngayBatDauDuyet: '',
-      ngayHetHanDuyet: '',
+      ngayBatDauDuyet: null,
+      ngayHetHanDuyet: null,
       ghiChu: '',
       lyDoTuChoi: '',
     },
@@ -56,6 +58,7 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
 
   const { control, watch, setValue, reset, handleSubmit } = formMethods;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [toaNhaId, phongId, ngayBatDauDuyet, ngayHetHanDuyet, lyDoTuChoi] = watch([
     'toaNhaId',
     'phongId',
@@ -73,10 +76,8 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
         toaNhaId: '',
         phongId: '',
         giuongId: '',
-        ngayBatDauDuyet: don.ngayBatDauMongMuon
-          ? don.ngayBatDauMongMuon.split('T')[0]
-          : new Date().toISOString().split('T')[0],
-        ngayHetHanDuyet: don.ngayHetHanMongMuon ? don.ngayHetHanMongMuon.split('T')[0] : '',
+        ngayBatDauDuyet: don.ngayBatDauMongMuon || new Date(),
+        ngayHetHanDuyet: don.ngayHetHanMongMuon || null,
         ghiChu: '',
         lyDoTuChoi: '',
       });
@@ -111,11 +112,7 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
       }
       if (isVaoOOrGiaHan) {
         if (!data.ngayBatDauDuyet || !data.ngayHetHanDuyet) {
-          alert('Nhập đủ ngày tháng');
-          return;
-        }
-        if (new Date(data.ngayHetHanDuyet) <= new Date(data.ngayBatDauDuyet)) {
-          alert('Ngày hết hạn phải sau ngày bắt đầu');
+          alert('Vui lòng nhập đủ ngày bắt đầu và ngày hết hạn');
           return;
         }
       }
@@ -150,7 +147,6 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
       if (data.ghiChu?.trim()) params.append('ghiChuDuyet', data.ghiChu.trim());
 
       await axios.post(`${env.API_ENDPOINT}/don-ktx/${don?.id}${endpoint}?${params.toString()}`);
-
       queryClient.invalidateQueries({ queryKey: ['don-ktx'] });
       onSuccess();
     } catch (error: any) {
@@ -191,10 +187,11 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
       maxWidth="sm"
     >
       <FormProvider {...formMethods}>
-        <Stack spacing={3}>
+        <Stack spacing={2.5}>
+          {/* Section: Thông tin sinh viên */}
           <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Thông tin sinh viên
+            <Typography variant="subtitle2" color="primary" fontWeight={700} gutterBottom>
+              THÔNG TIN SINH VIÊN
             </Typography>
             <Typography variant="body1" fontWeight="bold">
               {don.maSinhVien} - {don.hoTenSinhVien}
@@ -204,82 +201,92 @@ const XuLyDonModal: React.FC<XuLyDonModalProps> = ({ open, onClose, don, onSucce
             </Typography>
           </Box>
 
+          {/* Section: Thời hạn cư trú */}
           {isVaoOOrGiaHan && (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                label="Ngày bắt đầu"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                {...formMethods.register('ngayBatDauDuyet')}
-                inputProps={{ min: new Date().toISOString().split('T')[0] }}
-              />
-              <TextField
-                label="Ngày hết hạn"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                {...formMethods.register('ngayHetHanDuyet')}
-                error={
-                  !!ngayBatDauDuyet &&
-                  !!ngayHetHanDuyet &&
-                  new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)
-                }
-                helperText={
-                  !!ngayBatDauDuyet &&
-                  !!ngayHetHanDuyet &&
-                  new Date(ngayHetHanDuyet) <= new Date(ngayBatDauDuyet)
-                    ? 'Lỗi ngày tháng'
-                    : ''
-                }
-              />
-            </Stack>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                THỜI HẠN DUYỆT CƯ TRÚ
+              </Typography>
+              <Stack direction="row" spacing={2}>
+                <Box flex={1}>
+                  <ControlledDatePicker
+                    control={control}
+                    name="ngayBatDauDuyet"
+                    label="Ngày bắt đầu"
+                  />
+                </Box>
+                <Box flex={1}>
+                  <ControlledDatePicker
+                    control={control}
+                    name="ngayHetHanDuyet"
+                    label="Ngày hết hạn"
+                  />
+                </Box>
+              </Stack>
+            </Box>
           )}
 
+          {/* Section: Bố trí chỗ ở */}
           {isVaoOOrChuyenPhong && (
-            <>
-              <ToaNhaSelection control={control} name="toaNhaId" label="Chọn tòa nhà" />
-              <PhongSelection
-                control={control}
-                name="phongId"
-                label="Chọn phòng"
-                disabled={!toaNhaId}
-                toaNhaId={toaNhaId}
-              />
-              <GiuongSelection
-                control={control}
-                name="giuongId"
-                label="Giường trống"
-                disabled={!phongId}
-                phongId={phongId}
-              />
-            </>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                BỐ TRÍ CHỖ Ở
+              </Typography>
+              <Stack spacing={2}>
+                <ToaNhaSelection control={control} name="toaNhaId" label="Tòa nhà" />
+                <Stack direction="row" spacing={2}>
+                  <Box flex={1}>
+                    <PhongSelection
+                      control={control}
+                      name="phongId"
+                      label="Phòng"
+                      disabled={!toaNhaId}
+                      toaNhaId={toaNhaId}
+                    />
+                  </Box>
+                  <Box flex={1}>
+                    <GiuongSelection
+                      control={control}
+                      name="giuongId"
+                      label="Giường trống"
+                      disabled={!phongId}
+                      phongId={phongId}
+                    />
+                  </Box>
+                </Stack>
+              </Stack>
+            </Box>
           )}
 
-          <TextField
-            label="Ghi chú duyệt"
-            fullWidth
+          {/* Section: Ghi chú duyệt */}
+          <ControlledTextField
+            control={control}
+            name="ghiChu"
+            label="Ghi chú duyệt đơn"
             multiline
             rows={2}
-            {...formMethods.register('ghiChu')}
+            placeholder="Nhập nội dung ghi chú cho sinh viên..."
           />
 
           {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
-          <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed grey' }}>
-            <Typography variant="subtitle2" color="error" gutterBottom>
-              Hoặc từ chối đơn này
+          <Divider sx={{ borderStyle: 'dashed', my: 1 }} />
+
+          {/* Section: Từ chối đơn */}
+          <Box>
+            <Typography variant="subtitle2" color="error" fontWeight={700} gutterBottom>
+              TỪ CHỐI ĐƠN NÀY
             </Typography>
             <Stack direction="row" spacing={1} alignItems="flex-start">
-              <TextField
-                label="Lý do từ chối"
-                fullWidth
-                multiline
-                rows={1}
-                size="small"
-                {...formMethods.register('lyDoTuChoi')}
-                placeholder="Nhập lý do..."
-              />
+              <Box flex={1}>
+                <ControlledTextField
+                  control={control}
+                  name="lyDoTuChoi"
+                  label="Lý do từ chối"
+                  placeholder="Nhập lý do không duyệt đơn..."
+                  size="small"
+                />
+              </Box>
               <Button
                 variant="outlined"
                 color="error"

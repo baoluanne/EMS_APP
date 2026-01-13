@@ -16,7 +16,7 @@ export const danhSachThietBiDefaultFilters: DanhSachThietBiFilterState = {
   maThietBi: undefined,
   tenThietBi: undefined,
   model: undefined,
-  serialNumber: undefined,
+  thongSoKyThuat: undefined,
   trangThai: undefined,
 };
 
@@ -44,7 +44,7 @@ export const DanhSachThietBiFilter = ({ onApply, onReset }: Props) => {
       maThietBi: data.maThietBi?.trim() || undefined,
       tenThietBi: data.tenThietBi?.trim() || undefined,
       model: data.model?.trim() || undefined,
-      serialNumber: data.serialNumber?.trim() || undefined,
+      thongSoKyThuat: data.thongSoKyThuat?.trim() || undefined,
       trangThai:
         data.trangThai !== undefined && data.trangThai !== null && data.trangThai !== ('' as any)
           ? Number(data.trangThai)
@@ -94,8 +94,8 @@ export const DanhSachThietBiFilter = ({ onApply, onReset }: Props) => {
         <Grid size={6}>
           <ControlledTextField
             control={control}
-            name="serialNumber"
-            label="Serial Number"
+            name="thongSoKyThuat"
+            label="Thông số kỹ thuật"
             placeholder="Nhập để tìm kiếm"
           />
         </Grid>

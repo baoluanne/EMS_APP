@@ -221,7 +221,7 @@ export default function DanhSachDonSinhVien() {
             title={isAddMode ? 'Tạo đơn mới' : 'Cập nhật đơn'}
             onClose={handleCloseModal}
             onSave={formMethods.handleSubmit(onSubmit)}
-            maxWidth="md"
+            maxWidth="sm"
             titleMode={TITLE_MODE.COLORED}
           >
             <DonSinhVienForm />

@@ -1,78 +1,59 @@
 import { GridColDef } from '@mui/x-data-grid';
-//import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+import { Chip } from '@mui/material';
 
 export const taiSanKtxColumns: GridColDef[] = [
   {
     field: 'maTaiSan',
     headerName: 'Mã tài sản',
-    minWidth: 120,
-    flex: 0.8,
+    width: 120,
   },
   {
     field: 'tenTaiSan',
     headerName: 'Tên tài sản',
     minWidth: 200,
-    flex: 1.5,
+    flex: 1,
   },
   {
     field: 'maPhong',
     headerName: 'Phòng',
-    minWidth: 120,
-    flex: 0.8,
-    valueGetter: (value: any, row: any) => {
-      return row.maPhong || 'Chưa gán';
-    },
-  },
-  {
-    field: 'tenToaNha',
-    headerName: 'Tòa nhà',
-    minWidth: 120,
-    flex: 0.8,
-    valueGetter: (value: any, row: any) => {
-      return row.tenToaNha || '-';
-    },
+    width: 120,
+    valueGetter: (_, row) => row.maPhong || 'Chưa gán',
   },
   {
     field: 'tinhTrang',
     headerName: 'Tình trạng',
-    minWidth: 130,
-    flex: 0.8,
+    width: 150,
     renderCell: (params) => {
-      let color = 'black';
-      let text = params.value;
-      if (params.value === 'BinhThuong') {
-        color = 'orange';
-        text = 'Bình thường';
-      } else if (params.value === 'Tot') {
-        color = 'green';
-        text = 'Tốt';
-      } else if (params.value === 'Hong') {
-        color = 'red';
-        text = 'Hỏng';
-      } else if (params.value === 'CanSuaChua') {
-        color = 'yellow';
-        text = 'Cần sửa chữa';
-      }
+      const status = params.value;
+      let color: 'success' | 'warning' | 'error' | 'default' = 'default';
+      let label = status;
 
-      return <span style={{ color, fontWeight: 600 }}>{text}</span>;
+      switch (status) {
+        case 'Tot':
+          color = 'success';
+          label = 'Tốt';
+          break;
+        case 'BinhThuong':
+          color = 'default';
+          label = 'Bình thường';
+          break;
+        case 'CanSuaChua':
+          color = 'warning';
+          label = 'Cần sửa chữa';
+          break;
+        case 'Hong':
+          color = 'error';
+          label = 'Hỏng';
+          break;
+      }
+      return <Chip label={label} color={color} size="small" variant="outlined" />;
     },
   },
   {
     field: 'giaTri',
     headerName: 'Giá trị (VNĐ)',
-    minWidth: 130,
-    flex: 0.8,
+    width: 150,
     align: 'right',
-    headerAlign: 'right',
-    valueFormatter: (value) => {
-      if (value == null) return '';
-      return new Intl.NumberFormat('vi-VN').format(value);
-    },
-  },
-  {
-    field: 'ghiChu',
-    headerName: 'Ghi chú',
-    minWidth: 150,
-    flex: 1,
+    valueFormatter: (value) => (value ? new Intl.NumberFormat('vi-VN').format(value) : '0'),
   },
 ];

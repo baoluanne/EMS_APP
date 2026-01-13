@@ -13,18 +13,4 @@ export const toaNhaColumns: GridColDef[] = [
     minWidth: 150,
     flex: 1,
   },
-  {
-    field: 'soPhong',
-    headerName: 'Số lượng phòng',
-    width: 150,
-    align: 'center',
-    headerAlign: 'center',
-    valueGetter: (value) => value || 0,
-  },
-  {
-    field: 'ghiChu',
-    headerName: 'Ghi chú',
-    minWidth: 200,
-    flex: 1,
-  },
 ];

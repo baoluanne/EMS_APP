@@ -4,21 +4,7 @@ import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
 import { SinhVienDangOKtxSelection } from '@renderer/components/selections/ktx/SinhVienDangOKtxSelection';
 import { useForm } from 'react-hook-form';
-
-export interface YeuCauSuaChuaFilterState {
-  tieuDe?: string;
-  trangThai?: string;
-  phongKtxId?: string;
-  sinhVienId?: string;
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const yeuCauSuaChuaDefaultFilters: YeuCauSuaChuaFilterState = {
-  tieuDe: undefined,
-  trangThai: undefined,
-  phongKtxId: undefined,
-  sinhVienId: undefined,
-};
+import { YeuCauSuaChuaFilterState, yeuCauSuaChuaDefaultFilters } from '../type';
 
 interface Props {
   onApply: (filters: YeuCauSuaChuaFilterState) => void;
@@ -40,9 +26,9 @@ export const YeuCauSuaChuaFilter = ({ onApply, onReset }: Props) => {
   const handleApply = (data: YeuCauSuaChuaFilterState) => {
     onApply({
       tieuDe: data.tieuDe?.trim() || undefined,
-      trangThai: data.trangThai?.trim() || undefined,
-      phongKtxId: data.phongKtxId?.trim() || undefined,
-      sinhVienId: data.sinhVienId?.trim() || undefined,
+      trangThai: data.trangThai || undefined,
+      phongKtxId: data.phongKtxId || undefined,
+      sinhVienId: data.sinhVienId || undefined,
     });
   };
 
@@ -66,10 +52,10 @@ export const YeuCauSuaChuaFilter = ({ onApply, onReset }: Props) => {
         <Grid size={3}>
           <ControlledTextField control={control} name="trangThai" label="Trạng thái" select>
             <MenuItem value="">Tất cả</MenuItem>
-            <MenuItem value="ChoXuLy">Chờ xử lý</MenuItem>
+            <MenuItem value="MoiGui">Mới gửi</MenuItem>
             <MenuItem value="DangXuLy">Đang xử lý</MenuItem>
-            <MenuItem value="HoanThanh">Hoàn thành</MenuItem>
-            <MenuItem value="TuChoi">Từ chối</MenuItem>
+            <MenuItem value="DaXong">Hoàn thành</MenuItem>
+            <MenuItem value="Huy">Từ chối</MenuItem>
           </ControlledTextField>
         </Grid>
       </Grid>

@@ -1,73 +1,86 @@
-import { Stack, TextField, MenuItem } from '@mui/material';
+import { Stack, MenuItem, Typography, Box, Divider } from '@mui/material';
 import { useFormContext } from 'react-hook-form';
+import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
 
 export const TaiSanKtxForm = () => {
-  const {
-    register,
-    control,
-    formState: { errors },
-  } = useFormContext();
+  const { control, register } = useFormContext();
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2.5} sx={{ mt: 1 }}>
       <input type="hidden" {...register('id')} />
 
-      <TextField
-        label="Mã tài sản"
-        fullWidth
-        placeholder="Ví dụ: TS001, TS002..."
-        {...register('maTaiSan')}
-        error={!!errors.maTaiSan}
-        helperText={errors.maTaiSan?.message as string}
-      />
+      {/* NHÓM 1: ĐỊNH DANH TÀI SẢN */}
+      <Box>
+        <Typography variant="subtitle2" fontWeight={700} gutterBottom color="primary">
+          THÔNG TIN TÀI SẢN
+        </Typography>
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={1}>
+            <ControlledTextField
+              label="Mã tài sản"
+              control={control}
+              name="maTaiSan"
+              placeholder="Ví dụ: TS-001"
+              helperText={''}
+            />
+            <ControlledTextField
+              label="Tên tài sản"
+              control={control}
+              name="tenTaiSan"
+              placeholder="Ví dụ: Giường tầng"
+              helperText={''}
+            />
+          </Stack>
+          <PhongSelection control={control} name="phongKtxId" label="Phòng ký túc xá" required />
+        </Stack>
+      </Box>
 
-      <TextField
-        label="Tên tài sản"
-        fullWidth
-        placeholder="Ví dụ: Giường tầng, Tủ quần áo, Bàn ghế..."
-        {...register('tenTaiSan')}
-        error={!!errors.tenTaiSan}
-        helperText={errors.tenTaiSan?.message as string}
-      />
+      <Divider />
 
-      <PhongSelection control={control} name="phongKtxId" label="Phòng KTX" required={false} />
-
-      <TextField
-        label="Tình trạng"
-        fullWidth
-        select
-        defaultValue=""
-        {...register('tinhTrang')}
-        error={!!errors.tinhTrang}
-        helperText={errors.tinhTrang?.message as string}
-      >
-        <MenuItem value="Tot">Tốt</MenuItem>
-        <MenuItem value="BinhThuong">Bình thường</MenuItem>
-        <MenuItem value="CanSuaChua">Cần sửa chữa</MenuItem>
-        <MenuItem value="Hong">Hỏng</MenuItem>
-      </TextField>
-
-      <TextField
-        label="Giá trị (VNĐ)"
-        fullWidth
-        type="number"
-        placeholder="Nhập giá trị tài sản"
-        {...register('giaTri', { valueAsNumber: true })}
-        error={!!errors.giaTri}
-        helperText={errors.giaTri?.message as string}
-      />
-
-      <TextField
-        label="Ghi chú"
-        fullWidth
-        multiline
-        rows={3}
-        placeholder="Nhập ghi chú về tài sản (tùy chọn)"
-        {...register('ghiChu')}
-        error={!!errors.ghiChu}
-        helperText={errors.ghiChu?.message as string}
-      />
+      {/* NHÓM 2: TÌNH TRẠNG & GIÁ TRỊ */}
+      <Box>
+        <Typography variant="subtitle2" fontWeight={700} gutterBottom color="primary">
+          TÌNH TRẠNG & GIÁ TRỊ
+        </Typography>
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={1}>
+            <Box flex={1}>
+              <ControlledTextField
+                label="Tình trạng"
+                control={control}
+                name="tinhTrang"
+                select
+                helperText={''}
+              >
+                <MenuItem value="Tot">Tốt</MenuItem>
+                <MenuItem value="BinhThuong">Bình thường</MenuItem>
+                <MenuItem value="CanSuaChua">Cần sửa chữa</MenuItem>
+                <MenuItem value="Hong">Hỏng</MenuItem>
+              </ControlledTextField>
+            </Box>
+            <Box flex={1}>
+              <ControlledTextField
+                label="Giá trị (VNĐ)"
+                control={control}
+                name="giaTri"
+                type="number"
+                placeholder="Nhập giá trị..."
+                helperText={''}
+              />
+            </Box>
+          </Stack>
+          <ControlledTextField
+            label="Ghi chú"
+            control={control}
+            name="ghiChu"
+            multiline
+            minRows={3}
+            placeholder="Mô tả chi tiết tình trạng hoặc lưu ý..."
+            helperText={''}
+          />
+        </Stack>
+      </Box>
     </Stack>
   );
 };
