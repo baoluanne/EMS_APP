@@ -2229,7 +2229,7 @@ const _appRoutes = [
         ],
       },
       {
-        label: 'Cơ sở vật chất',
+        label: 'Cơ sở hạ tầng',
         icon: <FcHome />,
         path: 'facilities-management',
         children: [
@@ -2266,7 +2266,7 @@ const _appRoutes = [
           {
             label: 'Báo cáo tài sản & sửa chữa',
             path: 'bao-cao-co-so-vat-chat',
-            icon: <FcFolder/>
+            icon: <FcFolder />,
             // Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
           },
         ],

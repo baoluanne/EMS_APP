@@ -1,5 +1,7 @@
 export interface ToaNhaFilterState {
   id?: string;
   tenToaNha?: string;
-  loaiToaNha?: string;
+  loaiToaNha?: number;
+  soTang?: number;
+  ghiChu?: string;
 }

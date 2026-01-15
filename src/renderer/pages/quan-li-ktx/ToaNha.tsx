@@ -13,14 +13,17 @@ import { toaNhaColumns as columns } from '@renderer/features/ktx-management/toa-
 import { ToaNhaKtx, toaNhaSchema } from '@renderer/features/ktx-management/toa-nha/validation';
 import { ToaNhaFilterState } from '@renderer/features/ktx-management/toa-nha/type';
 import { Stack } from '@mui/material';
+import { LOAI_TOA_NHA } from '@renderer/features/ktx-management/toa-nha/LoaiToaNhaEnums';
 const defaultValues: ToaNhaKtx = {
   id: undefined,
   tenToaNha: '',
-  loaiToaNha: '',
+  loaiToaNha: LOAI_TOA_NHA.NAM,
+  soTang: 1,
+  ghiChu: undefined,
 };
 
 const ToaNhaPage = () => {
-  const [filters, setFilters] = useState<ToaNhaFilterState>({}); // Bỏ React.
+  const [filters, setFilters] = useState<ToaNhaFilterState>({});
   const {
     formMethods,
     data,
@@ -51,7 +54,7 @@ const ToaNhaPage = () => {
   }, [data]);
 
   const rowsData: ToaNhaKtx[] = useMemo(() => {
-    if (!filters.tenToaNha && !filters.loaiToaNha) {
+    if (!filters.tenToaNha && !filters.loaiToaNha && filters.soTang && filters.ghiChu) {
       return rawRowsData;
     }
 
@@ -60,11 +63,20 @@ const ToaNhaPage = () => {
         !filters.tenToaNha ||
         row.tenToaNha?.toLowerCase().includes(filters.tenToaNha.toLowerCase());
 
-      const matchLoaiToaNha =
-        !filters.loaiToaNha ||
-        row.loaiToaNha?.toLowerCase().includes(filters.loaiToaNha.toLowerCase());
+      const matchghiChu =
+        !filters.ghiChu || row.ghiChu?.toLowerCase().includes(filters.ghiChu.toLowerCase());
 
-      return matchTenToaNha && matchLoaiToaNha;
+      const matchLoaiToaNha =
+        filters.loaiToaNha === undefined ||
+        filters.loaiToaNha === null ||
+        Number(row.loaiToaNha) === Number(filters.loaiToaNha);
+
+      const matchsoTang =
+        filters.soTang === undefined ||
+        filters.soTang === null ||
+        Number(row.soTang) === Number(filters.soTang);
+
+      return matchTenToaNha && matchLoaiToaNha && matchghiChu && matchsoTang;
     });
   }, [rawRowsData, filters]);
 
