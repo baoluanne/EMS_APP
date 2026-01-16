@@ -2234,41 +2234,41 @@ const _appRoutes = [
         path: 'facilities-management',
         children: [
           {
-            label: 'Tòa nhà',
+            label: 'Sơ đồ Tòa nhà',
             icon: <FcFolder />,
             path: 'toa-nha',
             Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ToaNha'))),
           },
-          {
-            label: 'Phòng',
-            icon: <FcFolder />,
-            path: 'phong-ktx',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/phongktx'))),
-          },
+          // {
+          //   label: 'Phòng',
+          //   icon: <FcFolder />,
+          //   path: 'phong-ktx',
+          //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/phongktx'))),
+          // },
           {
             label: 'Giường',
             icon: <FcFolder />,
-            path: 'giuong-ktx',
+            path: 'giuongktx',
             Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/giuongktx'))),
           },
-          {
-            label: 'Tài sản KTX',
-            icon: <FcFolder />,
-            path: 'tai-san-ktx',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
-          },
+          // {
+          //   label: 'Tài sản KTX',
+          //   icon: <FcFolder />,
+          //   path: 'tai-san-ktx',
+          //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
+          // },
           {
             label: 'Yêu cầu sửa chữa',
             icon: <FcFolder />,
             path: 'yeu-cau-sua-chua',
             Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/YeuCauSuaChua'))),
           },
-          {
-            label: 'Báo cáo tài sản & sửa chữa',
-            path: 'bao-cao-co-so-vat-chat',
-            icon: <FcFolder />,
-            // Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
-          },
+          // {
+          //   label: 'Báo cáo tài sản & sửa chữa',
+          //   path: 'bao-cao-co-so-vat-chat',
+          //   icon: <FcFolder />,
+          //   // Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
+          // },
         ],
       },
       {

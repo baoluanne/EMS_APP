@@ -10,30 +10,26 @@ export const GiuongKtxForm = () => {
     <Stack spacing={3}>
       <input type="hidden" {...register('id')} />
 
-      <PhongSelection control={control} name="phongKtxId" label="Thuộc phòng" />
+      <PhongSelection control={control} name="phongKtxId" label="Phòng" />
 
-      <ControlledTextField label="Mã giường" control={control} name="maGiuong" helperText="" />
+      <ControlledTextField
+        label="Mã giường"
+        control={control}
+        name="maGiuong"
+        placeholder="VD: 101-G1"
+      />
 
       <ControlledTextField
         label="Trạng thái"
         control={control}
         name="trangThai"
         select
-        helperText=""
+        type="number"
       >
-        <MenuItem value="Trong">Trống</MenuItem>
-        <MenuItem value="BaoTri">Bảo trì</MenuItem>
-        <MenuItem value="CoSV">Đã có sinh viên</MenuItem>
+        <MenuItem value={0}>Trống</MenuItem>
+        <MenuItem value={1}>Đã có người</MenuItem>
+        <MenuItem value={2}>Bảo trì</MenuItem>
       </ControlledTextField>
-
-      <ControlledTextField
-        label="Ghi chú"
-        control={control}
-        name="ghiChu"
-        multiline
-        minRows={3}
-        helperText=""
-      />
     </Stack>
   );
 };

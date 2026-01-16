@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useState } from 'react';
 import { FormProvider } from 'react-hook-form';
+import { Stack } from '@mui/material';
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
@@ -9,21 +10,26 @@ import { TITLE_MODE } from '@renderer/shared/enums';
 
 import { ToaNhaForm } from '@renderer/features/ktx-management/toa-nha/components/ToaNhaForm';
 import { ToaNhaFilter } from '@renderer/features/ktx-management/toa-nha/components/ToaNhaFilter';
-import { toaNhaColumns as columns } from '@renderer/features/ktx-management/toa-nha/configs/table.configs';
+import { ToaNhaStructureSidebar } from '@renderer/features/ktx-management/toa-nha/components/ToaNhaStructureDrawer';
+import { toaNhaColumns } from '@renderer/features/ktx-management/toa-nha/configs/table.configs';
 import { ToaNhaKtx, toaNhaSchema } from '@renderer/features/ktx-management/toa-nha/validation';
 import { ToaNhaFilterState } from '@renderer/features/ktx-management/toa-nha/type';
-import { Stack } from '@mui/material';
 import { LOAI_TOA_NHA } from '@renderer/features/ktx-management/toa-nha/LoaiToaNhaEnums';
+
 const defaultValues: ToaNhaKtx = {
   id: undefined,
   tenToaNha: '',
   loaiToaNha: LOAI_TOA_NHA.NAM,
   soTang: 1,
-  ghiChu: undefined,
+  ghiChu: '',
 };
 
 const ToaNhaPage = () => {
   const [filters, setFilters] = useState<ToaNhaFilterState>({});
+  const [selectedBuilding, setSelectedBuilding] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+
   const {
     formMethods,
     data,
@@ -54,39 +60,30 @@ const ToaNhaPage = () => {
   }, [data]);
 
   const rowsData: ToaNhaKtx[] = useMemo(() => {
-    if (!filters.tenToaNha && !filters.loaiToaNha && filters.soTang && filters.ghiChu) {
-      return rawRowsData;
-    }
-
+    if (!filters.tenToaNha && filters.loaiToaNha === undefined) return rawRowsData;
     return rawRowsData.filter((row) => {
       const matchTenToaNha =
         !filters.tenToaNha ||
         row.tenToaNha?.toLowerCase().includes(filters.tenToaNha.toLowerCase());
-
-      const matchghiChu =
-        !filters.ghiChu || row.ghiChu?.toLowerCase().includes(filters.ghiChu.toLowerCase());
-
       const matchLoaiToaNha =
         filters.loaiToaNha === undefined ||
         filters.loaiToaNha === null ||
         Number(row.loaiToaNha) === Number(filters.loaiToaNha);
-
-      const matchsoTang =
-        filters.soTang === undefined ||
-        filters.soTang === null ||
-        Number(row.soTang) === Number(filters.soTang);
-
-      return matchTenToaNha && matchLoaiToaNha && matchghiChu && matchsoTang;
+      return matchTenToaNha && matchLoaiToaNha;
     });
   }, [rawRowsData, filters]);
 
-  const handleFilterApply = useCallback((filterValues: ToaNhaFilterState) => {
-    setFilters(filterValues);
-  }, []);
+  const handleViewStructure = useCallback(
+    (id: string) => {
+      const building = rawRowsData.find((r) => r.id === id);
+      if (building) {
+        setSelectedBuilding({ id: building.id!, name: building.tenToaNha! });
+      }
+    },
+    [rawRowsData],
+  );
 
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
+  const columns = useMemo(() => toaNhaColumns(handleViewStructure), [handleViewStructure]);
 
   return (
     <FormProvider {...formMethods}>
@@ -100,10 +97,10 @@ const ToaNhaPage = () => {
             exportPaginationToExcel<ToaNhaKtx>({
               entity: 'ToaNhaKtx',
               filteredData: rowsData,
-              columns: columns,
+              columns,
               options: { dataOption, columnOption },
               columnVisibilityModel,
-              fileName: 'Danh_sach_toa_nha_ktx',
+              fileName: 'Danh_sach_toa_nha',
             });
           }}
         />
@@ -127,7 +124,7 @@ const ToaNhaPage = () => {
           />
         )}
 
-        <ToaNhaFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+        <ToaNhaFilter onApply={(val) => setFilters(val)} onReset={() => setFilters({})} />
 
         <DataGridTable
           columns={columns}
@@ -141,6 +138,14 @@ const ToaNhaPage = () => {
           height="calc(100% - 85px)"
           {...tableConfig}
         />
+
+        {selectedBuilding && (
+          <ToaNhaStructureSidebar
+            buildingId={selectedBuilding.id}
+            buildingName={selectedBuilding.name}
+            onClose={() => setSelectedBuilding(null)}
+          />
+        )}
       </Stack>
     </FormProvider>
   );

@@ -6,14 +6,14 @@ import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelecti
 
 export interface GiuongKtxFilterState {
   maGiuong?: string;
-  phongKtxId?: string;
+  phongId?: string;
   trangThai?: string;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const giuongKtxDefaultFilters: GiuongKtxFilterState = {
   maGiuong: undefined,
-  phongKtxId: undefined,
+  phongId: undefined,
   trangThai: undefined,
 };
 
@@ -37,7 +37,7 @@ export const GiuongKtxFilter = ({ onApply, onReset }: Props) => {
   const handleApply = (data: GiuongKtxFilterState) => {
     const cleanedData: GiuongKtxFilterState = {
       maGiuong: data.maGiuong?.trim() || undefined,
-      phongKtxId: data.phongKtxId || undefined,
+      phongId: data.phongId || undefined,
       trangThai: data.trangThai || undefined,
     };
     onApply(cleanedData);
@@ -48,10 +48,9 @@ export const GiuongKtxFilter = ({ onApply, onReset }: Props) => {
       onApply={handleApply}
       onClear={handleClear}
       methods={filterMethods}
-      title="Bộ lọc Giường KTX"
     >
       <Grid container spacing={2}>
-        <Grid size={6}>
+        <Grid size={4}>
           <ControlledTextField
             control={control}
             name="maGiuong"
@@ -59,15 +58,15 @@ export const GiuongKtxFilter = ({ onApply, onReset }: Props) => {
             placeholder="Nhập mã giường..."
           />
         </Grid>
-        <Grid size={6}>
-          <PhongSelection control={control} name="phongKtxId" label="Thuộc phòng" />
+        <Grid size={4}>
+          <PhongSelection control={control} name="phongId" label="Phòng" />
         </Grid>
-        <Grid size={6}>
+        <Grid size={4}>
           <ControlledTextField control={control} name="trangThai" label="Trạng thái" select>
             <MenuItem value="">-- Tất cả --</MenuItem>
-            <MenuItem value="Trong">Trống</MenuItem>
-            <MenuItem value="CoSV">Đã có người</MenuItem>
-            <MenuItem value="BaoTri">Bảo trì</MenuItem>
+            <MenuItem value="0">Trống</MenuItem>
+            <MenuItem value="1">Đã có người</MenuItem>
+            <MenuItem value="2">Bảo trì</MenuItem>
           </ControlledTextField>
         </Grid>
       </Grid>

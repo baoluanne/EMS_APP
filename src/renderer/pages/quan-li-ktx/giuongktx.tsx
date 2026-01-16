@@ -1,15 +1,14 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
-
 import { DataGridTable } from '@renderer/components/Table';
 import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 import { TITLE_MODE } from '@renderer/shared/enums';
-
-import { giuongKtxColumns as columns } from '@renderer/features/ktx-management/giuong-ktx/configs/table.configs';
+import { giuongKtxColumns } from '@renderer/features/ktx-management/giuong-ktx/configs/table.configs';
 import { GiuongKtxForm } from '@renderer/features/ktx-management/giuong-ktx/components/GiuongKtxForm';
 import {
   GiuongKtxFilter,
@@ -24,12 +23,21 @@ const defaultValues: GiuongKtxSchema = {
   id: undefined,
   maGiuong: '',
   phongKtxId: '',
-  trangThai: 'Trong',
-  ghiChu: '',
+  sinhVienId: null,
+  trangThai: 0,
 };
 
-export default function GiuongKtxPage() {
+function GiuongKtxPage() {
   const [filters, setFilters] = useState<GiuongKtxFilterState>({});
+  const location = useLocation();
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.phongId) {
+      setFilters({ phongId: state.phongId });
+      console.log('>>> [GiuongKtxPage] Filtered by room:', state.maPhong, state.phongId);
+    }
+  }, [location]);
 
   const {
     formMethods,
@@ -48,30 +56,31 @@ export default function GiuongKtxPage() {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
-    refetch,
   } = useCrudPaginationModal<GiuongKtxSchema, GiuongKtxSchema>({
     defaultValues,
     schema: giuongKtxSchema,
-    entity: 'giuongKtx',
+    entity: 'GiuongKtx',
   });
 
-  const rowsData = useMemo(() => {
-    const rawData = (data as any)?.data || (data as any)?.result || [];
-    if (!filters.maGiuong && !filters.phongKtxId && !filters.trangThai) return rawData;
+  const rawRowsData: GiuongKtxSchema[] = useMemo(() => {
+    if (!data) return [];
+    const results = (data as any).data || (data as any).result || [];
+    return Array.isArray(results) ? results : [];
+  }, [data]);
 
-    return rawData.filter((row: any) => {
+  const rowsData: GiuongKtxSchema[] = useMemo(() => {
+    if (!filters.maGiuong && !filters.phongId && !filters.trangThai) {
+      return rawRowsData;
+    }
+
+    return rawRowsData.filter((row: any) => {
       const matchMa =
         !filters.maGiuong || row.maGiuong?.toLowerCase().includes(filters.maGiuong.toLowerCase());
-      const matchPhong = !filters.phongKtxId || row.phongKtxId === filters.phongKtxId;
-      const matchTrangThai = !filters.trangThai || row.trangThai === filters.trangThai;
+      const matchPhong = !filters.phongId || row.phongKtxId === filters.phongId;
+      const matchTrangThai = !filters.trangThai || row.trangThai?.toString() === filters.trangThai;
       return matchMa && matchPhong && matchTrangThai;
     });
-  }, [data, filters]);
-
-  const handleRefresh = useCallback(() => {
-    handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
-    if (refetch) setTimeout(() => refetch(), 300);
-  }, [handleRowSelectionModelChange, refetch]);
+  }, [rawRowsData, filters]);
 
   return (
     <FormProvider {...formMethods}>
@@ -85,7 +94,7 @@ export default function GiuongKtxPage() {
             exportPaginationToExcel<GiuongKtxSchema>({
               entity: 'giuong-ktx',
               filteredData: rowsData,
-              columns,
+              columns: giuongKtxColumns,
               options: { dataOption, columnOption },
               columnVisibilityModel,
               fileName: 'Danh_sach_giuong_ktx',
@@ -95,7 +104,7 @@ export default function GiuongKtxPage() {
 
         {isModalOpen && (
           <FormDetailsModal
-            title={isAddMode ? 'Thêm mới Giường KTX' : 'Chỉnh sửa Giường KTX'}
+            title={isAddMode ? 'Thêm mới giường' : 'Chỉnh sửa giường'}
             onClose={handleCloseModal}
             onSave={onSave}
             maxWidth="sm"
@@ -108,31 +117,27 @@ export default function GiuongKtxPage() {
         {isDeleteOpenModal && (
           <DeleteConfirmationModal
             onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={async () => {
-              await handleDeleteRecord();
-              handleRefresh();
-            }}
+            onDelete={handleDeleteRecord}
           />
         )}
 
         <GiuongKtxFilter onApply={setFilters} onReset={() => setFilters({})} />
 
         <DataGridTable
-          columns={columns}
+          columns={giuongKtxColumns}
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => {
-            handleRowSelectionModelChange({ type: 'row', ids: new Set() } as any);
-            formMethods.reset(params.row);
-          }}
+          onRowClick={(params) => formMethods.reset(params.row)}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
-          height="calc(100% - 120px)"
+          height="calc(100% - 85px)"
           {...tableConfig}
         />
       </Stack>
     </FormProvider>
   );
 }
+
+export default GiuongKtxPage;
