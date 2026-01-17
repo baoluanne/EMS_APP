@@ -22,7 +22,7 @@ import {
 const defaultValues: GiuongKtxSchema = {
   id: undefined,
   maGiuong: '',
-  phongKtxId: '',
+  phongId: '',
   sinhVienId: null,
   trangThai: 0,
 };

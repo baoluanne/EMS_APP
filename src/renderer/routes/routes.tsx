@@ -7,7 +7,6 @@ import {
   FcDepartment,
   FcDocument,
   FcFolder,
-  FcFullBattery,
   FcGraduationCap,
   FcHome,
   FcIdea,
@@ -2207,26 +2206,26 @@ const _appRoutes = [
         label: 'Danh sách sinh viên',
         icon: <FcBusinessman />,
         path: 'dormitory-student-list',
-        children: [
-          {
-            label: 'Danh sách đơn sinh viên',
-            icon: <FcFolder />,
-            path: 'don-sinh-vien',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/DanhSachDonSinhVien'))),
-          },
-          {
-            label: 'Thông tin sinh viên kí túc xá',
-            icon: <FcFolder />,
-            path: 'ttsv',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ThongTinSinhVienKtx'))),
-          },
-          {
-            label: 'Danh sách vi phạm',
-            icon: <FcFolder />,
-            path: 'danh-sach-vi-pham',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/DanhSachViPham'))),
-          },
-        ],
+        // children: [
+        //   {
+        //     label: 'Danh sách đơn sinh viên',
+        //     icon: <FcFolder />,
+        //     path: 'don-sinh-vien',
+        //     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/DanhSachDonSinhVien'))),
+        //   },
+        //   {
+        //     label: 'Thông tin sinh viên kí túc xá',
+        //     icon: <FcFolder />,
+        //     path: 'ttsv',
+        //     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ThongTinSinhVienKtx'))),
+        //   },
+        //   {
+        //     label: 'Danh sách vi phạm',
+        //     icon: <FcFolder />,
+        //     path: 'danh-sach-vi-pham',
+        //     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/DanhSachViPham'))),
+        //   },
+        // ],
       },
       {
         label: 'Cơ sở hạ tầng',
@@ -2257,12 +2256,12 @@ const _appRoutes = [
           //   path: 'tai-san-ktx',
           //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
           // },
-          {
-            label: 'Yêu cầu sửa chữa',
-            icon: <FcFolder />,
-            path: 'yeu-cau-sua-chua',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/YeuCauSuaChua'))),
-          },
+          // {
+          //   label: 'Yêu cầu sửa chữa',
+          //   icon: <FcFolder />,
+          //   path: 'yeu-cau-sua-chua',
+          //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/YeuCauSuaChua'))),
+          // },
           // {
           //   label: 'Báo cáo tài sản & sửa chữa',
           //   path: 'bao-cao-co-so-vat-chat',
@@ -2271,37 +2270,37 @@ const _appRoutes = [
           // },
         ],
       },
-      {
-        label: 'Chỉ số điện - nước',
-        icon: <FcFullBattery />,
-        path: 'utilities',
-        children: [
-          {
-            label: 'Nhập & chốt chỉ số hàng tháng',
-            icon: <FcFolder />,
-            path: 'input-meters',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ChiSoDienNuoc'))),
-          },
-          {
-            label: 'Hóa đơn phòng',
-            icon: <FcFolder />,
-            path: 'hoa-don-phong',
-            //Component: Lazy(() => import('@renderer/pages/quan-li-ktx/HoaDonKtx'))
-          },
-          {
-            label: 'Theo dõi thanh toán',
-            icon: <FcFolder />,
-            path: 'theo-doi-thanh-toan',
-            //Component: Lazy(() => import('@renderer/pages/quan-li-ktx/TheoDoiThanhToan'))
-          },
-          {
-            label: 'Báo cáo doanh thu',
-            icon: <FcFolder />,
-            path: 'bao-cao-doanh-thu',
-            //Component: ... (sau này)
-          },
-        ],
-      },
+      // {
+      //   label: 'Chỉ số điện - nước',
+      //   icon: <FcFullBattery />,
+      //   path: 'utilities',
+      //   children: [
+      //     {
+      //       label: 'Nhập & chốt chỉ số hàng tháng',
+      //       icon: <FcFolder />,
+      //       path: 'input-meters',
+      //       Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ChiSoDienNuoc'))),
+      //     },
+      //     {
+      //       label: 'Hóa đơn phòng',
+      //       icon: <FcFolder />,
+      //       path: 'hoa-don-phong',
+      //       //Component: Lazy(() => import('@renderer/pages/quan-li-ktx/HoaDonKtx'))
+      //     },
+      //     {
+      //       label: 'Theo dõi thanh toán',
+      //       icon: <FcFolder />,
+      //       path: 'theo-doi-thanh-toan',
+      //       //Component: Lazy(() => import('@renderer/pages/quan-li-ktx/TheoDoiThanhToan'))
+      //     },
+      //     {
+      //       label: 'Báo cáo doanh thu',
+      //       icon: <FcFolder />,
+      //       path: 'bao-cao-doanh-thu',
+      //       //Component: ... (sau này)
+      //     },
+      //   ],
+      // },
     ],
   },
   {
