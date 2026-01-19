@@ -2203,29 +2203,10 @@ const _appRoutes = [
     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/quanliktx'))),
     children: [
       {
-        label: 'Danh sách sinh viên',
+        label: 'Duyệt đơn kí túc xá',
         icon: <FcBusinessman />,
         path: 'dormitory-student-list',
-        // children: [
-        //   {
-        //     label: 'Danh sách đơn sinh viên',
-        //     icon: <FcFolder />,
-        //     path: 'don-sinh-vien',
-        //     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/DanhSachDonSinhVien'))),
-        //   },
-        //   {
-        //     label: 'Thông tin sinh viên kí túc xá',
-        //     icon: <FcFolder />,
-        //     path: 'ttsv',
-        //     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ThongTinSinhVienKtx'))),
-        //   },
-        //   {
-        //     label: 'Danh sách vi phạm',
-        //     icon: <FcFolder />,
-        //     path: 'danh-sach-vi-pham',
-        //     Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/DanhSachViPham'))),
-        //   },
-        // ],
+        Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/duyetdon'))),
       },
       {
         label: 'Cơ sở hạ tầng',

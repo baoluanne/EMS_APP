@@ -12,6 +12,7 @@ interface Props {
   required?: boolean;
   disabled?: boolean;
   toaNhaId?: string;
+  gioiTinh?: number | string;
 }
 
 const dummySchema = z.object({});
@@ -23,36 +24,34 @@ export const PhongSelection = ({
   required = false,
   disabled = false,
   toaNhaId,
+  gioiTinh,
 }: Props) => {
+  const genderParam =
+    gioiTinh !== undefined && gioiTinh !== null && gioiTinh !== '' ? gioiTinh : '';
+
   const { data, isRefetching } = useCrudPaginationModal({
     entity: 'PhongKtx',
+    endpoint: `pagination?Gender=${genderParam}`,
     schema: dummySchema,
     defaultValues: {
+      pageSize: 100,
       id: undefined,
       maPhong: undefined,
-      toaNhaId: undefined,
     },
   });
 
   const options = useMemo(() => {
-    if (!data) return [];
+    const listData: any[] = (data as any)?.result || (data as any)?.data || [];
 
-    let list: any[] = [];
-    if ('data' in data && Array.isArray(data.data)) {
-      list = data.data;
-    } else if ('result' in data && Array.isArray(data.result)) {
-      list = data.result;
-    } else if (Array.isArray(data)) {
-      list = data;
-    }
-
-    // Lọc theo tòa nhà nếu có truyền toaNhaId
+    let filteredList = listData;
     if (toaNhaId) {
-      list = list.filter((item) => item.toaNhaId === toaNhaId || item.idToaNha === toaNhaId);
+      filteredList = listData.filter(
+        (item) => item.toaNhaId === toaNhaId || item.idToaNha === toaNhaId,
+      );
     }
 
-    return list.map((item) => {
-      const tenToaNha = item.tenToaNha || item.toaNha?.tenToaNha || '';
+    return filteredList.map((item) => {
+      const tenToaNha = item.tang?.toaNha?.tenToaNha || item.toaNha?.tenToaNha || '';
       return {
         label: `${item.maPhong}${tenToaNha ? ` - ${tenToaNha}` : ''}`,
         value: item.id?.toString() || '',

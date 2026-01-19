@@ -1,9 +1,8 @@
-import { useMemo } from 'react';
-import { CircularProgress, Box } from '@mui/material';
-import { Control } from 'react-hook-form';
+import { useMemo, useState } from 'react';
+import { CircularProgress, Autocomplete, TextField } from '@mui/material';
+import { Control, useController } from 'react-hook-form';
 import { z } from 'zod';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
-import { FilterSelect } from '@renderer/components/fields';
 
 interface Props {
   control: Control<any>;
@@ -22,49 +21,64 @@ export const SinhVienSelection = ({
   required = false,
   disabled = false,
 }: Props) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const { field } = useController({ name, control });
+
   const { data, isRefetching } = useCrudPaginationModal({
     entity: 'SinhVien',
+    endpoint: `tim-kiem-sinh-vien?TimNhanh=${inputValue}`,
     schema: dummySchema,
     defaultValues: {},
   });
 
   const options = useMemo(() => {
     if (!data) return [];
+    const list = (data as any)?.result || (data as any)?.data || [];
 
-    let list: any[] = [];
-    if ('data' in data && Array.isArray(data.data)) {
-      list = data.data;
-    } else if ('result' in data && Array.isArray(data.result)) {
-      list = data.result;
-    } else if (Array.isArray(data)) {
-      list = data;
-    }
-
-    return list.map((item) => ({
-      label: `${item.maSinhVien} - ${item.hoDem || ''} ${item.ten || ''}`.trim(),
+    return list.map((item: any) => ({
+      label:
+        `${item.maSinhVien} - ${item.hoDem || ''} ${item.ten || ''} - ${item.gioiTinh === 0 ? 'Nam' : 'Nữ'}`.trim(),
       value: (item.id || item.Id)?.toString() || '',
     }));
   }, [data]);
 
-  if (isRefetching) {
-    return (
-      <Box sx={{ position: 'relative', height: '40px' }}>
-        <CircularProgress
-          size={24}
-          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
-        />
-      </Box>
-    );
-  }
+  const selectedValue = useMemo(() => {
+    return options.find((opt) => opt.value === field.value) || null;
+  }, [options, field.value]);
 
   return (
-    <FilterSelect
-      label={label}
-      options={options}
-      name={name}
-      control={control}
-      required={required}
+    <Autocomplete
+      fullWidth
       disabled={disabled}
+      options={options}
+      getOptionLabel={(option) => option.label}
+      isOptionEqualToValue={(option, value) => option.value === value.value}
+      value={selectedValue}
+      onInputChange={(_, newInputValue) => {
+        setInputValue(newInputValue);
+      }}
+      onChange={(_, newValue) => {
+        field.onChange(newValue ? newValue.value : '');
+      }}
+      loading={isRefetching}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={label}
+          required={required}
+          size="small"
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {isRefetching ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+        />
+      )}
     />
   );
 };
