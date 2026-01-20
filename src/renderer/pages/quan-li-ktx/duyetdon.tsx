@@ -17,8 +17,15 @@ import { DuyetDonForm } from '@renderer/features/ktx-management/duyet-don/compon
 import { DuyetDonFilter } from '@renderer/features/ktx-management/duyet-don/components/DuyetDonFilter';
 import { ApproveDonModal } from '@renderer/features/ktx-management/duyet-don/components/ApproveDonModal';
 import { KtxDonTrangThai } from '@renderer/features/ktx-management/duyet-don/configs/KtxDonEnum';
+import { format } from 'date-fns';
 
-const defaultValues = { trangThai: KtxDonTrangThai.ChoDuyet, ghiChu: '' };
+const defaultValues = {
+  idSinhVien: '',
+  idHocKy: '',
+  loaiDon: 0,
+  trangThai: KtxDonTrangThai.ChoDuyet,
+  idGoiDichVu: '',
+};
 
 const DuyetDonPage = () => {
   const [filters, setFilters] = useState<DuyetDonFilterState>({});
@@ -54,7 +61,16 @@ const DuyetDonPage = () => {
     return rawData.filter((row: any) => {
       const matchLoai = filters.loaiDon === undefined || row.loaiDon === filters.loaiDon;
       const matchTrangThai = filters.trangThai === undefined || row.trangThai === filters.trangThai;
-      return matchLoai && matchTrangThai;
+      const matchMaDon =
+        !filters.maDon || row.maDon?.toLowerCase().includes(filters.maDon.toLowerCase());
+      const matchGioiTinh =
+        filters.gioiTinh === undefined || row.sinhVien?.gioiTinh === filters.gioiTinh;
+      const matchNgaySinh =
+        !filters.ngaySinh ||
+        (row.sinhVien?.ngaySinh &&
+          row.sinhVien.ngaySinh.startsWith(filters.ngaySinh.substring(0, 10)));
+
+      return matchLoai && matchTrangThai && matchMaDon && matchGioiTinh && matchNgaySinh;
     });
   }, [data, filters]);
 
@@ -81,7 +97,15 @@ const DuyetDonPage = () => {
           <FormDetailsModal
             title={isAddMode ? 'Tạo đơn mới' : 'Chi tiết đơn từ'}
             onClose={handleCloseModal}
-            onSave={onSave}
+            onSave={async () => {
+              const values = formMethods.getValues();
+              if (values.ngayBatDau) {
+                const dateObj = new Date(values.ngayBatDau);
+                const fixedDate = format(dateObj, 'yyyy-MM-dd');
+                formMethods.setValue('ngayBatDau', fixedDate);
+              }
+              await onSave();
+            }}
             maxWidth="sm"
             titleMode={TITLE_MODE.COLORED}
           >

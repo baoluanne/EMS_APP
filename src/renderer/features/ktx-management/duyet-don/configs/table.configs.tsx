@@ -1,7 +1,7 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Chip, IconButton, Tooltip } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
-
+import { format } from 'date-fns';
 export const duyetDonColumns = (onApprove: (id: string) => void): GridColDef[] => [
   {
     field: 'maDon',
@@ -14,6 +14,12 @@ export const duyetDonColumns = (onApprove: (id: string) => void): GridColDef[] =
     headerName: 'Họ tên sinh viên',
     flex: 1,
     valueGetter: (_, row: any) => row.sinhVien?.fullName || '',
+  },
+  {
+    field: 'gioiTinh',
+    headerName: 'Giới tính',
+    flex: 1,
+    valueGetter: (_, row: any) => (row.sinhVien?.gioiTinh === 0 ? 'Nam' : 'Nữ'),
   },
   {
     field: 'loaiDon',
@@ -36,7 +42,8 @@ export const duyetDonColumns = (onApprove: (id: string) => void): GridColDef[] =
     headerName: 'Ngày gửi',
     width: 150,
     flex: 1,
-    valueGetter: (_, row: any) => row.ngayGuiDon || '',
+    valueGetter: (_, row: any) =>
+      row.ngayGuiDon ? format(new Date(row.ngayGuiDon), 'dd/MM/yyyy') : '---',
   },
   {
     field: 'trangThai',

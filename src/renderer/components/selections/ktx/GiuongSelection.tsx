@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { CircularProgress, Box } from '@mui/material';
 import { Control } from 'react-hook-form';
-import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
+import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
 import { FilterSelect } from '@renderer/components/fields';
-import { z } from 'zod';
 
 interface Props {
   control: Control<any>;
@@ -14,8 +13,6 @@ interface Props {
   phongId?: string;
 }
 
-const dummySchema = z.object({});
-
 export const GiuongSelection = ({
   control,
   name,
@@ -24,57 +21,53 @@ export const GiuongSelection = ({
   disabled = false,
   phongId,
 }: Props) => {
-  const { data, isRefetching } = useCrudPaginationModal({
+  // 1. Sửa lỗi: Sử dụng isRefetching thay vì isLoading theo kiểu dữ liệu của hook
+  const { data, isRefetching } = useCrudPagination<any>({
     entity: 'GiuongKtx',
-    schema: dummySchema,
-    defaultValues: {},
+    endpoint: `pagination?PhongId=${phongId || ''}&TrangThai=Trong`,
+    enabled: !!phongId,
   });
 
   const options = useMemo(() => {
     if (!data) return [];
 
     let list: any[] = [];
-    if ('data' in data && Array.isArray(data.data)) {
-      list = data.data;
-    } else if ('result' in data && Array.isArray(data.result)) {
-      list = data.result;
-    } else if (Array.isArray(data)) {
-      list = data;
-    }
 
-    if (phongId) {
-      list = list.filter(
-        (item) =>
-          (item.phongKtxId === phongId || item.PhongKtxId === phongId) &&
-          (item.trangThai === 'Trong' || item.TrangThai === 'Trong'),
-      );
+    // 2. Sửa lỗi: Truy xuất đúng trường 'result' dựa trên thông báo lỗi TS
+    // Thông báo lỗi xác nhận kiểu dữ liệu có { result: any[]; ... }
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && 'result' in data && Array.isArray(data.result)) {
+      list = data.result;
     }
 
     return list.map((item) => ({
       label: `Giường ${item.maGiuong || item.MaGiuong}`,
       value: (item.id || item.Id)?.toString() || '',
     }));
-  }, [data, phongId]);
-
-  if (isRefetching) {
-    return (
-      <Box sx={{ position: 'relative', height: '40px' }}>
-        <CircularProgress
-          size={24}
-          style={{ position: 'absolute', top: '50%', right: '10px', marginTop: -12 }}
-        />
-      </Box>
-    );
-  }
+  }, [data]);
 
   return (
-    <FilterSelect
-      label={label}
-      options={options}
-      name={name}
-      control={control}
-      required={required}
-      disabled={disabled || !phongId}
-    />
+    <Box sx={{ position: 'relative' }}>
+      <FilterSelect
+        label={label}
+        options={options}
+        name={name}
+        control={control}
+        required={required}
+        // Kết hợp cả disabled từ props và trạng thái đang tải dữ liệu
+        disabled={disabled || !phongId || isRefetching}
+      />
+      {isRefetching && (
+        <CircularProgress
+          size={20}
+          sx={{
+            position: 'absolute',
+            right: 30,
+            top: '25%',
+          }}
+        />
+      )}
+    </Box>
   );
 };

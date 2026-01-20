@@ -6,16 +6,17 @@ import { SinhVienSelection } from '@renderer/components/selections/SinhVienSelec
 import { HocKySelection } from '@renderer/components/selections/HocKySelection';
 import { DanhMucKhoanThuNgoaiHocPhiSelection } from '@renderer/components/selections/DanhMucKhoanThuNgoaiHocPhiSelection';
 import { PhongSelection } from '@renderer/components/selections/ktx/PhongSelection';
-import { KtxLoaiDonOptions, KtxDonTrangThaiOptions } from '../configs/KtxDonEnum';
+import { KtxLoaiDon, KtxLoaiDonOptions, KtxDonTrangThaiOptions } from '../configs/KtxDonEnum';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
 import { useMemo, useEffect } from 'react';
 
 export const DuyetDonForm = () => {
-  const { control, register, setValue } = useFormContext();
+  const { control, register, setValue, getValues } = useFormContext();
 
   const idSinhVien = useWatch({ control, name: 'idSinhVien' });
   const loaiDon = useWatch({ control, name: 'loaiDon' });
 
+  // 1. Thông tin sinh viên
   const { data: studentData } = useCrudPagination<any>({
     entity: 'SinhVien',
     endpoint: `tim-kiem-sinh-vien?Id=${idSinhVien}`,
@@ -33,20 +34,7 @@ export const DuyetDonForm = () => {
     return val !== null && val !== undefined ? Number(val) : undefined;
   }, [selectedStudent, idSinhVien]);
 
-  useEffect(() => {
-    setValue('phongYeuCauId', '');
-    setValue('phongHienTaiId', '');
-    setValue('phongDuocDuyetId', '');
-    setValue('giuongDuocDuyetId', '');
-    if (studentGender === 0) {
-      setValue('gioiTinhDisplay', 'Nam');
-    } else if (studentGender === 1) {
-      setValue('gioiTinhDisplay', 'Nữ');
-    } else {
-      setValue('gioiTinhDisplay', '');
-    }
-  }, [studentGender, setValue]);
-
+  // 2. Trạng thái cư trú
   const { data: stayData } = useCrudPagination<any>({
     entity: 'DonKtx',
     endpoint: `pagination?IdSinhVien=${idSinhVien}&TrangThai=DaDuyet`,
@@ -55,46 +43,66 @@ export const DuyetDonForm = () => {
 
   const isRegistered = useMemo(() => {
     const list = (stayData as any)?.result || [];
-    return list.some((don: any) => don.loaiDon !== 3);
+    return list.some((don: any) => don.loaiDon !== KtxLoaiDon.RoiKtx);
   }, [stayData]);
 
+  // 3. Phân loại đơn
+  const loaiDonNum = useMemo(
+    () => (loaiDon !== undefined ? Number(loaiDon) : undefined),
+    [loaiDon],
+  );
+  const isDangKyMoi = loaiDonNum === KtxLoaiDon.DangKyMoi;
+  const isGiaHan = loaiDonNum === KtxLoaiDon.GiaHan;
+  const isChuyenPhong = loaiDonNum === KtxLoaiDon.ChuyenPhong;
+  const isRoiKtx = loaiDonNum === KtxLoaiDon.RoiKtx;
+
+  // 4. XỬ LÝ RESET FIELD (Tránh Infinite Loop)
+  useEffect(() => {
+    if (loaiDonNum === undefined) return;
+
+    const currentValues = getValues();
+
+    // Chỉ reset Khoản thu khi là đơn Rời KTX (Giữ lại cho Chuyển phòng như yêu cầu mới)
+    if (isRoiKtx && currentValues.idGoiDichVu !== '') {
+      setValue('idGoiDichVu', '');
+    }
+
+    // Reset Phòng yêu cầu nếu không phải đơn đăng ký mới hoặc chuyển phòng
+    if (!isDangKyMoi && !isChuyenPhong && currentValues.phongYeuCauId !== '') {
+      setValue('phongYeuCauId', '');
+    }
+  }, [loaiDonNum, isRoiKtx, isDangKyMoi, isChuyenPhong, setValue, getValues]);
+
+  // 5. Cảnh báo nghiệp vụ
   const alertInfo = useMemo(() => {
     if (!idSinhVien || loaiDon === undefined) return null;
-    const loaiDonNum = Number(loaiDon);
-
-    if (!isRegistered && [1, 2, 3].includes(loaiDonNum)) {
+    if (
+      !isRegistered &&
+      [KtxLoaiDon.GiaHan, KtxLoaiDon.ChuyenPhong, KtxLoaiDon.RoiKtx].includes(loaiDonNum!)
+    ) {
       return {
         severity: 'error' as const,
         title: 'Lỗi nghiệp vụ',
-        message: 'Sinh viên chưa đăng ký lưu trú, không thể thực hiện thao tác này.',
+        message: 'Sinh viên chưa đăng ký lưu trú.',
       };
     }
-    if (isRegistered && loaiDonNum === 0) {
+    if (isRegistered && isDangKyMoi) {
       return {
         severity: 'warning' as const,
         title: 'Cảnh báo',
-        message: 'Sinh viên đang đăng ký lưu trú, không thể đăng ký mới.',
+        message: 'Sinh viên đang lưu trú, không thể đăng ký mới.',
       };
     }
     return null;
-  }, [idSinhVien, loaiDon, isRegistered]);
+  }, [idSinhVien, loaiDon, isRegistered, loaiDonNum, isDangKyMoi]);
 
   return (
     <Stack spacing={2} sx={{ mt: 1 }}>
       <input type="hidden" {...register('id')} />
 
       <Grid container spacing={2}>
-        <Grid size={8}>
+        <Grid size={12}>
           <SinhVienSelection name="idSinhVien" control={control} label="Sinh viên" />
-        </Grid>
-
-        <Grid size={4}>
-          <ControlledTextField
-            name="gioiTinhDisplay"
-            control={control}
-            label="Giới tính"
-            disabled
-          />
         </Grid>
 
         <Grid size={6}>
@@ -110,7 +118,8 @@ export const DuyetDonForm = () => {
           />
         </Grid>
 
-        {Number(loaiDon) === 2 && (
+        {/* Hiện phòng hiện tại: Cho Chuyển, Gia hạn, Rời */}
+        {!isDangKyMoi && loaiDonNum !== undefined && (
           <Grid size={6}>
             <PhongSelection
               name="phongHienTaiId"
@@ -121,13 +130,25 @@ export const DuyetDonForm = () => {
           </Grid>
         )}
 
-        {(Number(loaiDon) === 0 || Number(loaiDon) === 2) && (
+        {/* Hiện phòng yêu cầu: Cho Đăng ký mới, Chuyển phòng */}
+        {(isDangKyMoi || isChuyenPhong) && (
           <Grid size={6}>
             <PhongSelection
               name="phongYeuCauId"
               control={control}
               label="Phòng yêu cầu"
               gioiTinh={studentGender}
+            />
+          </Grid>
+        )}
+
+        {/* HIỆN KHOẢN THU: Cho Đăng ký mới, Gia hạn VÀ Chuyển phòng (Giữ theo logic mới) */}
+        {(isDangKyMoi || isGiaHan || isChuyenPhong) && (
+          <Grid size={6}>
+            <DanhMucKhoanThuNgoaiHocPhiSelection
+              name="idGoiDichVu"
+              control={control}
+              label="Khoản thu"
             />
           </Grid>
         )}
@@ -142,14 +163,11 @@ export const DuyetDonForm = () => {
         </Grid>
 
         <Grid size={6}>
-          <DanhMucKhoanThuNgoaiHocPhiSelection name="idGoiDichVu" control={control} />
-        </Grid>
-
-        <Grid size={6}>
-          <ControlledDatePicker name="ngayBatDau" control={control} label="Ngày bắt đầu" />
-        </Grid>
-        <Grid size={6}>
-          <ControlledDatePicker name="ngayHetHan" control={control} label="Ngày hết hạn" />
+          <ControlledDatePicker
+            name="ngayBatDau"
+            control={control}
+            label={isRoiKtx ? 'Ngày rời KTX' : 'Ngày bắt đầu ở'}
+          />
         </Grid>
 
         <Grid size={12}>
