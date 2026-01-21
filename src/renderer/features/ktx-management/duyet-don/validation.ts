@@ -29,7 +29,7 @@ export const duyetDonSchema = z
     }
 
     if (
-      (data.loaiDon === 0 || data.loaiDon === 1) &&
+      (data.loaiDon === 0 || data.loaiDon === 2) &&
       (!data.phongYeuCauId || data.phongYeuCauId.trim() === '')
     ) {
       ctx.addIssue({

@@ -16,7 +16,6 @@ export const DuyetDonForm = () => {
   const idSinhVien = useWatch({ control, name: 'idSinhVien' });
   const loaiDon = useWatch({ control, name: 'loaiDon' });
 
-  // 1. Thông tin sinh viên
   const { data: studentData } = useCrudPagination<any>({
     entity: 'SinhVien',
     endpoint: `tim-kiem-sinh-vien?Id=${idSinhVien}`,
@@ -34,7 +33,6 @@ export const DuyetDonForm = () => {
     return val !== null && val !== undefined ? Number(val) : undefined;
   }, [selectedStudent, idSinhVien]);
 
-  // 2. Trạng thái cư trú
   const { data: stayData } = useCrudPagination<any>({
     entity: 'DonKtx',
     endpoint: `pagination?IdSinhVien=${idSinhVien}&TrangThai=DaDuyet`,
@@ -46,7 +44,6 @@ export const DuyetDonForm = () => {
     return list.some((don: any) => don.loaiDon !== KtxLoaiDon.RoiKtx);
   }, [stayData]);
 
-  // 3. Phân loại đơn
   const loaiDonNum = useMemo(
     () => (loaiDon !== undefined ? Number(loaiDon) : undefined),
     [loaiDon],
@@ -56,24 +53,20 @@ export const DuyetDonForm = () => {
   const isChuyenPhong = loaiDonNum === KtxLoaiDon.ChuyenPhong;
   const isRoiKtx = loaiDonNum === KtxLoaiDon.RoiKtx;
 
-  // 4. XỬ LÝ RESET FIELD (Tránh Infinite Loop)
   useEffect(() => {
     if (loaiDonNum === undefined) return;
 
     const currentValues = getValues();
 
-    // Chỉ reset Khoản thu khi là đơn Rời KTX (Giữ lại cho Chuyển phòng như yêu cầu mới)
     if (isRoiKtx && currentValues.idGoiDichVu !== '') {
       setValue('idGoiDichVu', '');
     }
 
-    // Reset Phòng yêu cầu nếu không phải đơn đăng ký mới hoặc chuyển phòng
     if (!isDangKyMoi && !isChuyenPhong && currentValues.phongYeuCauId !== '') {
       setValue('phongYeuCauId', '');
     }
   }, [loaiDonNum, isRoiKtx, isDangKyMoi, isChuyenPhong, setValue, getValues]);
 
-  // 5. Cảnh báo nghiệp vụ
   const alertInfo = useMemo(() => {
     if (!idSinhVien || loaiDon === undefined) return null;
     if (
@@ -118,7 +111,6 @@ export const DuyetDonForm = () => {
           />
         </Grid>
 
-        {/* Hiện phòng hiện tại: Cho Chuyển, Gia hạn, Rời */}
         {!isDangKyMoi && loaiDonNum !== undefined && (
           <Grid size={6}>
             <PhongSelection
@@ -130,7 +122,6 @@ export const DuyetDonForm = () => {
           </Grid>
         )}
 
-        {/* Hiện phòng yêu cầu: Cho Đăng ký mới, Chuyển phòng */}
         {(isDangKyMoi || isChuyenPhong) && (
           <Grid size={6}>
             <PhongSelection
@@ -142,7 +133,6 @@ export const DuyetDonForm = () => {
           </Grid>
         )}
 
-        {/* HIỆN KHOẢN THU: Cho Đăng ký mới, Gia hạn VÀ Chuyển phòng (Giữ theo logic mới) */}
         {(isDangKyMoi || isGiaHan || isChuyenPhong) && (
           <Grid size={6}>
             <DanhMucKhoanThuNgoaiHocPhiSelection
