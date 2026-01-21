@@ -71,7 +71,7 @@ export const SearchLeftStudentDrawer = ({
             KẾT QUẢ TÌM KIẾM ({results.length})
           </Typography>
 
-          <List spacing={1}>
+          <List>
             {results.map((item: any) => (
               <ListItem
                 key={item.id}

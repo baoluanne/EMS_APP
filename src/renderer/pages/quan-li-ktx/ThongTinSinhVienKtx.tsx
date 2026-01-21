@@ -1,11 +1,11 @@
-import { Stack, Typography, Button, Box, Chip } from '@mui/material';
+import { Stack, Typography, Box, Chip, Button } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
-import { PersonSearch, Group } from '@mui/icons-material';
-import React, { useState } from 'react';
+import { Group, PersonSearch } from '@mui/icons-material';
+import React, { useEffect, useState } from 'react';
 
 import { ThongTinSvKtxFilter } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/ThongTinSinhVienFilter';
 import { thongTinSvKtxColumns } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/configs/table.configs';
@@ -30,10 +30,10 @@ export default function ThongTinSinhVienKtx() {
     defaultValues,
     schema: thongTinSvKtxSchema,
     entity: 'CuTruKtx',
-    // Mặc định lọc những người đang ở (Status 0 hoặc DangO tùy BE)
-    initialParams: { TrangThai: 'DangO' },
   });
-
+  useEffect(() => {
+    mergeParams({ TrangThai: 'DangO' });
+  }, [mergeParams]);
   const rowsData = React.useMemo(() => (data as any)?.result || [], [data]);
   const totalCount = (data as any)?.totalCount || 0;
 
@@ -64,15 +64,16 @@ export default function ThongTinSinhVienKtx() {
         {/* Toolbar với nút mở Sidebar */}
         <ActionsToolbar
           selectedRowIds={selectedRows}
-          extraActions={
+          customStartActions={
             <Button
-              variant="contained"
+              variant="text"
+              size="small"
               color="secondary"
               startIcon={<PersonSearch />}
               onClick={() => setOpenHistory(true)}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
+              sx={{ fontWeight: 700 }}
             >
-              Tìm kiếm sinh viên rời KTX
+              Tìm kiếm sinh viên đã rời
             </Button>
           }
           onExport={(dataOption, columnOption) => {
