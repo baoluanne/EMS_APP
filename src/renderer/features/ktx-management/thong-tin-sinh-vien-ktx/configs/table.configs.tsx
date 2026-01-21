@@ -1,51 +1,67 @@
-import { Typography } from '@mui/material';
+import { Typography, Chip } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
-//import { generateTableConfigs } from '@renderer/shared/configs/base-table.config';
+import { format } from 'date-fns';
 
 export const thongTinSvKtxColumns: GridColDef[] = [
-  { field: 'maSinhVien', headerName: 'Mã SV', minWidth: 110, align: 'center', sortable: true },
-  { field: 'hoTen', headerName: 'Họ tên', minWidth: 180, flex: 1, sortable: true },
-  { field: 'lop', headerName: 'Lớp', minWidth: 100 },
-  { field: 'chuyenNganh', headerName: 'Chuyên ngành', minWidth: 150 },
-  { field: 'tenToaNha', headerName: 'Tòa nhà', minWidth: 100 },
-  { field: 'maPhong', headerName: 'Phòng', minWidth: 90, align: 'center' },
-  { field: 'maGiuong', headerName: 'Giường', minWidth: 90, align: 'center' },
   {
-    field: 'trangThaiGiuong',
-    headerName: 'Trạng thái',
-    minWidth: 110,
-    align: 'center',
-    renderCell: (params) => {
-      const status = params.value;
-      const color = status === 'CoSV' ? 'success' : 'warning';
-      return (
-        <Typography variant="body2" fontWeight={600} color={`${color}.main`}>
-          {status === 'CoSV' ? 'Đang ở' : 'Trống'}
-        </Typography>
-      );
-    },
+    field: 'maSinhVien',
+    headerName: 'Mã SV',
+    width: 120,
+    valueGetter: (_, row) => row.sinhVien?.maSinhVien,
   },
   {
-    field: 'ngayVaoO',
+    field: 'hoTen',
+    headerName: 'Họ tên',
+    flex: 1,
+    valueGetter: (_, row) =>
+      row.sinhVien?.fullName || `${row.sinhVien?.hoDem} ${row.sinhVien?.ten}`,
+  },
+  {
+    field: 'maPhong',
+    headerName: 'Phòng',
+    width: 100,
+    valueGetter: (_, row) => row.phongKtx?.maPhong,
+  },
+  {
+    field: 'maGiuong',
+    headerName: 'Giường',
+    width: 100,
+    valueGetter: (_, row) => row.giuongKtx?.maGiuong,
+  },
+  {
+    field: 'ngayBatDau',
     headerName: 'Ngày vào ở',
-    minWidth: 120,
-    align: 'center',
-    renderCell: (params) =>
-      params.value ? new Date(params.value).toLocaleDateString('vi-VN') : '-',
+    width: 130,
+    renderCell: (params) => (params.value ? format(new Date(params.value), 'dd/MM/yyyy') : '-'),
   },
   {
-    field: 'ngayHetHan',
-    headerName: 'Hết hạn',
-    minWidth: 120,
-    align: 'center',
+    field: 'ngayRoiKtx',
+    headerName: 'Hạn cư trú',
+    width: 130,
     renderCell: (params) => {
       if (!params.value) return '-';
       const isExpired = new Date(params.value) < new Date();
       return (
-        <Typography color={isExpired ? 'error' : 'text.primary'} variant="body2">
-          {new Date(params.value).toLocaleDateString('vi-VN')}
+        <Typography
+          color={isExpired ? 'error.main' : 'text.primary'}
+          variant="body2"
+          fontWeight={isExpired ? 700 : 400}
+        >
+          {format(new Date(params.value), 'dd/MM/yyyy')}
         </Typography>
       );
     },
+  },
+  {
+    field: 'trangThai',
+    headerName: 'Trạng thái',
+    width: 120,
+    renderCell: (params) => (
+      <Chip
+        label={params.value === 0 || params.value === 'DangO' ? 'Đang ở' : 'Đã rời'}
+        color={params.value === 0 || params.value === 'DangO' ? 'success' : 'default'}
+        size="small"
+      />
+    ),
   },
 ];
