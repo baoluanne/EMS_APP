@@ -1,48 +1,47 @@
 import { Grid } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
 import { ControlledTextField } from '@renderer/components/controlled-fields';
+import { FilterSelect } from '@renderer/components/fields';
 import { useForm } from 'react-hook-form';
-
-export interface ThongTinSvKtxFilterState {
-  maSinhVien?: string;
-  hoTen?: string;
-  maPhong?: string;
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const thongTinSvKtxDefaultFilters: ThongTinSvKtxFilterState = {
-  maSinhVien: undefined,
-  hoTen: undefined,
-  maPhong: undefined,
-};
+import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
+import {
+  KtxTrangThaiSvOptions,
+  thongTinSvKtxDefaultFilters,
+} from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
 
 interface Props {
   onApply: (filters: ThongTinSvKtxFilterState) => void;
+  onReset?: () => void;
 }
 
-export const ThongTinSvKtxFilter = ({ onApply }: Props) => {
+export const ThongTinSvKtxFilter = ({ onApply, onReset }: Props) => {
   const filterMethods = useForm<ThongTinSvKtxFilterState>({
     defaultValues: thongTinSvKtxDefaultFilters,
   });
 
-  const { control } = filterMethods;
+  const { control, reset } = filterMethods;
 
   const handleClear = () => {
-    filterMethods.reset(thongTinSvKtxDefaultFilters);
+    reset(thongTinSvKtxDefaultFilters);
+    onReset?.();
     onApply(thongTinSvKtxDefaultFilters);
   };
 
-  const handleApply = (data: ThongTinSvKtxFilterState) => {
+  const handleApplyFilter = (data: ThongTinSvKtxFilterState) => {
     const cleanedData: ThongTinSvKtxFilterState = {};
+
     if (data.maSinhVien?.trim()) cleanedData.maSinhVien = data.maSinhVien.trim();
     if (data.hoTen?.trim()) cleanedData.hoTen = data.hoTen.trim();
     if (data.maPhong?.trim()) cleanedData.maPhong = data.maPhong.trim();
+    if (data.maGiuong?.trim()) cleanedData.maGiuong = data.maGiuong.trim();
+    if (data.trangThai !== undefined) cleanedData.trangThai = data.trangThai;
+
     onApply(cleanedData);
   };
 
   return (
     <FilterDrawerBottom<ThongTinSvKtxFilterState>
-      onApply={handleApply}
+      onApply={handleApplyFilter}
       onClear={handleClear}
       methods={filterMethods}
     >
@@ -69,6 +68,23 @@ export const ThongTinSvKtxFilter = ({ onApply }: Props) => {
             name="maPhong"
             label="Mã phòng"
             placeholder="Tìm theo phòng..."
+          />
+        </Grid>
+
+        <Grid size={4}>
+          <ControlledTextField
+            control={control}
+            name="maGiuong"
+            label="Mã giường"
+            placeholder="Tìm theo giường..."
+          />
+        </Grid>
+        <Grid size={4}>
+          <FilterSelect
+            name="trangThai"
+            control={control}
+            label="Trạng thái sinh viên"
+            options={KtxTrangThaiSvOptions}
           />
         </Grid>
       </Grid>

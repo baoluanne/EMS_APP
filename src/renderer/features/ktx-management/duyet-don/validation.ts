@@ -4,7 +4,7 @@ export const duyetDonSchema = z
   .object({
     id: z.string().optional(),
     idSinhVien: z.string().min(1, 'Sinh viên không được để trống'),
-    idHocKy: z.string().min(1, 'Học kỳ không được để trống'),
+    idHocKy: z.string().optional().nullable(),
     loaiDon: z.coerce.number().min(0, 'Loại đơn không được để trống'),
     phongYeuCauId: z.string().optional().nullable(),
     trangThai: z.coerce.number(),
@@ -18,13 +18,24 @@ export const duyetDonSchema = z
   })
   .superRefine((data, ctx) => {
     if (
-      (data.loaiDon === 0 || data.loaiDon === 2 || data.loaiDon === 1) &&
+      (data.loaiDon === 0 || data.loaiDon === 1) &&
       (!data.idGoiDichVu || data.idGoiDichVu.trim() === '')
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Khoản thu không được để trống',
         path: ['idGoiDichVu'],
+      });
+    }
+
+    if (
+      (data.loaiDon === 0 || data.loaiDon === 1) &&
+      (!data.idHocKy || data.idHocKy.trim() === '')
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Học kì không được để trống',
+        path: ['idHocKy'],
       });
     }
 
@@ -43,7 +54,7 @@ export const duyetDonSchema = z
 export type DuyetDon = z.infer<typeof duyetDonSchema>;
 
 export interface DuyetDonFilterState {
-  idSinhVien?: string;
+  fullName?: string;
   idHocKy?: string;
   loaiDon?: number;
   trangThai?: number;
@@ -52,4 +63,5 @@ export interface DuyetDonFilterState {
   maDon?: string;
   gioiTinh?: number;
   ngaySinh?: string;
+  ngayGuiDon?: string;
 }

@@ -38,15 +38,15 @@ export const DuyetDonFilter = ({ onApply, onReset }: Props) => {
       methods={filterMethods}
     >
       <Grid container spacing={2}>
-        <Grid size={6}>
+        <Grid size={4}>
           <ControlledTextField
-            name="idSinhVien"
+            name="fullName"
             control={control}
-            label="Mã sinh viên"
-            placeholder="Tìm kiếm theo mã sinh viên"
+            label="Tên sinh viên"
+            placeholder="Tìm kiếm theo sinh viên"
           />
         </Grid>
-        <Grid size={6}>
+        <Grid size={4}>
           <FilterSelect
             name="gioiTinh"
             control={control}
@@ -55,11 +55,11 @@ export const DuyetDonFilter = ({ onApply, onReset }: Props) => {
           />
         </Grid>
 
-        <Grid size={6}>
-          <ControlledDatePicker name="ngaySinh" control={control} label="Ngày sinh sinh viên" />
+        <Grid size={4}>
+          <ControlledDatePicker name="ngayGuiDon" control={control} label="Ngày gửi đơn" />
         </Grid>
 
-        <Grid size={6}>
+        <Grid size={4}>
           <ControlledTextField
             name="maDon"
             control={control}
@@ -67,7 +67,7 @@ export const DuyetDonFilter = ({ onApply, onReset }: Props) => {
             placeholder="Tìm kiếm theo mã đơn"
           />
         </Grid>
-        <Grid size={6}>
+        <Grid size={4}>
           <FilterSelect
             name="loaiDon"
             control={control}
@@ -75,7 +75,7 @@ export const DuyetDonFilter = ({ onApply, onReset }: Props) => {
             options={KtxLoaiDonOptions}
           />
         </Grid>
-        <Grid size={6}>
+        <Grid size={4}>
           <FilterSelect
             name="trangThai"
             control={control}

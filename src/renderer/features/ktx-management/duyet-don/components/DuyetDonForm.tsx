@@ -97,11 +97,11 @@ export const DuyetDonForm = () => {
         <Grid size={12}>
           <SinhVienSelection name="idSinhVien" control={control} label="Sinh viên" />
         </Grid>
-
-        <Grid size={6}>
-          <HocKySelection name="idHocKy" control={control} label="Học kỳ" />
-        </Grid>
-
+        {(isDangKyMoi || isGiaHan || isChuyenPhong) && (
+          <Grid size={6}>
+            <HocKySelection name="idHocKy" control={control} label="Học kỳ" />
+          </Grid>
+        )}
         <Grid size={6}>
           <FilterSelect
             name="loaiDon"
@@ -133,7 +133,7 @@ export const DuyetDonForm = () => {
           </Grid>
         )}
 
-        {(isDangKyMoi || isGiaHan || isChuyenPhong) && (
+        {(isDangKyMoi || isGiaHan) && (
           <Grid size={6}>
             <DanhMucKhoanThuNgoaiHocPhiSelection
               name="idGoiDichVu"

@@ -65,12 +65,23 @@ const DuyetDonPage = () => {
         !filters.maDon || row.maDon?.toLowerCase().includes(filters.maDon.toLowerCase());
       const matchGioiTinh =
         filters.gioiTinh === undefined || row.sinhVien?.gioiTinh === filters.gioiTinh;
-      const matchNgaySinh =
-        !filters.ngaySinh ||
-        (row.sinhVien?.ngaySinh &&
-          row.sinhVien.ngaySinh.startsWith(filters.ngaySinh.substring(0, 10)));
+      const matchNgayGui =
+        !filters.ngayGuiDon ||
+        (row.ngayGuiDon &&
+          format(new Date(row.ngayGuiDon), 'yyyy-MM-dd') ===
+            format(new Date(filters.ngayGuiDon), 'yyyy-MM-dd'));
+      const matchTenSinhVien =
+        !filters.fullName ||
+        row.sinhVien?.fullName?.toLowerCase().includes(filters.fullName.toLowerCase());
 
-      return matchLoai && matchTrangThai && matchMaDon && matchGioiTinh && matchNgaySinh;
+      return (
+        matchLoai &&
+        matchTrangThai &&
+        matchMaDon &&
+        matchGioiTinh &&
+        matchNgayGui &&
+        matchTenSinhVien
+      );
     });
   }, [data, filters]);
 
