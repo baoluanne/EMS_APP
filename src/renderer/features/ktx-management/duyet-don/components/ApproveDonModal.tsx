@@ -24,7 +24,6 @@ interface Props {
 }
 
 export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
-  //#region State & Current Don
   const [phongId, setPhongId] = useState('');
   const [giuongId, setGiuongId] = useState('');
   const [ghiChu, setGhiChu] = useState('');
@@ -50,40 +49,37 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
     return null;
   }, [currentDon, isGiaHan, isChuyenPhong, isRoiKtx]);
 
-  const currentPhong = useMemo(() => currentStayInfo?.phongHienTai, [currentStayInfo]);
-
-  const requestedPhong = useMemo(() => {
-    if (isDangKyMoi) return currentDon?.dangKyMoi?.phongYeuCau;
-    if (isChuyenPhong) return currentDon?.chuyenPhong?.phongYeuCau;
+  const requestedInfo = useMemo(() => {
+    if (isDangKyMoi) return currentDon?.dangKyMoi;
+    if (isChuyenPhong) return currentDon?.chuyenPhong;
     return null;
   }, [currentDon, isDangKyMoi, isChuyenPhong]);
 
   useEffect(() => {
     if (isGiaHan && currentStayInfo?.phongHienTaiId) {
       setPhongId(currentStayInfo.phongHienTaiId);
-    } else if (requestedPhong?.id && (isDangKyMoi || isChuyenPhong)) {
-      setPhongId(requestedPhong.id);
+      setGiuongId(currentStayInfo.giuongHienTaiId || '');
+    } else if (requestedInfo?.phongYeuCauId && (isDangKyMoi || isChuyenPhong)) {
+      setPhongId(requestedInfo.phongYeuCauId);
+      setGiuongId(requestedInfo.giuongYeuCauId || '');
     }
-  }, [requestedPhong, currentStayInfo, isDangKyMoi, isChuyenPhong, isGiaHan]);
+  }, [requestedInfo, currentStayInfo, isDangKyMoi, isChuyenPhong, isGiaHan]);
 
   const { data: phongs } = useCrudPagination<any>({
     entity: 'PhongKtx',
-    endpoint: `pagination?Gender=${currentDon?.sinhVien?.gioiTinh ?? ''}`,
-    enabled: isDangKyMoi || isChuyenPhong,
+    endpoint: `pagination?Gender=${currentDon?.sinhVien?.gioiTinh ?? ''}&pageSize=1000`,
+    enabled: !!currentDon?.sinhVien,
   });
 
   const { data: fetchedGiuongs, isRefetching } = useCrudPagination<any>({
     entity: 'GiuongKtx',
-    endpoint: `pagination?PhongId=${phongId}&TrangThai=0`,
+    endpoint: `pagination?PhongId=${phongId}&TrangThai=0&pageSize=1000`,
     enabled: !!phongId && (isDangKyMoi || isChuyenPhong),
   });
 
   const bedOptions = useMemo(() => {
-    if (phongId === requestedPhong?.id && requestedPhong?.giuongs) {
-      return requestedPhong.giuongs.filter((g: any) => g.trangThai === 0);
-    }
     return (fetchedGiuongs as any)?.result || [];
-  }, [phongId, requestedPhong, fetchedGiuongs]);
+  }, [fetchedGiuongs]);
 
   const { mutateAsync: approveDon } = useMutation<any>(
     `DonKtx/${selectedId}/approve?phongDuyetId=${phongId}&giuongDuyetId=${giuongId}`,
@@ -130,9 +126,7 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
       </Typography>
     </Grid>
   );
-  //#endregion
 
-  //#region FormDetailsModal
   return (
     <FormDetailsModal
       title={`Xử lý đơn ${isDangKyMoi ? 'đăng ký mới' : isChuyenPhong ? 'chuyển phòng' : isGiaHan ? 'gia hạn' : 'rời KTX'}`}
@@ -164,12 +158,6 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
               bold
             />
             <InfoItem label="Mã sinh viên" value={currentDon?.sinhVien?.maSinhVien} bold />
-            {!isRoiKtx && (
-              <InfoItem
-                label="Gói dịch vụ"
-                value={currentDon?.goiDichVu?.tenKhoanThu || 'Mặc định'}
-              />
-            )}
           </Grid>
         </Paper>
 
@@ -186,33 +174,34 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
               CHI TIẾT YÊU CẦU
             </Typography>
           </Stack>
-
           <Grid container spacing={2}>
             {(isChuyenPhong || isGiaHan || isRoiKtx) && (
               <InfoItem
                 label="PHÒNG ĐANG Ở"
-                value={currentPhong?.maPhong || currentStayInfo?.phongHienTaiId || 'Đang ở KTX'}
+                value={currentStayInfo?.phongHienTai?.maPhong || 'Đang ở KTX'}
                 bold
                 color="primary.main"
               />
             )}
-
             {(isDangKyMoi || isChuyenPhong) && (
-              <InfoItem
-                label="PHÒNG YÊU CẦU"
-                value={requestedPhong?.maPhong}
-                bold
-                color="error.main"
-              />
+              <>
+                <InfoItem
+                  label="PHÒNG YÊU CẦU"
+                  value={requestedInfo?.phongYeuCau?.maPhong}
+                  bold
+                  color="error.main"
+                />
+                <InfoItem
+                  label="GIƯỜNG YÊU CẦU"
+                  value={requestedInfo?.giuongYeuCau?.maGiuong}
+                  bold
+                  color="error.main"
+                />
+              </>
             )}
-
             <InfoItem
               label={
-                isRoiKtx
-                  ? 'NGÀY RỜI KTX (DỰ KIẾN)'
-                  : isChuyenPhong
-                    ? 'NGÀY BẮT ĐẦU CHUYỂN'
-                    : 'NGÀY BẮT ĐẦU Ở'
+                isRoiKtx ? 'NGÀY RỜI (DỰ KIẾN)' : isChuyenPhong ? 'NGÀY CHUYỂN' : 'NGÀY BẮT ĐẦU'
               }
               value={
                 currentDon?.ngayBatDau
@@ -220,21 +209,7 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
                   : '---'
               }
               bold
-              color={isRoiKtx ? 'error.main' : 'textPrimary'}
             />
-
-            {isGiaHan && (
-              <InfoItem
-                label="HẠN LƯU TRÚ MỚI"
-                value={
-                  currentDon?.hocKy?.denNgay
-                    ? format(new Date(currentDon.hocKy.denNgay), 'dd/MM/yyyy')
-                    : 'Theo học kỳ'
-                }
-                bold
-                color="success.main"
-              />
-            )}
           </Grid>
         </Paper>
 
@@ -260,11 +235,10 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
               >
                 {phongs?.result?.map((p: any) => (
                   <MenuItem key={p.id} value={p.id}>
-                    {p.maPhong} - {p.tang?.tenTang} ({p.loaiPhong})
+                    {p.maPhong}
                   </MenuItem>
                 ))}
               </TextField>
-
               <TextField
                 select
                 fullWidth
@@ -273,27 +247,35 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
                 value={giuongId}
                 onChange={(e) => setGiuongId(e.target.value)}
                 disabled={!phongId || isRefetching}
-                error={!!(phongId && bedOptions.length === 0)}
+                error={!!(phongId && !isRefetching && bedOptions.length === 0 && giuongId === '')}
                 helperText={
-                  phongId && bedOptions.length === 0 ? 'Phòng này không còn giường trống!' : ''
+                  phongId && !isRefetching && bedOptions.length === 0 && giuongId === ''
+                    ? 'Phòng này hết giường trống!'
+                    : ''
                 }
               >
                 {bedOptions.map((g: any) => (
                   <MenuItem key={g.id} value={g.id}>
-                    Số giường: {g.maGiuong}
+                    {g.maGiuong}
                   </MenuItem>
                 ))}
+                {giuongId &&
+                  !bedOptions.find((x: any) => x.id === giuongId) &&
+                  requestedInfo?.giuongYeuCau && (
+                    <MenuItem key={giuongId} value={giuongId}>
+                      {requestedInfo.giuongYeuCau.maGiuong} (Yêu cầu)
+                    </MenuItem>
+                  )}
               </TextField>
             </Stack>
           </Box>
         )}
 
         <Divider />
-
         <Stack spacing={1} sx={{ bgcolor: '#fff5f5', p: 1.5, borderRadius: 1 }}>
           <TextField
             fullWidth
-            label="Lý do từ chối (nếu có)"
+            label="Lý do từ chối"
             multiline
             rows={2}
             size="small"
@@ -308,11 +290,10 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
             fullWidth
             size="small"
           >
-            Từ chối đơn này
+            Từ chối đơn
           </Button>
         </Stack>
       </Stack>
     </FormDetailsModal>
   );
-  //#endregion
 };

@@ -15,6 +15,7 @@ export const duyetDonSchema = z
     idGoiDichVu: z.string().optional().nullable(),
     phongDuocDuyetId: z.string().optional().nullable(),
     giuongDuocDuyetId: z.string().optional().nullable(),
+    giuongYeuCauId: z.string().optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (
@@ -27,7 +28,16 @@ export const duyetDonSchema = z
         path: ['idGoiDichVu'],
       });
     }
-
+    if (
+      (data.loaiDon === 0 || data.loaiDon === 2) &&
+      (!data.giuongYeuCauId || data.giuongYeuCauId.trim() === '')
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Giường yêu cầu không được để trống',
+        path: ['giuongYeuCauId'],
+      });
+    }
     if (
       (data.loaiDon === 0 || data.loaiDon === 1) &&
       (!data.idHocKy || data.idHocKy.trim() === '')

@@ -6,25 +6,25 @@ export const duyetDonColumns = (onApprove: (id: string) => void): GridColDef[] =
   {
     field: 'maDon',
     headerName: 'Mã đơn',
-    width: 130,
+    width: 100,
     valueGetter: (_, row: any) => row.maDon || '',
   },
   {
     field: 'idSinhVien',
     headerName: 'Họ tên sinh viên',
-    flex: 1,
+    width: 100,
     valueGetter: (_, row: any) => row.sinhVien?.fullName || '',
   },
   {
     field: 'gioiTinh',
     headerName: 'Giới tính',
-    flex: 1,
+    width: 100,
     valueGetter: (_, row: any) => (row.sinhVien?.gioiTinh === 0 ? 'Nam' : 'Nữ'),
   },
   {
     field: 'loaiDon',
     headerName: 'Loại đơn',
-    width: 150,
+    width: 100,
     renderCell: (params) => {
       const options: any = { 0: 'Đăng ký mới', 1: 'Gia hạn', 2: 'Chuyển phòng', 3: 'Rời KTX' };
       return options[params.value] || '';
@@ -33,22 +33,20 @@ export const duyetDonColumns = (onApprove: (id: string) => void): GridColDef[] =
   {
     field: 'idGoiDichVu',
     headerName: 'Gói dịch vụ',
-    width: 150,
-    flex: 1,
+    width: 100,
     valueGetter: (_, row: any) => row.goiDichVu?.tenKhoanThu || '',
   },
   {
     field: 'ngayGuiDon',
     headerName: 'Ngày gửi',
-    width: 150,
-    flex: 1,
+    width: 100,
     valueGetter: (_, row: any) =>
       row.ngayGuiDon ? format(new Date(row.ngayGuiDon), 'dd/MM/yyyy') : '---',
   },
   {
     field: 'trangThai',
     headerName: 'Trạng thái',
-    width: 130,
+    width: 100,
     renderCell: (params) => {
       const statusMap: any = {
         0: { label: 'Chờ duyệt', color: 'warning' },

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { CircularProgress, Autocomplete, TextField } from '@mui/material';
 import { Control, useController } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,12 +22,31 @@ export const SinhVienSelection = ({
   disabled = false,
 }: Props) => {
   const [inputValue, setInputValue] = useState('');
+  const [debouncedInputValue, setDebouncedInputValue] = useState('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { field } = useController({ name, control });
 
+  // Debounce input value
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedInputValue(inputValue);
+    }, 300); // 300ms delay
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [inputValue]);
+
   const { data, isRefetching } = useCrudPaginationModal({
     entity: 'SinhVien',
-    endpoint: `tim-kiem-sinh-vien?TimNhanh=${inputValue}`,
+    endpoint: `tim-kiem-sinh-vien?${debouncedInputValue}`,
     schema: dummySchema,
     defaultValues: {},
   });
@@ -37,8 +56,7 @@ export const SinhVienSelection = ({
     const list = (data as any)?.result || (data as any)?.data || [];
 
     return list.map((item: any) => ({
-      label:
-        `${item.maSinhVien} - ${item.hoDem || ''} ${item.ten || ''} - ${item.gioiTinh === 0 ? 'Nam' : 'Nữ'}`.trim(),
+      label: `${item.maSinhVien} - ${item.hoDem || ''} ${item.ten || ''} `.trim(),
       value: (item.id || item.Id)?.toString() || '',
     }));
   }, [data]);
@@ -62,6 +80,8 @@ export const SinhVienSelection = ({
         field.onChange(newValue ? newValue.value : '');
       }}
       loading={isRefetching}
+      noOptionsText="Không tìm thấy sinh viên"
+      loadingText="Đang tìm kiếm..."
       renderInput={(params) => (
         <TextField
           {...params}

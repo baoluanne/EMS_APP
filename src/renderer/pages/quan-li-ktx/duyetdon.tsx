@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Stack } from '@mui/material';
+import { Button, Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { FormDetailsModal, DeleteConfirmationModal } from '@renderer/components/modals';
@@ -18,6 +18,8 @@ import { DuyetDonFilter } from '@renderer/features/ktx-management/duyet-don/comp
 import { ApproveDonModal } from '@renderer/features/ktx-management/duyet-don/components/ApproveDonModal';
 import { KtxDonTrangThai } from '@renderer/features/ktx-management/duyet-don/configs/KtxDonEnum';
 import { format } from 'date-fns';
+import { Search as SearchIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 const defaultValues = {
   idSinhVien: '',
@@ -30,7 +32,7 @@ const defaultValues = {
 const DuyetDonPage = () => {
   const [filters, setFilters] = useState<DuyetDonFilterState>({});
   const [targetId, setTargetId] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   const {
     formMethods,
     data,
@@ -93,6 +95,16 @@ const DuyetDonPage = () => {
           onDelete={() => setIsDeleteOpenModal(true)}
           onAdd={onAdd}
           onEdit={onEdit}
+          customStartActions={
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<SearchIcon />}
+              onClick={() => navigate('/dormitory-management/student-dormitory-lookup')}
+            >
+              Tra cứu sinh viên
+            </Button>
+          }
           onExport={(dataOption, columnOption) => {
             exportPaginationToExcel<DuyetDon>({
               entity: 'don-ktx',
