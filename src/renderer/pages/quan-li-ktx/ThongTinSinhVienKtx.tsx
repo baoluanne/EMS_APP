@@ -1,19 +1,22 @@
-import { useMemo, useState, useEffect } from 'react';
-import { Stack, Box, Typography, Chip, Grid, Paper } from '@mui/material';
-import { Wc, HomeWork, People, Hotel, CheckCircle } from '@mui/icons-material';
-
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { Stack, Box, Typography, Grid } from '@mui/material';
 import { DataGridTable } from '@renderer/components/Table';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 
-import { ResidencyHistoryModal } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/CutruHistory';
-import { thongTinSvKtxSchema } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/validation';
-
+import { roomColumns } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/configs/table.configs';
 import { KtxSidebar } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/KtxSidebar';
-import { BedListDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentListDrawer';
+import { FloorStatsCard } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/FloorStatsCard';
+import { ThongTinSvKtxFilter } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/ThongTinSinhVienFilter';
+import { floorStatsConfig } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/configs/floorStats';
+import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
+import { thongTinSvKtxSchema } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/validation';
 import { FormProvider } from 'react-hook-form';
+import { BedListDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentListDrawer';
+import { StudentSearchResultDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentSearchResultDrawer';
+import { ResidencyHistoryModal } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/CutruHistory';
 
 export default function ThongTinSinhVienKtx() {
   const [expandedToa, setExpandedToa] = useState<string | null>(null);
@@ -21,6 +24,9 @@ export default function ThongTinSinhVienKtx() {
   const [selectedPhong, setSelectedPhong] = useState<any>(null);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
+  const [filterState, setFilterState] = useState<ThongTinSvKtxFilterState>({});
+  const [isSearchResultOpen, setIsSearchResultOpen] = useState(false);
 
   const {
     formMethods,
@@ -36,6 +42,7 @@ export default function ThongTinSinhVienKtx() {
     schema: thongTinSvKtxSchema,
     entity: 'PhongKtx',
   });
+
   const { data: toaNhaData } = useCrudPagination<any>({
     entity: 'ToaNhaKtx',
     endpoint: 'pagination?pageSize=100',
@@ -50,47 +57,27 @@ export default function ThongTinSinhVienKtx() {
     if (selectedTang?.id) mergeParams({ TangId: selectedTang.id });
   }, [selectedTang, mergeParams]);
 
-  // Cột cho bảng danh sách Phòng ở giữa
-  const roomColumns: any = [
-    { field: 'maPhong', headerName: 'Phòng', flex: 1, renderCell: (p: any) => <b>{p.value}</b> },
-    {
-      field: 'loaiPhong',
-      headerName: 'Loại',
-      width: 120,
-      renderCell: (p: any) => (
-        <Chip size="small" label={p.value} icon={<Wc sx={{ fontSize: 14 }} />} />
-      ),
-    },
-    { field: 'soLuongGiuong', headerName: 'Tổng giường', width: 120, align: 'center' },
-    {
-      field: 'occupied',
-      headerName: 'Đang ở',
-      width: 100,
-      align: 'center',
-      valueGetter: (_: any, row: any) =>
-        row.giuongs?.filter((g: any) => g.trangThai === 1).length || 0,
-    },
-    {
-      field: 'available',
-      headerName: 'Giường trống',
-      width: 120,
-      align: 'center',
-      renderCell: (p: any) => {
-        const empty =
-          (p.row.soLuongGiuong || 0) -
-          (p.row.giuongs?.filter((g: any) => g.trangThai === 1).length || 0);
-        return (
-          <Typography
-            variant="body2"
-            fontWeight={700}
-            color={empty > 0 ? 'success.main' : 'error.main'}
-          >
-            {empty}
-          </Typography>
-        );
-      },
-    },
-  ];
+  const handleExpandToa = useCallback((id: string | null) => setExpandedToa(id), []);
+  const handleSelectTang = useCallback((tang: any) => {
+    setSelectedTang(tang);
+    setSelectedPhong(null);
+  }, []);
+
+  const handleFilterApply = (filters: ThongTinSvKtxFilterState) => {
+    setFilterState(filters);
+
+    // Only open drawer if there are actual filters
+    const hasRealFilter = Object.values(filters).some(
+      (v) => v !== undefined && v !== '' && v !== null,
+    );
+
+    setIsSearchResultOpen(hasRealFilter);
+  };
+
+  const handleFilterReset = useCallback(() => {
+    setFilterState({});
+    setIsSearchResultOpen(false);
+  }, []);
 
   const floorStats = useMemo(() => {
     const phongs = (phongData as any)?.result || [];
@@ -124,73 +111,59 @@ export default function ThongTinSinhVienKtx() {
           tangData={(tangData as any)?.result}
           expandedToa={expandedToa}
           selectedTangId={selectedTang?.id}
-          onExpandToa={setExpandedToa}
-          onSelectTang={(tang) => {
-            setSelectedTang(tang);
-            setSelectedPhong(null);
-          }}
+          onExpandToa={handleExpandToa}
+          onSelectTang={handleSelectTang}
         />
 
         <Stack flexGrow={1} p={2} spacing={2} sx={{ overflowY: 'auto' }}>
           {selectedTang ? (
             <>
-              <ActionsToolbar
-                selectedRowIds={selectedRows}
-                onExport={(dataOption, columnOption) =>
-                  exportPaginationToExcel<any>({
-                    entity: 'DanhSachPhong',
-                    filteredData: (phongData as any)?.result || [],
-                    columns: roomColumns,
-                    options: { dataOption, columnOption },
-                    fileName: `Phong_Tang_${selectedTang.tenTang}`,
-                    columnVisibilityModel,
-                  })
-                }
-              />
+              <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                <Box flexGrow={1}>
+                  <ActionsToolbar
+                    selectedRowIds={selectedRows}
+                    onExport={(dataOption, columnOption) =>
+                      exportPaginationToExcel<any>({
+                        entity: 'DanhSachPhong',
+                        filteredData: (phongData as any)?.result || [],
+                        columns: roomColumns,
+                        options: { dataOption, columnOption },
+                        fileName: `Phong_Tang_${selectedTang.tenTang}`,
+                        columnVisibilityModel,
+                      })
+                    }
+                  />
+                </Box>
+              </Stack>
+
+              <Box>
+                <ThongTinSvKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+              </Box>
 
               <Grid container spacing={2}>
-                <Grid size={3}>
-                  <StatCard
-                    label="Tổng phòng"
-                    value={floorStats.totalRooms}
-                    icon={<HomeWork color="primary" />}
-                    color="#1976d2"
-                  />
-                </Grid>
-                <Grid size={3}>
-                  <StatCard
-                    label="Tổng SV"
-                    value={floorStats.occupiedBeds}
-                    icon={<People color="secondary" />}
-                    color="#9c27b0"
-                  />
-                </Grid>
-                <Grid size={3}>
-                  <StatCard
-                    label="Tổng giường"
-                    value={floorStats.totalBeds}
-                    icon={<Hotel color="info" />}
-                    color="#0288d1"
-                  />
-                </Grid>
-                <Grid size={3}>
-                  <StatCard
-                    label="Trống"
-                    value={floorStats.availableBeds}
-                    icon={<CheckCircle color="success" />}
-                    color="#2e7d32"
-                  />
-                </Grid>
+                {floorStatsConfig.map((stat) => (
+                  <Grid key={stat.key} size={3}>
+                    <FloorStatsCard
+                      label={stat.label}
+                      value={floorStats[stat.key]}
+                      icon={stat.icon}
+                      color={stat.color}
+                    />
+                  </Grid>
+                ))}
               </Grid>
 
               <Box
                 flexGrow={1}
                 sx={{
-                  height: 500,
                   bgcolor: '#fff',
                   borderRadius: 2,
                   overflow: 'hidden',
                   border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: '100%',
+                  height: '100%',
                 }}
               >
                 <DataGridTable
@@ -202,6 +175,40 @@ export default function ThongTinSinhVienKtx() {
                   onRowSelectionModelChange={handleRowSelectionModelChange}
                   rowSelectionModel={selectedRows}
                   getRowId={(row) => row.id}
+                  sx={{
+                    flex: 1,
+                    '& .MuiDataGrid-root': {
+                      border: 'none',
+                      height: '100%',
+                    },
+                    '& .MuiDataGrid-columnHeaders': {
+                      borderBottom: '1px solid #e2e8f0',
+                      backgroundColor: '#fafafa',
+                    },
+                    '& .MuiDataGrid-columnHeaderTitle': {
+                      fontWeight: 700,
+                      fontSize: '14px',
+                    },
+                    '& .MuiDataGrid-cell': {
+                      borderRight: '1px solid #f0f0f0',
+                      padding: '12px 8px',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                    '& .MuiDataGrid-row': {
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                      },
+                    },
+                    '& .MuiDataGrid-virtualScroller': {
+                      overflow: 'auto !important',
+                    },
+                    '& .css-1lih3j9': {
+                      mb: 0,
+                    },
+                  }}
                 />
               </Box>
             </>
@@ -231,6 +238,16 @@ export default function ThongTinSinhVienKtx() {
           }}
         />
 
+        <StudentSearchResultDrawer
+          open={isSearchResultOpen}
+          filters={filterState}
+          onClose={() => setIsSearchResultOpen(false)}
+          onStudentClick={(student) => {
+            setSelectedStudent(student);
+            setOpenHistoryModal(true);
+          }}
+        />
+
         <ResidencyHistoryModal
           open={openHistoryModal}
           onClose={() => {
@@ -243,30 +260,3 @@ export default function ThongTinSinhVienKtx() {
     </FormProvider>
   );
 }
-
-const StatCard = ({ label, value, icon, color }: any) => (
-  <Paper
-    variant="outlined"
-    sx={{
-      p: 1.5,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 2,
-      bgcolor: '#fff',
-      borderRadius: 2,
-      borderLeft: `4px solid ${color}`,
-    }}
-  >
-    <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: `${color}15`, display: 'flex', color: color }}>
-      {icon}
-    </Box>
-    <Box>
-      <Typography variant="caption" color="text.secondary" fontWeight={700}>
-        {label.toUpperCase()}
-      </Typography>
-      <Typography variant="h6" fontWeight={800}>
-        {value}
-      </Typography>
-    </Box>
-  </Paper>
-);

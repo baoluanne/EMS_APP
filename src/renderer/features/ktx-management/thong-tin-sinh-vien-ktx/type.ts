@@ -17,12 +17,12 @@ export interface ThongTinSvKtxFilterState {
   hoTen?: string;
   maPhong?: string;
   maGiuong?: string;
-  trangThai?: number | undefined;
+  trangThai?: string;
 }
 
 export const KtxTrangThaiSvOptions = [
-  { label: 'Đang ở', value: 0 },
-  { label: 'Đã rời', value: 1 },
+  { label: 'Đang ở', value: '0' },
+  { label: 'Đã rời', value: '1' },
 ];
 
 export const thongTinSvKtxDefaultFilters: ThongTinSvKtxFilterState = {

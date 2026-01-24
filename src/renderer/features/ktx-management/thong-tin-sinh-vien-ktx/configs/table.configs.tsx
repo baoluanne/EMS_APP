@@ -1,58 +1,100 @@
-import { Link } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
+import { Chip, Typography, Tooltip } from '@mui/material';
+import { Wc } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
-export const thongTinSvKtxColumns = (onStudentClick: (student: any) => void): GridColDef[] => [
-  {
-    field: 'maSinhVien',
-    headerName: 'Mã SV',
-    width: 120,
-    valueGetter: (_, row) => row.sinhVien?.maSinhVien,
-  },
-  {
-    field: 'hoTen',
-    headerName: 'Họ tên sinh viên',
-    flex: 1,
-    renderCell: (params) => (
-      <Link
-        component="button"
-        variant="body2"
-        onClick={() => onStudentClick(params.row)}
-        sx={{ fontWeight: 600, textDecoration: 'none', cursor: 'pointer', textAlign: 'left' }}
-      >
-        {params.row.sinhVien?.fullName ||
-          `${params.row.sinhVien?.hoDem} ${params.row.sinhVien?.ten}`}
-      </Link>
-    ),
-  },
+export const roomColumns: GridColDef[] = [
   {
     field: 'maPhong',
     headerName: 'Phòng',
-    width: 100,
-    valueGetter: (_, row) => row.phongKtx?.maPhong,
+    flex: 1,
+    renderCell: (p: any) => <b>{p.value}</b>,
   },
   {
-    field: 'maGiuong',
-    headerName: 'Giường',
-    width: 100,
-    valueGetter: (_, row) => row.giuongKtx?.maGiuong,
+    field: 'loaiPhong',
+    headerName: 'Loại',
+    flex: 1,
+    renderCell: (p: any) => (
+      <Chip size="small" label={p.value} icon={<Wc sx={{ fontSize: 14 }} />} />
+    ),
   },
   {
-    field: 'tenDot',
-    headerName: 'Học kì',
-    width: 130,
-    valueGetter: (_, row) => row.hocKy?.tenDot,
+    field: 'soLuongGiuong',
+    headerName: 'Tổng giường',
+    flex: 1,
+    align: 'center' as const,
   },
   {
-    field: 'thoiGianLuuTru',
-    headerName: 'Thời gian lưu trú',
-    width: 130,
-    valueGetter: (_, row) => row.thoiGianLuuTru,
+    field: 'occupied',
+    headerName: 'Đang ở',
+    flex: 1,
+    align: 'center' as const,
+    valueGetter: (_: any, row: any) =>
+      row.giuongs?.filter((g: any) => g.trangThai === 1).length || 0,
   },
   {
-    field: 'ngayBatDau',
-    headerName: 'Ngày vào ở',
-    width: 130,
-    renderCell: (params) => (params.value ? format(new Date(params.value), 'dd/MM/yyyy') : '-'),
+    field: 'available',
+    headerName: 'Giường trống',
+    flex: 1,
+    align: 'center' as const,
+    renderCell: (p: any) => {
+      const empty =
+        (p.row.soLuongGiuong || 0) -
+        (p.row.giuongs?.filter((g: any) => g.trangThai === 1).length || 0);
+      return (
+        <Typography
+          variant="body2"
+          fontWeight={700}
+          color={empty > 0 ? 'success.main' : 'error.main'}
+        >
+          {empty}
+        </Typography>
+      );
+    },
+  },
+  {
+    field: 'trangThai',
+    headerName: 'Trạng thái',
+    flex: 0.8,
+    align: 'center' as const,
+    renderCell: (p: any) => (
+      <Chip
+        size="small"
+        label={p.value === 0 ? 'Hoạt động' : 'Không hoạt động'}
+        color={p.value === 0 ? 'success' : 'error'}
+        variant="outlined"
+      />
+    ),
+  },
+  {
+    field: 'ngayTao',
+    headerName: 'Ngày tạo',
+    flex: 1,
+    renderCell: (p: any) => {
+      if (!p.value) return '---';
+      return (
+        <Tooltip title={p.value}>
+          <Typography variant="caption">
+            {format(new Date(p.value), 'dd/MM/yyyy', { locale: vi })}
+          </Typography>
+        </Tooltip>
+      );
+    },
+  },
+  {
+    field: 'ngayCapNhat',
+    headerName: 'Ngày cập nhật',
+    flex: 1,
+    renderCell: (p: any) => {
+      if (!p.value) return '---';
+      return (
+        <Tooltip title={p.value}>
+          <Typography variant="caption">
+            {format(new Date(p.value), 'dd/MM/yyyy', { locale: vi })}
+          </Typography>
+        </Tooltip>
+      );
+    },
   },
 ];
