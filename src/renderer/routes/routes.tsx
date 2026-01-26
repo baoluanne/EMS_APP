@@ -2215,6 +2215,12 @@ const _appRoutes = [
         Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ThongTinSinhVienKtx'))),
       },
       {
+        label: 'Vi phạm nội quy KTX',
+        icon: <FcBusinessman />,
+        path: 'student-dormitory-Vi-Pham',
+        Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ViPhamNoiQuy'))),
+      },
+      {
         label: 'Cơ sở hạ tầng',
         icon: <FcHome />,
         path: 'facilities-management',
