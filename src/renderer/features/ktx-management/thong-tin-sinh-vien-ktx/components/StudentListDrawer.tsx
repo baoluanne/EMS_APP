@@ -60,7 +60,6 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
           </IconButton>
         </Box>
 
-        {/* Stats */}
         <Box
           sx={{
             p: 2,
@@ -114,7 +113,6 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
           </Paper>
         </Box>
 
-        {/* Table */}
         <Box sx={{ flexGrow: 1, overflow: 'auto', bgcolor: '#f8fafc' }}>
           <TableContainer sx={{ bgcolor: '#fff' }}>
             <Table stickyHeader size="small">
@@ -123,7 +121,7 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
                   <TableCell
                     sx={{
                       fontWeight: 700,
-                      width: '90px',
+                      width: '120px',
                       borderRight: '1px solid #e2e8f0',
                       bgcolor: '#f1f5f9',
                     }}
@@ -133,7 +131,7 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
                   <TableCell
                     sx={{
                       fontWeight: 700,
-                      width: '130px',
+                      width: '80px',
                       borderRight: '1px solid #e2e8f0',
                       bgcolor: '#f1f5f9',
                       textAlign: 'center',
@@ -144,7 +142,7 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
                   <TableCell
                     sx={{
                       fontWeight: 700,
-                      width: '180px',
+                      width: '150px',
                       borderRight: '1px solid #e2e8f0',
                       bgcolor: '#f1f5f9',
                     }}
@@ -154,7 +152,7 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
                   <TableCell
                     sx={{
                       fontWeight: 700,
-                      width: '130px',
+                      width: '100px',
                       borderRight: '1px solid #e2e8f0',
                       bgcolor: '#f1f5f9',
                     }}
@@ -164,7 +162,7 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
                   <TableCell
                     sx={{
                       fontWeight: 700,
-                      width: '130px',
+                      width: '100px',
                       borderRight: '1px solid #e2e8f0',
                       bgcolor: '#f1f5f9',
                     }}

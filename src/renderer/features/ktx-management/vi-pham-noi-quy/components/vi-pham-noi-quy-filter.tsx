@@ -1,6 +1,6 @@
 import { Grid } from '@mui/material';
 import { FilterDrawerBottom } from '@renderer/components/modals';
-import { ControlledTextField, ControlledDatePicker } from '@renderer/components/controlled-fields';
+import { ControlledTextField } from '@renderer/components/controlled-fields';
 import { useForm } from 'react-hook-form';
 import { ViPhamNoiQuyFilterState, viPhamNoiQuyDefaultFilters } from '../validation';
 import { SinhVienCuTruSelection } from '@renderer/components/selections/SinhVienCuTruSelection';
@@ -19,12 +19,21 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
 
   const handleApply = () => {
     const values = getValues();
-    // Chuyển đổi điểm trừ sang kiểu number trước khi gửi lên API nếu người dùng nhập
-    const cleanedValues = {
+
+    const rawSV = values.maSinhVien as any;
+    let searchString = '';
+
+    if (typeof rawSV === 'object' && rawSV !== null) {
+      searchString = rawSV.maSinhVien;
+    } else {
+      searchString = rawSV;
+    }
+
+    onApply({
       ...values,
-      //diemTru: values.diemTru ? Number(values.diemTru) : null,
-    };
-    onApply(cleanedValues);
+      maSinhVien: searchString,
+      keyword: searchString,
+    });
   };
 
   return (
@@ -41,33 +50,35 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
           <SinhVienCuTruSelection
             control={control}
             name="maSinhVien"
-            label="Lọc nhanh theo sinh viên đang cư trú"
+            label="Mã số hoặc Họ tên sinh viên"
             isFilter
           />
         </Grid>
-
-        <Grid size={6}>
+        <Grid size={4}>
           <ControlledTextField
             control={control}
-            name="maBienBan"
-            label="Mã biên bản"
-            placeholder="Nhập mã..."
+            name="maPhong"
+            label="Mã phòng"
+            placeholder="Ví dụ: R10-101"
           />
         </Grid>
-
-        <Grid size={6}>
-          <ControlledDatePicker control={control} name="tuNgay" label="Vi phạm từ ngày" />
-        </Grid>
-
-        {/* <Grid size={4}>
+        <Grid size={4}>
           <ControlledTextField
             control={control}
-            name="diemTru"
-            label="Điểm trừ"
-            type="number" // Đảm bảo bàn phím số hiện lên trên mobile và có nút tăng giảm
-            placeholder="Ví dụ: 10"
+            name="viPhamTu"
+            label="Điểm vi phạm từ"
+            type="number"
+            placeholder="Nhập số điểm..."
           />
-        </Grid> */}
+        </Grid>
+        <Grid size={4}>
+          <ControlledTextField
+            control={control}
+            name="soDienThoai"
+            label="Số điện thoại"
+            placeholder="Nhập SĐT..."
+          />
+        </Grid>
       </Grid>
     </FilterDrawerBottom>
   );

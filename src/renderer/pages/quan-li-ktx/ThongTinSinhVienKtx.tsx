@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Stack, Box, Typography, Grid } from '@mui/material';
+import { Stack, Box, Typography, Grid, Button } from '@mui/material';
 import { DataGridTable } from '@renderer/components/Table';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
@@ -17,6 +17,8 @@ import { FormProvider } from 'react-hook-form';
 import { BedListDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentListDrawer';
 import { StudentSearchResultDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentSearchResultDrawer';
 import { ResidencyHistoryModal } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/CutruHistory';
+import { DescriptionOutlined, ErrorSharp } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 export default function ThongTinSinhVienKtx() {
   const [expandedToa, setExpandedToa] = useState<string | null>(null);
@@ -27,6 +29,7 @@ export default function ThongTinSinhVienKtx() {
 
   const [filterState, setFilterState] = useState<ThongTinSvKtxFilterState>({});
   const [isSearchResultOpen, setIsSearchResultOpen] = useState(false);
+  const navigate = useNavigate();
 
   const {
     formMethods,
@@ -66,7 +69,6 @@ export default function ThongTinSinhVienKtx() {
   const handleFilterApply = (filters: ThongTinSvKtxFilterState) => {
     setFilterState(filters);
 
-    // Only open drawer if there are actual filters
     const hasRealFilter = Object.values(filters).some(
       (v) => v !== undefined && v !== '' && v !== null,
     );
@@ -122,6 +124,28 @@ export default function ThongTinSinhVienKtx() {
                 <Box flexGrow={1}>
                   <ActionsToolbar
                     selectedRowIds={selectedRows}
+                    customStartActions={
+                      <>
+                        <Button
+                          variant="text"
+                          size="small"
+                          startIcon={<DescriptionOutlined />}
+                          onClick={() => navigate('/dormitory-management/dormitory-student-list')}
+                        >
+                          Duyệt đơn KTX
+                        </Button>
+                        <Button
+                          variant="text"
+                          size="small"
+                          startIcon={<ErrorSharp />}
+                          onClick={() =>
+                            navigate('/dormitory-management/student-dormitory-Vi-Pham')
+                          }
+                        >
+                          Vi phạm nội quy KTX
+                        </Button>
+                      </>
+                    }
                     onExport={(dataOption, columnOption) =>
                       exportPaginationToExcel<any>({
                         entity: 'DanhSachPhong',

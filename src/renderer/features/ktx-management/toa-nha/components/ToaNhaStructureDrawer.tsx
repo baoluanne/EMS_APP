@@ -76,7 +76,7 @@ export const ToaNhaStructureSidebar = ({ buildingId, buildingName, onClose }: Pr
     console.log('>>> [Action] Room clicked:', row);
     onClose();
     navigate('/dormitory-management/facilities-management/giuongktx', {
-      state: { PhongKtxId: row.id, maPhong: row.maPhong },
+      state: { phongId: row.id, maPhong: row.maPhong },
     });
   };
 

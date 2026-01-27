@@ -20,30 +20,38 @@ export interface ViPhamNoiQuyFilterState {
   maBienBan?: string;
   maSinhVien?: string;
   hoTen?: string;
+  maPhong?: string;
+  viPhamTu?: number | '';
+  soDienThoai?: string;
   tuNgay?: Date | null;
   denNgay?: Date | null;
   keyword?: string;
-  //diemTru?: number | null; // Cho phép null để xóa bộ lọc dễ dàng
 }
 
 export const viPhamNoiQuyDefaultFilters: ViPhamNoiQuyFilterState = {
   maBienBan: '',
   maSinhVien: '',
   hoTen: '',
+  maPhong: '',
+  viPhamTu: '',
+  soDienThoai: '',
   tuNgay: null,
   denNgay: null,
-  //diemTru: null, // Để null mặc định sẽ chuyên nghiệp hơn là để cứng 10
 };
 
 export const viPhamNoiQuySchema = z.object({
   id: z.string().nullable().optional(),
-  sinhVienId: z.string().min(1, 'Vui lòng chọn sinh viên'),
+  sinhVienId: z
+    .any()
+    .transform((val) => (typeof val === 'object' && val !== null ? val.sinhVienId || val.id : val))
+    .refine((val) => !!val, 'Vui lòng chọn sinh viên'),
   loaiViPham: z.nativeEnum(LoaiViPhamNoiQuy),
   maBienBan: z.string().optional(),
-  noiDungViPham: z.string().min(1, 'Nhập nội dung chi tiết'),
+  noiDungViPham: z.string().optional(),
   hinhThucXuLy: z.string().nullable().optional(),
   diemTru: z.coerce.number().min(0),
-  ngayViPham: z.date(),
+  ngayViPham: z.coerce.date(),
+  ghiChu: z.string().nullable().optional(),
 });
 
 export type ViPhamNoiQuy = z.infer<typeof viPhamNoiQuySchema> & {
@@ -53,5 +61,10 @@ export type ViPhamNoiQuy = z.infer<typeof viPhamNoiQuySchema> & {
     fullName: string;
     hoDem: string;
     ten: string;
+    soDienThoai?: string;
   };
+  phongKtx?: {
+    maPhong: string;
+  };
+  tongDiemViPham?: number;
 };

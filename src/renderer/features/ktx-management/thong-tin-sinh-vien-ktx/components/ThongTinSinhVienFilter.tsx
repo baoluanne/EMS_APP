@@ -22,13 +22,10 @@ export const ThongTinSvKtxFilter = ({ onApply, onReset }: Props) => {
   const { control, reset } = filterMethods;
 
   const handleClear = () => {
-    // Reset form fields
     reset(thongTinSvKtxDefaultFilters);
 
-    // Call reset callback
     onReset?.();
 
-    // Apply empty filter to close drawer or clear results
     onApply(thongTinSvKtxDefaultFilters);
   };
 
@@ -39,7 +36,6 @@ export const ThongTinSvKtxFilter = ({ onApply, onReset }: Props) => {
     if (data.hoTen?.trim()) cleanedData.hoTen = data.hoTen.trim();
     if (data.maPhong?.trim()) cleanedData.maPhong = data.maPhong.trim();
     if (data.maGiuong?.trim()) cleanedData.maGiuong = data.maGiuong.trim();
-    // Only include trangThai if it's actually set
     if (data.trangThai !== undefined && data.trangThai !== '' && data.trangThai !== null) {
       cleanedData.trangThai = data.trangThai;
     }

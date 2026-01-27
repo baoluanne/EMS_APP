@@ -18,7 +18,7 @@ import { DuyetDonFilter } from '@renderer/features/ktx-management/duyet-don/comp
 import { ApproveDonModal } from '@renderer/features/ktx-management/duyet-don/components/ApproveDonModal';
 import { KtxDonTrangThai } from '@renderer/features/ktx-management/duyet-don/configs/KtxDonEnum';
 import { format } from 'date-fns';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { ErrorSharp, Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const defaultValues = {
@@ -96,14 +96,24 @@ const DuyetDonPage = () => {
           onAdd={onAdd}
           onEdit={onEdit}
           customStartActions={
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<SearchIcon />}
-              onClick={() => navigate('/dormitory-management/student-dormitory-lookup')}
-            >
-              Tra cứu sinh viên
-            </Button>
+            <>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<SearchIcon />}
+                onClick={() => navigate('/dormitory-management/student-dormitory-lookup')}
+              >
+                Tra cứu sinh viên KTX
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<ErrorSharp />}
+                onClick={() => navigate('/dormitory-management/student-dormitory-Vi-Pham')}
+              >
+                Vi phạm nội quy KTX
+              </Button>
+            </>
           }
           onExport={(dataOption, columnOption) => {
             exportPaginationToExcel<DuyetDon>({

@@ -28,16 +28,12 @@ const defaultValues: GiuongKtxSchema = {
 };
 
 function GiuongKtxPage() {
-  const [filters, setFilters] = useState<GiuongKtxFilterState>({});
   const location = useLocation();
+  const state = location.state as any;
 
-  useEffect(() => {
-    const state = location.state as any;
-    if (state?.phongId) {
-      setFilters({ phongId: state.phongId });
-      console.log('>>> [GiuongKtxPage] Filtered by room:', state.maPhong, state.phongId);
-    }
-  }, [location]);
+  const [filters, setFilters] = useState<GiuongKtxFilterState>(() => {
+    return state?.phongId ? { phongId: state.phongId } : {};
+  });
 
   const {
     formMethods,
@@ -56,31 +52,38 @@ function GiuongKtxPage() {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
+    mergeParams,
   } = useCrudPaginationModal<GiuongKtxSchema, GiuongKtxSchema>({
     defaultValues,
     schema: giuongKtxSchema,
     entity: 'GiuongKtx',
+    defaultState: filters,
   });
 
-  const rawRowsData: GiuongKtxSchema[] = useMemo(() => {
+  useEffect(() => {
+    if (state?.phongId) {
+      const newParams = { phongId: state.phongId };
+      setFilters(newParams);
+      mergeParams(newParams);
+      formMethods.setValue('phongId', state.phongId);
+    }
+  }, [state?.phongId, mergeParams, formMethods]);
+
+  const rowsData: GiuongKtxSchema[] = useMemo(() => {
     if (!data) return [];
-    const results = (data as any).data || (data as any).result || [];
+    const results = (data as any).result || (data as any).data || [];
     return Array.isArray(results) ? results : [];
   }, [data]);
 
-  const rowsData: GiuongKtxSchema[] = useMemo(() => {
-    if (!filters.maGiuong && !filters.phongId && !filters.trangThai) {
-      return rawRowsData;
-    }
+  const handleApplyFilter = (newFilters: GiuongKtxFilterState) => {
+    setFilters(newFilters);
+    mergeParams(newFilters);
+  };
 
-    return rawRowsData.filter((row: any) => {
-      const matchMa =
-        !filters.maGiuong || row.maGiuong?.toLowerCase().includes(filters.maGiuong.toLowerCase());
-      const matchPhong = !filters.phongId || row.phongKtxId === filters.phongId;
-      const matchTrangThai = !filters.trangThai || row.trangThai?.toString() === filters.trangThai;
-      return matchMa && matchPhong && matchTrangThai;
-    });
-  }, [rawRowsData, filters]);
+  const handleResetFilter = () => {
+    setFilters({});
+    mergeParams({});
+  };
 
   return (
     <FormProvider {...formMethods}>
@@ -121,7 +124,7 @@ function GiuongKtxPage() {
           />
         )}
 
-        <GiuongKtxFilter onApply={setFilters} onReset={() => setFilters({})} />
+        <GiuongKtxFilter onApply={handleApplyFilter} onReset={handleResetFilter} />
 
         <DataGridTable
           columns={giuongKtxColumns}

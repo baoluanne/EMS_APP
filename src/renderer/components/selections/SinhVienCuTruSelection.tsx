@@ -10,7 +10,7 @@ interface Props {
   label?: string;
   required?: boolean;
   disabled?: boolean;
-  isFilter?: boolean; // Xác định dùng cho Filter hay Form
+  isFilter?: boolean;
 }
 
 export const SinhVienCuTruSelection = ({
@@ -19,7 +19,6 @@ export const SinhVienCuTruSelection = ({
   label = 'Sinh viên cư trú',
   required = false,
   disabled = false,
-  isFilter = false,
 }: Props) => {
   const [inputValue, setInputValue] = useState('');
   const [debouncedInputValue, setDebouncedInputValue] = useState('');
@@ -48,20 +47,22 @@ export const SinhVienCuTruSelection = ({
     if (!data) return [];
     const list = (data as any)?.result || [];
     return list.map((item: any) => ({
-      label:
-        `${item.sinhVien?.maSinhVien} - ${item.sinhVien?.fullName || item.sinhVien?.hoDem + ' ' + item.sinhVien?.ten}`.trim(),
+      label: `${item.sinhVien?.maSinhVien} - ${item.sinhVien?.hoDem} ${item.sinhVien?.ten}`.trim(),
       value: item.sinhVienId?.toString() || '',
-      maSinhVien: item.sinhVien?.maSinhVien || '', // Lưu trữ mã SV riêng
+      rawData: item,
     }));
   }, [data]);
 
   const selectedValue = useMemo(() => {
-    return (
-      options.find((opt) =>
-        isFilter ? opt.maSinhVien === field.value : opt.value === field.value,
-      ) || null
-    );
-  }, [options, field.value, isFilter]);
+    if (!field.value) return null;
+
+    if (typeof field.value === 'object') {
+      const id = field.value.sinhVienId || field.value.id;
+      return options.find((opt) => opt.value === id?.toString()) || null;
+    }
+
+    return options.find((opt) => opt.value === field.value.toString()) || null;
+  }, [options, field.value]);
 
   return (
     <Autocomplete
@@ -80,7 +81,11 @@ export const SinhVienCuTruSelection = ({
         }
       }}
       onChange={(_, newValue) => {
-        field.onChange(newValue ? (isFilter ? newValue.maSinhVien : newValue.value) : '');
+        if (!newValue) {
+          field.onChange('');
+          return;
+        }
+        field.onChange(newValue.rawData);
       }}
       loading={isRefetching}
       renderInput={(params) => (
@@ -89,6 +94,7 @@ export const SinhVienCuTruSelection = ({
           label={label}
           required={required}
           size="small"
+          placeholder="Nhập mã hoặc tên để tìm..."
           InputProps={{
             ...params.InputProps,
             endAdornment: (

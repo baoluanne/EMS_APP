@@ -58,7 +58,15 @@ export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => 
         return 'Khác';
     }
   };
-
+  const currentResidency = useMemo(() => {
+    return history.find((item) => item.loaiDon !== 3);
+  }, [history]);
+  const currentRoom = useMemo(() => {
+    return currentResidency?.phongMoi?.maPhong || 'N/A';
+  }, [currentResidency]);
+  const totalViolations = useMemo(() => {
+    return history.reduce((sum: number, item: any) => sum + (item.diemViPhamHocKy || 0), 0);
+  }, [history]);
   return (
     <Dialog
       open={open}
@@ -107,7 +115,7 @@ export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => 
           <SummaryItem
             icon={<HomeWork />}
             label="Phòng hiện tại"
-            value={studentData?.phongKtx?.maPhong || 'N/A'}
+            value={currentRoom || 'N/A'}
             color="#1976d2"
           />
           <SummaryItem
@@ -115,6 +123,12 @@ export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => 
             label="Tổng số kỳ đã ở"
             value={`${uniqueSemesters} Học kỳ`}
             color="#2e7d32"
+          />
+          <SummaryItem
+            icon={<HistoryEdu />}
+            label="Điểm vi phạm"
+            value={`${totalViolations} Điểm`}
+            color="#d32f2f"
           />
         </Stack>
 
@@ -170,7 +184,7 @@ export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => 
                         Phòng - Giường
                       </Typography>
                       <Typography variant="body2" fontWeight={600}>
-                        {item.phongMoi?.maPhong} - {item.giuongMoi?.maGiuong}
+                        {item.giuongMoi?.maGiuong}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         Loại: {item.phongMoi?.loaiPhong || 'N/A'}

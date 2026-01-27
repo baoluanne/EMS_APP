@@ -33,7 +33,7 @@ export const giuongKtxColumns: GridColDef[] = [
     headerName: 'Sinh viên',
     flex: 1.5,
     minWidth: 200,
-    valueGetter: (_, row: any) => row.sinhVien?.tenSinhVien || '',
+    valueGetter: (_, row: any) => row.sinhVien?.fullName || '',
   },
   {
     field: 'trangThai',
