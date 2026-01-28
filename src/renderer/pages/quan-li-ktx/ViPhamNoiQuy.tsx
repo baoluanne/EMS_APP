@@ -68,11 +68,9 @@ const ViPhamNoiQuyPage = () => {
       id: values.id || undefined,
       sinhVienId: finalSinhVienId,
       loaiViPham: Number(values.loaiViPham),
-      noiDungViPham: values.noiDungViPham,
       diemTru: Number(values.diemTru),
       ngayViPham: values.ngayViPham,
       maBienBan: values.maBienBan || `BB-${Date.now()}`,
-      hinhThucXuLy: values.hinhThucXuLy,
       ghiChu: values.ghiChu,
     };
 

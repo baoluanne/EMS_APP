@@ -75,18 +75,6 @@ export const ViPhamNoiQuyForm = () => {
         <Grid size={6}>
           <ControlledDatePicker label="Ngày vi phạm" control={control} name="ngayViPham" />
         </Grid>
-        <Grid size={6}>
-          <ControlledTextField label="Hình thức xử lý" control={control} name="hinhThucXuLy" />
-        </Grid>
-        <Grid size={12}>
-          <ControlledTextField
-            label="Nội dung chi tiết"
-            control={control}
-            name="noiDungViPham"
-            multiline
-            minRows={3}
-          />
-        </Grid>
       </Grid>
     </Stack>
   );

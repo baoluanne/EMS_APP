@@ -47,8 +47,6 @@ export const viPhamNoiQuySchema = z.object({
     .refine((val) => !!val, 'Vui lòng chọn sinh viên'),
   loaiViPham: z.nativeEnum(LoaiViPhamNoiQuy),
   maBienBan: z.string().optional(),
-  noiDungViPham: z.string().optional(),
-  hinhThucXuLy: z.string().nullable().optional(),
   diemTru: z.coerce.number().min(0),
   ngayViPham: z.coerce.date(),
   ghiChu: z.string().nullable().optional(),

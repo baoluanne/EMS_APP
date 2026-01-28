@@ -48,7 +48,6 @@ export const DuyetDonForm = () => {
 
   const { data: bedsData, isRefetching: loadingBeds } = useCrudPagination<any>({
     entity: 'GiuongKtx',
-    // Thêm pageSize=1000 vào endpoint để lấy hết giường của phòng
     endpoint: `pagination?PhongId=${encodeURIComponent(phongYeuCauId || '')}&TrangThai=0&pageSize=1000`,
     enabled: !!phongYeuCauId && phongYeuCauId !== '',
   });
@@ -63,13 +62,28 @@ export const DuyetDonForm = () => {
 
   const { data: stayData } = useCrudPagination<any>({
     entity: 'DonKtx',
-    endpoint: `pagination?IdSinhVien=${idSinhVien}&TrangThai=DaDuyet`,
+    endpoint: `pagination?IdSinhVien=${idSinhVien}&TrangThai=DaDuyet&pageSize=1000`,
     enabled: !!idSinhVien,
   });
 
-  const isRegistered = useMemo(() => {
+  const historyStatus = useMemo(() => {
     const list = (stayData as any)?.result || [];
-    return list.some((don: any) => don.loaiDon !== KtxLoaiDon.RoiKtx);
+    if (list.length === 0) return { isCurrent: false, isOut: false };
+
+    const sortedByDate = [...list].sort(
+      (a: any, b: any) => new Date(b.ngayTao || 0).getTime() - new Date(a.ngayTao || 0).getTime(),
+    );
+
+    const latestOrder = sortedByDate[0];
+    const isCurrentlyOut = latestOrder.loaiDon === KtxLoaiDon.RoiKtx;
+
+    const lastActiveHocKy = sortedByDate.find((d) => d.hocKy?.tenDot || d.hocKy?.tenHocKy);
+
+    return {
+      isCurrent: !isCurrentlyOut,
+      isOut: isCurrentlyOut,
+      lastHocKy: lastActiveHocKy?.hocKy?.tenDot || lastActiveHocKy?.hocKy?.tenHocKy || 'N/A',
+    };
   }, [stayData]);
 
   const loaiDonNum = useMemo(
@@ -83,90 +97,78 @@ export const DuyetDonForm = () => {
   const isRoiKtx = loaiDonNum === KtxLoaiDon.RoiKtx;
 
   useEffect(() => {
-    if (idSinhVien === prevIdSinhVien) return;
-    if (!idSinhVien) return;
-
+    if (idSinhVien === prevIdSinhVien || !idSinhVien) return;
     resetInProgressRef.current = true;
-
-    setValue('loaiDon', '', { shouldValidate: false });
-    setValue('idHocKy', '', { shouldValidate: false });
-    setValue('phongHienTaiId', '', { shouldValidate: false });
-    setValue('phongYeuCauId', '', { shouldValidate: false });
-    setValue('giuongYeuCauId', '', { shouldValidate: false });
-    setValue('idGoiDichVu', '', { shouldValidate: false });
-    setValue('trangThai', '', { shouldValidate: false });
-
+    const fields = [
+      'loaiDon',
+      'idHocKy',
+      'phongHienTaiId',
+      'phongYeuCauId',
+      'giuongYeuCauId',
+      'idGoiDichVu',
+      'trangThai',
+    ];
+    fields.forEach((f) => setValue(f, '', { shouldValidate: false }));
     resetInProgressRef.current = false;
   }, [idSinhVien, prevIdSinhVien, setValue]);
 
   useEffect(() => {
     if (phongYeuCauId === prevPhongId || resetInProgressRef.current) return;
-
-    const currentGiuong = getValues('giuongYeuCauId');
-    if (currentGiuong) {
-      setValue('giuongYeuCauId', '', { shouldValidate: false });
-    }
+    if (getValues('giuongYeuCauId')) setValue('giuongYeuCauId', '', { shouldValidate: false });
   }, [phongYeuCauId, prevPhongId, setValue, getValues]);
 
   useEffect(() => {
     if (resetInProgressRef.current) return;
-
-    const currentValues = getValues();
-
-    if (isRoiKtx && currentValues.idGoiDichVu) {
-      setValue('idGoiDichVu', '', { shouldValidate: false });
-    }
-
+    const vals = getValues();
+    if (isRoiKtx && vals.idGoiDichVu) setValue('idGoiDichVu', '', { shouldValidate: false });
     if (!isDangKyMoi && !isChuyenPhong) {
-      if (currentValues.phongYeuCauId) {
-        setValue('phongYeuCauId', '', { shouldValidate: false });
-      }
-      if (currentValues.giuongYeuCauId) {
-        setValue('giuongYeuCauId', '', { shouldValidate: false });
-      }
+      if (vals.phongYeuCauId) setValue('phongYeuCauId', '', { shouldValidate: false });
+      if (vals.giuongYeuCauId) setValue('giuongYeuCauId', '', { shouldValidate: false });
     }
   }, [loaiDonNum, isDangKyMoi, isChuyenPhong, isRoiKtx, setValue, getValues]);
 
   const alertInfo = useMemo(() => {
     if (!idSinhVien || loaiDon === undefined) return null;
 
-    if (
-      !isRegistered &&
-      [KtxLoaiDon.GiaHan, KtxLoaiDon.ChuyenPhong, KtxLoaiDon.RoiKtx].includes(loaiDonNum!)
-    ) {
+    if (historyStatus.isCurrent && isDangKyMoi) {
       return {
-        severity: 'error' as const,
-        title: 'Lỗi nghiệp vụ',
-        message: 'Sinh viên chưa đăng ký lưu trú.',
+        severity: 'warning' as const,
+        title: 'Sinh viên đang lưu trú',
+        message: 'Hệ thống ghi nhận sinh viên này vẫn đang ở KTX. Không thể tạo đơn đăng ký mới.',
       };
     }
 
-    if (isRegistered && isDangKyMoi) {
+    if (historyStatus.isOut && isDangKyMoi) {
       return {
-        severity: 'warning' as const,
-        title: 'Cảnh báo',
-        message: 'Sinh viên đang lưu trú, không thể đăng ký mới.',
+        severity: 'info' as const,
+        title: 'Sinh viên quay lại KTX',
+        message: `Sinh viên từng ở KTX (Rời đi từ học kỳ: ${historyStatus.lastHocKy}). Bạn có thể tiếp tục duyệt đơn đăng ký mới này.`,
+      };
+    }
+
+    if (!historyStatus.isCurrent && !isDangKyMoi) {
+      return {
+        severity: 'error' as const,
+        title: 'Lỗi nghiệp vụ',
+        message: 'Sinh viên không ở KTX, không thể thực hiện Gia hạn/Chuyển phòng/Rời KTX.',
       };
     }
 
     return null;
-  }, [idSinhVien, loaiDon, isRegistered, loaiDonNum, isDangKyMoi]);
+  }, [idSinhVien, loaiDon, historyStatus, loaiDonNum, isDangKyMoi]);
 
   return (
     <Stack spacing={2} sx={{ mt: 1 }}>
       <input type="hidden" {...register('id')} />
-
       <Grid container spacing={2}>
         <Grid size={12}>
           <SinhVienSelection name="idSinhVien" control={control} label="Sinh viên" />
         </Grid>
-
         {(isDangKyMoi || isGiaHan || isChuyenPhong) && (
           <Grid size={6}>
             <HocKySelection name="idHocKy" control={control} label="Học kỳ" />
           </Grid>
         )}
-
         <Grid size={6}>
           <FilterSelect
             name="loaiDon"
@@ -175,7 +177,6 @@ export const DuyetDonForm = () => {
             options={KtxLoaiDonOptions}
           />
         </Grid>
-
         {!isDangKyMoi && loaiDonNum !== undefined && (
           <Grid size={6}>
             <PhongSelection
@@ -186,7 +187,6 @@ export const DuyetDonForm = () => {
             />
           </Grid>
         )}
-
         {(isDangKyMoi || isChuyenPhong) && (
           <>
             <Grid size={6}>
@@ -197,7 +197,6 @@ export const DuyetDonForm = () => {
                 gioiTinh={studentGender}
               />
             </Grid>
-
             <Grid size={6}>
               <FilterSelect
                 name="giuongYeuCauId"
@@ -209,7 +208,6 @@ export const DuyetDonForm = () => {
             </Grid>
           </>
         )}
-
         {(isDangKyMoi || isGiaHan) && (
           <Grid size={6}>
             <DanhMucKhoanThuNgoaiHocPhiSelection
@@ -219,7 +217,6 @@ export const DuyetDonForm = () => {
             />
           </Grid>
         )}
-
         <Grid size={6}>
           <FilterSelect
             name="trangThai"
@@ -228,11 +225,9 @@ export const DuyetDonForm = () => {
             options={KtxDonTrangThaiOptions}
           />
         </Grid>
-
         <Grid size={12}>
           <ControlledTextField name="ghiChu" control={control} label="Ghi chú" multiline rows={3} />
         </Grid>
-
         {alertInfo && (
           <Grid size={12}>
             <Alert severity={alertInfo.severity} variant="filled" sx={{ mt: 1 }}>
