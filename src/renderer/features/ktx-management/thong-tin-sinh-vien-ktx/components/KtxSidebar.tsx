@@ -108,7 +108,7 @@ export const KtxSidebar = memo(
       <Paper
         elevation={0}
         sx={{
-          width: sidebarCollapsed ? 64 : 280,
+          width: sidebarCollapsed ? 64 : 200,
           borderRight: '1px solid #e2e8f0',
           display: 'flex',
           flexDirection: 'column',
@@ -120,15 +120,10 @@ export const KtxSidebar = memo(
         <Box
           sx={{ p: 1.5, bgcolor: '#f1f5f9', display: 'flex', alignItems: 'center', minHeight: 60 }}
         >
-          {!sidebarCollapsed && (
-            <Typography variant="overline" fontWeight={800} color="text.secondary" noWrap>
-              SƠ ĐỒ KTX
-            </Typography>
-          )}
           <IconButton
             size="small"
             onClick={toggleSidebar}
-            sx={{ ml: 'auto', color: 'primary.main' }}
+            sx={{ sm: 'auto', color: 'primary.main' }}
           >
             {sidebarCollapsed ? (
               <MenuIcon fontSize="small" />
@@ -136,6 +131,11 @@ export const KtxSidebar = memo(
               <ChevronLeftIcon fontSize="small" />
             )}
           </IconButton>
+          {!sidebarCollapsed && (
+            <Typography variant="overline" fontWeight={800} color="text.secondary" noWrap>
+              SƠ ĐỒ KTX
+            </Typography>
+          )}
         </Box>
 
         <Divider />

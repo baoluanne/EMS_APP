@@ -1,97 +1,166 @@
-import { Grid } from '@mui/material';
-import { FilterDrawerBottom } from '@renderer/components/modals';
-import { ControlledTextField } from '@renderer/components/controlled-fields';
-import { FilterSelect } from '@renderer/components/fields';
-import { useForm } from 'react-hook-form';
-import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
+import { useState, useMemo } from 'react';
 import {
-  KtxTrangThaiSvOptions,
-  thongTinSvKtxDefaultFilters,
-} from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
+  Stack,
+  TextField,
+  Autocomplete,
+  Box,
+  Typography,
+  Chip,
+  InputAdornment,
+} from '@mui/material';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
+
+const filterFields = [
+  { key: 'maSinhVien', label: 'Mã sinh viên' },
+  { key: 'hoTen', label: 'Họ tên' },
+  { key: 'maPhong', label: 'Mã phòng' },
+  { key: 'maGiuong', label: 'Mã giường' },
+  { key: 'trangThaiText', label: 'Trạng thái' },
+];
 
 interface Props {
   onApply: (filters: ThongTinSvKtxFilterState) => void;
-  onReset?: () => void;
+  onReset: () => void;
 }
 
 export const ThongTinSvKtxFilter = ({ onApply, onReset }: Props) => {
-  const filterMethods = useForm<ThongTinSvKtxFilterState>({
-    defaultValues: thongTinSvKtxDefaultFilters,
-  });
+  const [inputValue, setInputValue] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
-  const { control, reset } = filterMethods;
+  const options = useMemo(() => {
+    if (!inputValue) return [];
+    const results: any[] = [];
 
-  const handleClear = () => {
-    reset(thongTinSvKtxDefaultFilters);
+    filterFields.forEach((field) => {
+      results.push({
+        key: field.key,
+        label: field.label,
+        value: inputValue,
+        display: `${field.label}: "${inputValue}"`,
+      });
+    });
 
-    onReset?.();
+    return results;
+  }, [inputValue]);
 
-    onApply(thongTinSvKtxDefaultFilters);
+  const handleSelect = (_: any, newValue: any) => {
+    if (newValue && typeof newValue !== 'string') {
+      const updated = { ...activeFilters, [newValue.key]: newValue.value };
+      setActiveFilters(updated);
+      onApply(updated as any);
+      setInputValue('');
+    }
   };
 
-  const handleApplyFilter = (data: ThongTinSvKtxFilterState) => {
-    const cleanedData: ThongTinSvKtxFilterState = {};
-
-    if (data.maSinhVien?.trim()) cleanedData.maSinhVien = data.maSinhVien.trim();
-    if (data.hoTen?.trim()) cleanedData.hoTen = data.hoTen.trim();
-    if (data.maPhong?.trim()) cleanedData.maPhong = data.maPhong.trim();
-    if (data.maGiuong?.trim()) cleanedData.maGiuong = data.maGiuong.trim();
-    if (data.trangThai !== undefined && data.trangThai !== '' && data.trangThai !== null) {
-      cleanedData.trangThai = data.trangThai;
-    }
-
-    onApply(cleanedData);
+  const handleDelete = (key: string) => {
+    const updated = { ...activeFilters };
+    delete updated[key];
+    setActiveFilters(updated);
+    if (Object.keys(updated).length === 0) onReset();
+    else onApply(updated as any);
   };
 
   return (
-    <FilterDrawerBottom<ThongTinSvKtxFilterState>
-      onApply={handleApplyFilter}
-      onClear={handleClear}
-      methods={filterMethods}
-    >
-      <Grid container spacing={2}>
-        <Grid size={4}>
-          <ControlledTextField
-            control={control}
-            name="maSinhVien"
-            label="Mã sinh viên"
-            placeholder="Tìm theo mã..."
+    <Stack spacing={1} sx={{ mb: 1 }}>
+      <Autocomplete
+        freeSolo
+        value={null}
+        options={options}
+        getOptionLabel={(option: any) => option.display || ''}
+        inputValue={inputValue}
+        onInputChange={(_, val) => setInputValue(val)}
+        onChange={handleSelect}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Tìm sinh viên theo MSSV, Họ tên, Mã phòng, Mã giường, Trạng thái..."
+            size="small"
+            fullWidth
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonSearchIcon sx={{ color: 'primary.main', ml: 0.5, fontSize: 20 }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#fff',
+                borderRadius: 2,
+                paddingY: '1px !important',
+                px: 1,
+                fontSize: '0.9rem',
+                transition: 'all 0.2s',
+                '& fieldset': {
+                  borderColor: '#e2e8f0',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                  borderWidth: '2px',
+                },
+              },
+              '& .MuiInputBase-input': {
+                paddingY: '4px !important',
+                height: '1.2rem',
+              },
+            }}
           />
-        </Grid>
-        <Grid size={4}>
-          <ControlledTextField
-            control={control}
-            name="hoTen"
-            label="Họ tên"
-            placeholder="Tìm theo tên..."
-          />
-        </Grid>
-        <Grid size={4}>
-          <ControlledTextField
-            control={control}
-            name="maPhong"
-            label="Mã phòng"
-            placeholder="Tìm theo phòng..."
-          />
-        </Grid>
+        )}
+        renderOption={(props, option: any) => (
+          <Box component="li" {...props} sx={{ display: 'flex', gap: 1 }}>
+            <Typography variant="body2" fontWeight={700} color="primary">
+              {option.label}:
+            </Typography>
+            <Typography variant="body2">&quot;{option.value}&quot;</Typography>
+          </Box>
+        )}
+      />
 
-        <Grid size={4}>
-          <ControlledTextField
-            control={control}
-            name="maGiuong"
-            label="Mã giường"
-            placeholder="Tìm theo giường..."
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', minHeight: 1 }}>
+        {Object.entries(activeFilters).map(([key, value]) => {
+          const field = filterFields.find((f) => f.key === key);
+          if (!value) return null;
+          return (
+            <Chip
+              key={key}
+              label={`${field?.label}: ${value}`}
+              onDelete={() => handleDelete(key)}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{
+                fontWeight: 700,
+                bgcolor: '#e3f2fd',
+                borderRadius: 1.5,
+                height: 26,
+                fontSize: '0.75rem',
+              }}
+            />
+          );
+        })}
+        {Object.keys(activeFilters).length > 0 && (
+          <Chip
+            label="Xóa tất cả"
+            onClick={() => {
+              setActiveFilters({});
+              onReset();
+            }}
+            size="small"
+            color="error"
+            variant="filled"
+            sx={{
+              height: 26,
+              fontSize: '0.75rem',
+              fontWeight: 700,
+            }}
           />
-        </Grid>
-        <Grid size={4}>
-          <FilterSelect
-            name="trangThai"
-            control={control}
-            label="Trạng thái sinh viên"
-            options={KtxTrangThaiSvOptions}
-          />
-        </Grid>
-      </Grid>
-    </FilterDrawerBottom>
+        )}
+      </Box>
+    </Stack>
   );
 };

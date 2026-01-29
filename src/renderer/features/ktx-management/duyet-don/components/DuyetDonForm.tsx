@@ -155,7 +155,7 @@ export const DuyetDonForm = () => {
     }
 
     return null;
-  }, [idSinhVien, loaiDon, historyStatus, loaiDonNum, isDangKyMoi]);
+  }, [idSinhVien, loaiDon, historyStatus, isDangKyMoi]);
 
   return (
     <Stack spacing={2} sx={{ mt: 1 }}>

@@ -1,146 +1,177 @@
-import { useState } from 'react';
-import { Stack, MenuItem, TextField, Typography, CircularProgress, Divider } from '@mui/material';
+import { useState, useMemo } from 'react';
+import {
+  Stack,
+  MenuItem,
+  TextField,
+  Typography,
+  CircularProgress,
+  Autocomplete,
+  Box,
+  Grid,
+} from '@mui/material';
 import { FormDetailsModal } from '@renderer/components/modals';
-import { DataGridTable } from '@renderer/components/Table';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
 import { useMutation } from '@renderer/shared/mutations';
-import { GridColDef } from '@mui/x-data-grid';
-import InfoSection from '@renderer/components/InfoSection';
 import BusinessIcon from '@mui/icons-material/Business';
+import HomeWorkIcon from '@mui/icons-material/HomeWork';
 import { toast } from 'react-toastify';
-import { getTrangThaiLabel } from '../TrangThaiThietBiEnum';
 
 interface Props {
   onClose: () => void;
   selectedIds: string[];
   onSuccess: () => void;
+  initialData?: any;
 }
 
-export const AssignRoomModal = ({ onClose, selectedIds, onSuccess }: Props) => {
-  const [roomId, setRoomId] = useState('');
+export const AssignRoomModal = ({ onClose, selectedIds, onSuccess, initialData }: Props) => {
+  const [targetType, setTargetType] = useState<'HOC' | 'KTX'>('HOC');
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { data: roomsData, isRefetching: isRoomsLoading } = useCrudPagination<any>({
+  const { data: roomsHoc, isRefetching: loadingHoc } = useCrudPagination<any>({
     entity: 'PhongHoc',
-    defaultState: { pageSize: 20 },
+    endpoint: `pagination?Keyword=${searchTerm}`,
+    enabled: targetType === 'HOC',
   });
 
-  const {
-    data: existingDevicesData,
-    isRefetching: isExistingLoading,
-    generateTableConfig: genExistingTableConfig,
-  } = useCrudPagination<any>({
-    entity: 'ThietBi',
-    endpoint: `pagination?PhongHocId=${roomId}`,
-    enabled: !!roomId,
-    defaultState: { pageSize: 50 },
+  const { data: roomsKtx, isRefetching: loadingKtx } = useCrudPagination<any>({
+    entity: 'PhongKtx',
+    endpoint: `pagination?MaPhong=${searchTerm}`,
+    enabled: targetType === 'KTX',
   });
 
-  const { mutateAsync: assignRoomAsync } = useMutation<any>(`ThietBi/phan-vao-phong/${roomId}`);
+  const options = useMemo(() => {
+    const data = targetType === 'HOC' ? roomsHoc : roomsKtx;
+    return (data as any)?.result || [];
+  }, [targetType, roomsHoc, roomsKtx]);
 
-  const existingRows = (existingDevicesData as any)?.result ?? [];
+  const { mutateAsync: assignRoomAsync } = useMutation<any>(
+    `ThietBi/phan-vao-phong/${selectedRoom?.id}?isKtx=${targetType === 'KTX'}`,
+  );
 
   const handleConfirm = async () => {
-    if (!roomId) {
-      toast.error('Vui lòng chọn phòng học đích.');
-      return;
-    }
-
+    if (!selectedRoom) return toast.error('Vui lòng chọn phòng đích.');
     setLoading(true);
     try {
-      const response = await assignRoomAsync(selectedIds);
-      if (response) {
-        toast.success('Phân bổ thiết bị thành công!');
-        onSuccess();
-        onClose();
-      }
+      await assignRoomAsync(selectedIds);
+      toast.success('Điều chuyển thành công!');
+      onSuccess();
+      onClose();
     } catch (error: any) {
-      toast.error(error?.message || 'Có lỗi xảy ra khi phân phòng.');
+      toast.error(error?.message || 'Lỗi hệ thống.');
     } finally {
       setLoading(false);
     }
   };
 
-  const columns: GridColDef[] = [
-    { field: 'maThietBi', headerName: 'Mã TB', width: 120 },
-    { field: 'tenThietBi', headerName: 'Tên thiết bị', flex: 1 },
-    {
-      field: 'trangThai',
-      headerName: 'Tình trạng',
-      width: 130,
-      valueGetter: (_, row) => getTrangThaiLabel(row.trangThai),
-    },
-  ];
+  const InfoItem = ({ label, value }: { label: string; value: string | number }) => (
+    <Box>
+      <Typography
+        variant="caption"
+        color="textSecondary"
+        fontWeight={600}
+        sx={{ display: 'block', textTransform: 'uppercase' }}
+      >
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={700}>
+        {value || '---'}
+      </Typography>
+    </Box>
+  );
 
   return (
     <FormDetailsModal
-      title="Điều chuyển thiết bị vào phòng"
+      title="Điều chuyển thiết bị"
       onClose={onClose}
       onSave={handleConfirm}
       maxWidth="sm"
-      saveTitle={loading ? 'Đing xử lý...' : 'Xác nhận gán'}
+      saveTitle={loading ? 'Đang xử lý...' : 'Xác nhận gán'}
     >
-      <Stack spacing={2} sx={{ mt: 1 }}>
-        <InfoSection
-          title={
-            <Typography
-              variant="subtitle2"
-              fontWeight={700}
-              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            >
-              <BusinessIcon color="primary" fontSize="small" /> 1. Thông tin phòng đích
-            </Typography>
-          }
-        >
-          <Stack spacing={2} p={1}>
-            <TextField
-              select
-              fullWidth
-              label={isRoomsLoading ? 'Đang tải danh sách phòng...' : 'Chọn phòng đích'}
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              size="small"
-              disabled={loading}
-            >
-              {roomsData?.result?.map((room: any) => (
-                <MenuItem key={room.id} value={room.id}>
-                  {room.tenPhong} {room.dayNhaId}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <Typography
-              variant="caption"
-              fontWeight={600}
-              color="textSecondary"
-              sx={{ mb: 1, display: 'block' }}
-            >
-              Thiết bị hiện có tại phòng này ({existingRows.length}):
-            </Typography>
-            <DataGridTable
-              rows={existingRows}
-              columns={columns}
-              loading={isExistingLoading}
-              getRowId={(row) => row.id}
-              checkboxSelection={false}
-              hideFooter
-              disableRowSelectionOnClick
-              {...genExistingTableConfig(existingRows.length, isExistingLoading)}
-              height={300}
-            />
-          </Stack>
-        </InfoSection>
-
-        <Divider />
-
-        {loading && (
-          <Stack direction="row" alignItems="center" spacing={1} justifyContent="center" py={1}>
-            <CircularProgress size={16} />
-            <Typography variant="caption" color="primary">
-              Đang thực hiện phân bổ thiết bị...
-            </Typography>
-          </Stack>
+      <Stack spacing={3} sx={{ mt: 1 }}>
+        {selectedIds.length === 1 && initialData && (
+          <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+            <Grid container spacing={2}>
+              <Grid size={12}>
+                <InfoItem label="Tên thiết bị" value={initialData.tenThietBi} />
+              </Grid>
+              <Grid size={6}>
+                <InfoItem label="Mã thiết bị" value={initialData.maThietBi} />
+              </Grid>
+              <Grid size={6}>
+                <InfoItem
+                  label="Vị trí hiện tại"
+                  value={
+                    initialData.phongKtx
+                      ? `KTX: ${initialData.phongKtx.maPhong}`
+                      : initialData.phongHoc
+                        ? `Phòng: ${initialData.phongHoc.tenPhong}`
+                        : 'Trong kho'
+                  }
+                />
+              </Grid>
+            </Grid>
+          </Box>
         )}
+        <TextField
+          select
+          fullWidth
+          size="small"
+          label="Loại phòng đích"
+          value={targetType}
+          onChange={(e) => {
+            setTargetType(e.target.value as any);
+            setSelectedRoom(null);
+            setSearchTerm('');
+          }}
+        >
+          <MenuItem value="HOC">Phòng học / Khu hiệu bộ</MenuItem>
+          <MenuItem value="KTX">Phòng Ký túc xá (Nội trú)</MenuItem>
+        </TextField>
+        <Autocomplete
+          options={options}
+          loading={loadingHoc || loadingKtx}
+          getOptionLabel={(option: any) =>
+            targetType === 'HOC' ? option.tenPhong : option.maPhong
+          }
+          onInputChange={(_, val) => setSearchTerm(val)}
+          onChange={(_, val) => setSelectedRoom(val)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              size="small"
+              label={
+                targetType === 'HOC' ? 'Tìm tên phòng học...' : 'Nhập mã phòng KTX (vd: 20...)'
+              }
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loadingHoc || loadingKtx ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          renderOption={(props, option: any) => (
+            <li {...props}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {targetType === 'HOC' ? (
+                  <BusinessIcon fontSize="small" color="disabled" />
+                ) : (
+                  <HomeWorkIcon fontSize="small" color="disabled" />
+                )}
+                <Typography variant="body2">
+                  {targetType === 'HOC' ? option.tenPhong : option.maPhong}
+                </Typography>
+              </Stack>
+            </li>
+          )}
+        />
       </Stack>
     </FormDetailsModal>
   );

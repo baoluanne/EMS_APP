@@ -1,5 +1,17 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Stack, Box, Typography, Grid, Button } from '@mui/material';
+import {
+  Stack,
+  Box,
+  Typography,
+  Grid,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Collapse,
+  Button,
+} from '@mui/material';
 import { DataGridTable } from '@renderer/components/Table';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
@@ -17,7 +29,14 @@ import { FormProvider } from 'react-hook-form';
 import { BedListDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentListDrawer';
 import { StudentSearchResultDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentSearchResultDrawer';
 import { ResidencyHistoryModal } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/CutruHistory';
-import { DescriptionOutlined, ErrorSharp } from '@mui/icons-material';
+import {
+  DescriptionOutlined,
+  ErrorSharp,
+  MoreVert,
+  KeyboardArrowUp,
+  KeyboardArrowDown,
+  Analytics,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 export default function ThongTinSinhVienKtx() {
@@ -27,9 +46,15 @@ export default function ThongTinSinhVienKtx() {
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
+  // State điều khiển việc thu gọn thống kê
+  const [showStats, setShowStats] = useState(true);
+
   const [filterState, setFilterState] = useState<ThongTinSvKtxFilterState>({});
   const [isSearchResultOpen, setIsSearchResultOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+
+  const openMenu = Boolean(menuAnchorEl);
 
   const {
     formMethods,
@@ -68,11 +93,9 @@ export default function ThongTinSinhVienKtx() {
 
   const handleFilterApply = (filters: ThongTinSvKtxFilterState) => {
     setFilterState(filters);
-
     const hasRealFilter = Object.values(filters).some(
       (v) => v !== undefined && v !== '' && v !== null,
     );
-
     setIsSearchResultOpen(hasRealFilter);
   };
 
@@ -80,6 +103,14 @@ export default function ThongTinSinhVienKtx() {
     setFilterState({});
     setIsSearchResultOpen(false);
   }, []);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
 
   const floorStats = useMemo(() => {
     const phongs = (phongData as any)?.result || [];
@@ -120,62 +151,114 @@ export default function ThongTinSinhVienKtx() {
         <Stack flexGrow={1} p={2} spacing={2} sx={{ overflowY: 'auto' }}>
           {selectedTang ? (
             <>
-              <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                <Box flexGrow={1}>
-                  <ActionsToolbar
-                    selectedRowIds={selectedRows}
-                    customStartActions={
-                      <>
-                        <Button
-                          variant="text"
-                          size="small"
-                          startIcon={<DescriptionOutlined />}
-                          onClick={() => navigate('/dormitory-management/dormitory-student-list')}
-                        >
-                          Duyệt đơn KTX
-                        </Button>
-                        <Button
-                          variant="text"
-                          size="small"
-                          startIcon={<ErrorSharp />}
-                          onClick={() =>
-                            navigate('/dormitory-management/student-dormitory-Vi-Pham')
-                          }
-                        >
-                          Vi phạm nội quy KTX
-                        </Button>
-                      </>
-                    }
-                    onExport={(dataOption, columnOption) =>
-                      exportPaginationToExcel<any>({
-                        entity: 'DanhSachPhong',
-                        filteredData: (phongData as any)?.result || [],
-                        columns: roomColumns,
-                        options: { dataOption, columnOption },
-                        fileName: `Phong_Tang_${selectedTang.tenTang}`,
-                        columnVisibilityModel,
-                      })
-                    }
-                  />
-                </Box>
+              {/* Header điều khiển Thống kê */}
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Analytics color="action" fontSize="small" />
+                  <Typography
+                    variant="overline"
+                    fontWeight={600}
+                    color="text.secondary"
+                    sx={{ letterSpacing: 1 }}
+                  >
+                    Báo cáo nhanh tầng {selectedTang.tenTang}
+                  </Typography>
+                </Stack>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => setShowStats(!showStats)}
+                  startIcon={showStats ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                  sx={{ fontWeight: 700, borderRadius: 2 }}
+                >
+                  {showStats ? 'Thu gọn thống kê' : 'Mở rộng thống kê'}
+                </Button>
               </Stack>
 
+              {/* Khu vực thống kê có khả năng thu gọn */}
+              <Collapse in={showStats}>
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  {floorStatsConfig.map((stat) => (
+                    <Grid key={stat.key} size={3}>
+                      <FloorStatsCard
+                        label={stat.label}
+                        value={floorStats[stat.key as keyof typeof floorStats]}
+                        icon={stat.icon}
+                        color={stat.color}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Collapse>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  bgcolor: 'background.paper',
+                  borderRadius: 1,
+                }}
+              >
+                <ActionsToolbar
+                  selectedRowIds={selectedRows}
+                  onExport={(dataOption, columnOption) =>
+                    exportPaginationToExcel<any>({
+                      entity: 'DanhSachPhong',
+                      filteredData: (phongData as any)?.result || [],
+                      columns: roomColumns,
+                      options: { dataOption, columnOption },
+                      fileName: `Phong_Tang_${selectedTang.tenTang}`,
+                      columnVisibilityModel,
+                    })
+                  }
+                />
+
+                <Box sx={{ pr: 2 }}>
+                  <IconButton
+                    onClick={handleMenuClick}
+                    size="small"
+                    sx={{ border: '1px solid #e2e8f0', borderRadius: 1 }}
+                  >
+                    <MoreVert />
+                  </IconButton>
+                  <Menu
+                    anchorEl={menuAnchorEl}
+                    open={openMenu}
+                    onClose={handleMenuClose}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        navigate('/dormitory-management/dormitory-student-list');
+                        handleMenuClose();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <DescriptionOutlined fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Duyệt đơn KTX</ListItemText>
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        navigate('/dormitory-management/student-dormitory-Vi-Pham');
+                        handleMenuClose();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <ErrorSharp fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Vi phạm nội quy KTX</ListItemText>
+                    </MenuItem>
+                  </Menu>
+                </Box>
+              </Box>
+
+              {/* FILTER MỚI - Autocomplete search */}
               <Box>
                 <ThongTinSvKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
               </Box>
-
-              <Grid container spacing={2}>
-                {floorStatsConfig.map((stat) => (
-                  <Grid key={stat.key} size={3}>
-                    <FloorStatsCard
-                      label={stat.label}
-                      value={floorStats[stat.key]}
-                      icon={stat.icon}
-                      color={stat.color}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
 
               <Box
                 flexGrow={1}
@@ -201,18 +284,12 @@ export default function ThongTinSinhVienKtx() {
                   getRowId={(row) => row.id}
                   sx={{
                     flex: 1,
-                    '& .MuiDataGrid-root': {
-                      border: 'none',
-                      height: '100%',
-                    },
+                    '& .MuiDataGrid-root': { border: 'none', height: '100%' },
                     '& .MuiDataGrid-columnHeaders': {
                       borderBottom: '1px solid #e2e8f0',
                       backgroundColor: '#fafafa',
                     },
-                    '& .MuiDataGrid-columnHeaderTitle': {
-                      fontWeight: 700,
-                      fontSize: '14px',
-                    },
+                    '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 700, fontSize: '14px' },
                     '& .MuiDataGrid-cell': {
                       borderRight: '1px solid #f0f0f0',
                       padding: '12px 8px',
@@ -220,17 +297,6 @@ export default function ThongTinSinhVienKtx() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                    },
-                    '& .MuiDataGrid-row': {
-                      '&:hover': {
-                        backgroundColor: '#f5f5f5',
-                      },
-                    },
-                    '& .MuiDataGrid-virtualScroller': {
-                      overflow: 'auto !important',
-                    },
-                    '& .css-1lih3j9': {
-                      mb: 0,
                     },
                   }}
                 />
@@ -253,6 +319,7 @@ export default function ThongTinSinhVienKtx() {
           )}
         </Stack>
 
+        {/* BedListDrawer - Click vào phòng */}
         <BedListDrawer
           phong={selectedPhong}
           onClose={() => setSelectedPhong(null)}
@@ -262,6 +329,7 @@ export default function ThongTinSinhVienKtx() {
           }}
         />
 
+        {/* StudentSearchResultDrawer - Kết quả tìm kiếm sinh viên */}
         <StudentSearchResultDrawer
           open={isSearchResultOpen}
           filters={filterState}
@@ -272,6 +340,7 @@ export default function ThongTinSinhVienKtx() {
           }}
         />
 
+        {/* ResidencyHistoryModal - Lịch sử cư trú */}
         <ResidencyHistoryModal
           open={openHistoryModal}
           onClose={() => {

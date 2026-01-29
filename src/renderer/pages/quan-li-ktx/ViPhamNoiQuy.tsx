@@ -1,4 +1,13 @@
-import { Button, Stack } from '@mui/material';
+import {
+  Stack,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Button,
+} from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { FormDetailsModal } from '@renderer/components/modals';
@@ -8,7 +17,7 @@ import { useMutation } from '@renderer/shared/mutations';
 import { useState, useCallback, useMemo } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
 import { useNavigate } from 'react-router-dom';
-import { DescriptionOutlined, Search as SearchIcon, Add } from '@mui/icons-material';
+import { DescriptionOutlined, Search as SearchIcon, Add, MoreVert } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
 import { ViPhamNoiQuyForm } from '../../features/ktx-management/vi-pham-noi-quy/components/vi-pham-noi-quy-form';
@@ -25,7 +34,10 @@ import { exportPaginationToExcel } from '@renderer/shared/utils';
 const ViPhamNoiQuyPage = () => {
   const [filters, setFilters] = useState<ViPhamNoiQuyFilterState>({});
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+
+  const openMenu = Boolean(menuAnchorEl);
 
   const { mutateAsync: createViolation, isPending: isSaving } = useMutation<any>('ViPhamNoiQuyKTX');
 
@@ -55,6 +67,14 @@ const ViPhamNoiQuyPage = () => {
     endpoint: 'pagination?TrangThai=0&ViPhamKtx=1',
     defaultState: filters,
   });
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
 
   const handleSaveWithMutation = useCallback(async () => {
     const isValid = await formMethods.trigger();
@@ -132,41 +152,67 @@ const ViPhamNoiQuyPage = () => {
   return (
     <FormProvider {...formMethods}>
       <Stack height="100%" width="100%" p={2}>
-        <ActionsToolbar
-          customStartActions={
-            <Stack direction="row" spacing={1}>
-              <Button variant="text" size="small" startIcon={<Add />} onClick={() => onAdd()}>
-                Lập biên bản mới
-              </Button>
-              <Button
-                variant="text"
-                size="small"
-                startIcon={<DescriptionOutlined />}
-                onClick={() => navigate('/dormitory-management/dormitory-student-list')}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <ActionsToolbar
+            customStartActions={
+              <Stack direction="row" spacing={1}>
+                <Button variant="text" size="small" startIcon={<Add />} onClick={() => onAdd()}>
+                  Lập biên bản mới
+                </Button>
+              </Stack>
+            }
+            onExport={(_dataOption, columnOption) => {
+              exportPaginationToExcel({
+                entity: 'ViPhamNoiQuy',
+                filteredData: rowsData,
+                columns: columns,
+                options: { dataOption: 'filtered', columnOption },
+                columnVisibilityModel,
+                fileName: 'Danh_sach_tong_hop_vi_pham_KTX',
+              });
+            }}
+          />
+
+          <Box sx={{ pr: 1 }}>
+            <IconButton
+              onClick={handleMenuClick}
+              size="small"
+              sx={{ border: '1px solid #e2e8f0', borderRadius: 1 }}
+            >
+              <MoreVert />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchorEl}
+              open={openMenu}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  navigate('/dormitory-management/dormitory-student-list');
+                  handleMenuClose();
+                }}
               >
-                Duyệt đơn KTX
-              </Button>
-              <Button
-                variant="text"
-                size="small"
-                startIcon={<SearchIcon />}
-                onClick={() => navigate('/dormitory-management/student-dormitory-lookup')}
+                <ListItemIcon>
+                  <DescriptionOutlined fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Duyệt đơn KTX</ListItemText>
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  navigate('/dormitory-management/student-dormitory-lookup');
+                  handleMenuClose();
+                }}
               >
-                Tra cứu sinh viên KTX
-              </Button>
-            </Stack>
-          }
-          onExport={(_dataOption, columnOption) => {
-            exportPaginationToExcel({
-              entity: 'ViPhamNoiQuy',
-              filteredData: rowsData,
-              columns: columns,
-              options: { dataOption: 'filtered', columnOption },
-              columnVisibilityModel,
-              fileName: 'Danh_sach_tong_hop_vi_pham_KTX',
-            });
-          }}
-        />
+                <ListItemIcon>
+                  <SearchIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Tra cứu sinh viên KTX</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Box>
 
         {isModalOpen && (
           <FormDetailsModal
