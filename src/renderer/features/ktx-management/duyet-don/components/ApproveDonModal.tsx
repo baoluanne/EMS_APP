@@ -131,8 +131,6 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
     <FormDetailsModal
       title={`Xử lý đơn ${isDangKyMoi ? 'đăng ký mới' : isChuyenPhong ? 'chuyển phòng' : isGiaHan ? 'gia hạn' : 'rời KTX'}`}
       onClose={onClose}
-      onSave={handleApprove}
-      saveTitle={isRoiKtx ? 'Xác nhận rời' : 'Duyệt đơn'}
       maxWidth="sm"
     >
       <Stack spacing={2} sx={{ mt: 1 }}>
@@ -271,29 +269,46 @@ export const ApproveDonModal = ({ onClose, selectedId, onSuccess }: Props) => {
           </Box>
         )}
 
-        <Divider />
-        <Stack spacing={1} sx={{ bgcolor: '#fff5f5', p: 1.5, borderRadius: 1 }}>
-          <TextField
-            fullWidth
-            label="Lý do từ chối"
-            multiline
-            rows={2}
-            size="small"
-            value={ghiChu}
-            onChange={(e) => setGhiChu(e.target.value)}
-          />
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Cancel />}
-            onClick={handleRejectAction}
-            fullWidth
-            size="small"
-          >
-            Từ chối đơn
-          </Button>
-        </Stack>
+        <TextField
+          fullWidth
+          label="Lý do từ chối (nếu có)"
+          multiline
+          rows={2}
+          size="small"
+          value={ghiChu}
+          onChange={(e) => setGhiChu(e.target.value)}
+          placeholder="Nhập lý do từ chối đơn..."
+        />
       </Stack>
+
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 1,
+          mt: 3,
+          pt: 2,
+          borderTop: '1px solid #e9ecef',
+        }}
+      >
+        <Button
+          variant="contained"
+          color="error"
+          startIcon={<Cancel />}
+          onClick={handleRejectAction}
+        >
+          Từ chối đơn
+        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button onClick={onClose} color="inherit">
+            Hủy
+          </Button>
+          <Button onClick={handleApprove} variant="contained">
+            {isRoiKtx ? 'Xác nhận rời' : 'Duyệt đơn'}
+          </Button>
+        </Box>
+      </Box>
     </FormDetailsModal>
   );
 };

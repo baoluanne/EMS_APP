@@ -1,6 +1,6 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Chip, IconButton, Tooltip, Stack, Typography } from '@mui/material';
-import { CheckCircleOutline, Visibility } from '@mui/icons-material';
+import { CheckCircleOutline } from '@mui/icons-material';
 import { format } from 'date-fns';
 
 export const duyetDonColumns = (
@@ -94,6 +94,32 @@ export const duyetDonColumns = (
     },
   },
   {
+    field: 'nguoiTao',
+    headerName: 'Người tạo',
+    width: 150,
+    valueGetter: (_, row: any) => row.nguoiTao?.fullName || '---',
+  },
+  {
+    field: 'ngayTao',
+    headerName: 'Ngày tạo',
+    width: 150,
+    valueGetter: (_, row: any) =>
+      row.ngayTao ? format(new Date(row.ngayTao), 'dd/MM/yyyy HH:mm') : '---',
+  },
+  {
+    field: 'nguoiCapNhat',
+    headerName: 'Người cập nhật',
+    width: 150,
+    valueGetter: (_, row: any) => row.nguoiCapNhat?.fullName || '---',
+  },
+  {
+    field: 'ngayCapNhat',
+    headerName: 'Ngày cập nhật',
+    width: 150,
+    valueGetter: (_, row: any) =>
+      row.ngayCapNhat ? format(new Date(row.ngayCapNhat), 'dd/MM/yyyy HH:mm') : '---',
+  },
+  {
     field: 'actions',
     headerName: 'Thao tác',
     width: 100,
@@ -102,11 +128,6 @@ export const duyetDonColumns = (
     headerAlign: 'center',
     renderCell: (params) => (
       <Stack direction="row" spacing={0.5}>
-        <Tooltip title="Xem chi tiết">
-          <IconButton size="small" color="info" onClick={() => onView(params.row)}>
-            <Visibility fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <Tooltip title="Xử lý đơn">
           <IconButton
             color="primary"
