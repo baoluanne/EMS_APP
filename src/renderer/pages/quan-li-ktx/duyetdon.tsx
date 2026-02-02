@@ -18,7 +18,7 @@ import { DuyetDonFilter } from '@renderer/features/ktx-management/duyet-don/comp
 import { ApproveDonModal } from '@renderer/features/ktx-management/duyet-don/components/ApproveDonModal';
 import { DonKtxDetailDrawer } from '@renderer/features/ktx-management/duyet-don/components/DonKtxDetailDrawer';
 import { KtxDonTrangThai } from '@renderer/features/ktx-management/duyet-don/configs/KtxDonEnum';
-import { ErrorSharp, Search as SearchIcon, MoreVert } from '@mui/icons-material';
+import { ErrorSharp, Search as SearchIcon, MoreVert, Home } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const removeAccents = (str: string) => {
@@ -191,6 +191,17 @@ const DuyetDonPage = () => {
                   <ErrorSharp fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Vi phạm nội quy KTX</ListItemText>
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  navigate('/dormitory-management/facilities-management');
+                  handleMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Home fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Cơ sở hạ tầng</ListItemText>
               </MenuItem>
             </Menu>
           </Box>

@@ -9,23 +9,18 @@ import {
   InputAdornment,
 } from '@mui/material';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
-import { ViPhamNoiQuyFilterState } from '../validation';
 
 const filterFields = [
-  { key: 'maSinhVien', label: 'Mã sinh viên' },
-  { key: 'hoTen', label: 'Họ tên' },
   { key: 'maPhong', label: 'Mã phòng' },
-  { key: 'maBienBan', label: 'Mã biên bản' },
-  { key: 'soDienThoai', label: 'Số điện thoại' },
-  { key: 'viPhamTu', label: 'Điểm vi phạm từ' },
+  { key: 'loaiPhong', label: 'Loại phòng' },
 ];
 
 interface Props {
-  onApply: (filters: ViPhamNoiQuyFilterState) => void;
+  onApply: (filters: any) => void;
   onReset: () => void;
 }
 
-export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
+export const RoomFilter = ({ onApply, onReset }: Props) => {
   const [inputValue, setInputValue] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
@@ -43,7 +38,7 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
     if (newValue && typeof newValue !== 'string') {
       const updated = { ...activeFilters, [newValue.key]: newValue.value };
       setActiveFilters(updated);
-      onApply(updated as any);
+      onApply(updated);
       setInputValue('');
     }
   };
@@ -53,7 +48,7 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
     delete updated[key];
     setActiveFilters(updated);
     if (Object.keys(updated).length === 0) onReset();
-    else onApply(updated as any);
+    else onApply(updated);
   };
 
   return (
@@ -69,7 +64,7 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
         renderInput={(params) => (
           <TextField
             {...params}
-            placeholder="Tìm theo Mã SV, Họ tên, Mã phòng, Mã biên bản, Số điện thoại..."
+            placeholder="Tìm theo Mã phòng, Loại phòng..."
             size="small"
             fullWidth
             InputProps={{
@@ -88,10 +83,17 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
                 px: 1,
                 fontSize: '0.9rem',
                 transition: 'all 0.2s',
-                '& fieldset': { borderColor: '#e2e8f0' },
-                '&:hover fieldset': { borderColor: 'primary.main' },
+                '& fieldset': {
+                  borderColor: '#e2e8f0',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
               },
-              '& .MuiInputBase-input': { paddingY: '4px !important', height: '1.2rem' },
+              '& .MuiInputBase-input': {
+                paddingY: '4px !important',
+                height: '1.2rem',
+              },
             }}
           />
         )}
@@ -137,7 +139,11 @@ export const ViPhamNoiQuyFilter = ({ onApply, onReset }: Props) => {
             size="small"
             color="error"
             variant="filled"
-            sx={{ height: 26, fontSize: '0.75rem', fontWeight: 700, borderRadius: 1.5 }}
+            sx={{
+              height: 26,
+              fontSize: '0.75rem',
+              fontWeight: 700,
+            }}
           />
         )}
       </Box>

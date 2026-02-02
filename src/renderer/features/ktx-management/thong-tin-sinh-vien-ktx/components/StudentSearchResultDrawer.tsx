@@ -1,22 +1,18 @@
+import { useState, useEffect } from 'react';
 import {
-  Box,
   Drawer,
   Stack,
-  Avatar,
   Typography,
+  Box,
   IconButton,
   Divider,
-  ListItemButton,
-  ListItemText,
-  ListItemIcon,
-  Paper,
+  Avatar,
   Chip,
-  Tooltip,
+  CircularProgress,
 } from '@mui/material';
-import { Close, Person, History, Badge, HomeWork, CheckCircle, Cancel } from '@mui/icons-material';
+import { Close, Person, Home, Bed, CalendarMonth } from '@mui/icons-material';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
-import { ThongTinSvKtxFilterState } from '../type';
-import { useMemo } from 'react';
+import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
 
 interface Props {
   open: boolean;
@@ -25,220 +21,159 @@ interface Props {
   onStudentClick: (student: any) => void;
 }
 
-const removeAccents = (str: string) => {
-  return str
-    ? str
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
-        .replace(/Đ/g, 'D')
-        .toLowerCase()
-    : '';
-};
-
 export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentClick }: Props) => {
-  const hasFilter = useMemo(() => {
-    const hasMaSinhVien = (filters.maSinhVien?.trim() || '') !== '';
-    const hasHoTen = (filters.hoTen?.trim() || '') !== '';
-    const hasMaPhong = (filters.maPhong?.trim() || '') !== '';
-    const hasMaGiuong = (filters.maGiuong?.trim() || '') !== '';
-    const hasTrangThai =
-      filters.trangThai !== undefined && filters.trangThai !== '' && filters.trangThai !== null;
-    const hasTrangThaiText = ((filters as any).trangThaiText?.trim() || '') !== '';
+  const [params, setParams] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    return (
-      hasMaSinhVien || hasHoTen || hasMaPhong || hasMaGiuong || hasTrangThai || hasTrangThaiText
-    );
-  }, [filters]);
+  useEffect(() => {
+    const queryParams = new URLSearchParams();
 
-  const buildQueryString = useMemo(() => {
-    const params = new URLSearchParams();
+    if (filters.maSinhVien) queryParams.append('MaSinhVien', filters.maSinhVien);
+    if (filters.hoTen) queryParams.append('HoTen', filters.hoTen);
+    if (filters.maPhong) queryParams.append('MaPhong', filters.maPhong);
 
-    const keywords: string[] = [];
-    if (filters.maSinhVien?.trim()) keywords.push(filters.maSinhVien.trim());
-    if (filters.hoTen?.trim()) keywords.push(filters.hoTen.trim());
-    if (filters.maPhong?.trim()) keywords.push(filters.maPhong.trim());
-    if (filters.maGiuong?.trim()) keywords.push(filters.maGiuong.trim());
-
-    if (keywords.length > 0) {
-      params.append('Keyword', keywords.join(' '));
+    if (filters.isSapHetHan === 'true') {
+      queryParams.append('IsSapHetHan', 'true');
+      queryParams.append('TrangThai', '0');
     }
 
-    if ((filters as any).trangThaiText) {
-      const search = removeAccents((filters as any).trangThaiText);
-      const statusMap: any = {
-        'dang o': '0',
-        dango: '0',
-        'da roi': '1',
-        daroi: '1',
-      };
-
-      const matchedStatus = Object.entries(statusMap).find(([key]) =>
-        removeAccents(key).includes(search),
-      );
-
-      if (matchedStatus) {
-        params.append('TrangThai', matchedStatus[1]);
-      }
-    } else if (filters.trangThai !== undefined && filters.trangThai !== '') {
-      params.append('TrangThai', filters.trangThai.toString());
+    if (filters.isQuaHan === 'true') {
+      queryParams.append('IsQuaHan', 'true');
+      queryParams.append('TrangThai', '0');
     }
 
-    params.append('pageSize', '100');
-
-    return params.toString();
+    setParams(queryParams.toString());
   }, [filters]);
 
-  const { data, isRefetching } = useCrudPagination<any>({
+  const { data: cuTruData, refetch } = useCrudPagination<any>({
     entity: 'CuTruKtx',
-    endpoint: `pagination?${buildQueryString}`,
-    enabled: open && hasFilter,
+    endpoint: `pagination?pageSize=100&${params}`,
+    enabled: open && params.length > 0,
   });
 
-  const results = useMemo(() => {
-    const rawResults = (data as any)?.result || [];
+  useEffect(() => {
+    if (open && params.length > 0) {
+      setIsLoading(true);
+      refetch();
+      setTimeout(() => setIsLoading(false), 500);
+    }
+  }, [params, open, refetch]);
 
-    const uniqueStudents = new Map<string, any>();
+  const students = (cuTruData as any)?.result || [];
 
-    rawResults.forEach((item: any) => {
-      const sinhVienId = item.sinhVienId || item.sinhVien?.id;
-      if (!sinhVienId) return;
+  const getStatusChip = (ngayRoiKtx: string) => {
+    if (!ngayRoiKtx) return null;
+    const roiKtx = new Date(ngayRoiKtx);
+    const now = new Date();
+    const warning = new Date();
+    warning.setDate(warning.getDate() + 15);
 
-      const existing = uniqueStudents.get(sinhVienId);
-
-      if (!existing || new Date(item.ngayTao || 0) > new Date(existing.ngayTao || 0)) {
-        uniqueStudents.set(sinhVienId, item);
-      }
-    });
-
-    return Array.from(uniqueStudents.values());
-  }, [data]);
+    if (roiKtx < now)
+      return <Chip label="Quá hạn" color="error" size="small" sx={{ fontWeight: 700 }} />;
+    if (roiKtx <= warning)
+      return <Chip label="Sắp hết hạn" color="warning" size="small" sx={{ fontWeight: 700 }} />;
+    return <Chip label="Còn hạn" color="success" size="small" sx={{ fontWeight: 700 }} />;
+  };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: 480, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: 450 }, bgcolor: '#f8fafc' } }}
+    >
+      <Stack spacing={0} sx={{ height: '100%' }}>
         <Box
           sx={{
-            p: 2.5,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+            p: 2,
+            bgcolor: 'primary.main',
             color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Person sx={{ fontSize: 28 }} />
-            <Box>
-              <Typography variant="h6" fontWeight={800}>
-                Kết quả tìm kiếm
-              </Typography>
-              <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                {results.length} sinh viên được tìm thấy
-              </Typography>
-            </Box>
-          </Stack>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              Kết quả tìm kiếm ({students.length})
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.8 }}>
+              Thông tin sinh viên nội trú
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose} sx={{ color: 'white' }}>
             <Close />
           </IconButton>
         </Box>
-        <Divider />
 
-        <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, bgcolor: '#f1f5f9' }}>
-          {isRefetching ? (
-            <Typography variant="body2" color="text.secondary" align="center" mt={4}>
-              Đang tìm kiếm...
-            </Typography>
-          ) : results.length > 0 ? (
-            <Stack spacing={1.5}>
-              {results.map((item: any) => {
-                const isActive = item.trangThai === '0' || item.trangThai === 0;
-                const trangThaiLabel = isActive ? 'Đang ở' : 'Đã rời';
-                const trangThaiColor = isActive ? 'success' : 'error';
-                const TrangThaiIcon = isActive ? CheckCircle : Cancel;
-
-                return (
-                  <Paper
-                    key={item.id}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2,
-                      transition: 'all 0.2s',
-                      borderLeftWidth: 4,
-                      borderLeftColor: isActive ? 'success.main' : 'error.main',
-                      '&:hover': {
-                        boxShadow: '0 4px 12px rgba(25, 118, 210, 0.15)',
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <ListItemButton onClick={() => onStudentClick(item)} sx={{ p: 1.5 }}>
-                      <ListItemIcon>
-                        <Avatar sx={{ bgcolor: 'primary.main', width: 42, height: 42 }}>
-                          {item.sinhVien?.ten?.charAt(0) || '?'}
-                        </Avatar>
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Typography variant="body2" fontWeight={800}>
-                              {item.sinhVien?.fullName}
-                            </Typography>
-                            <Chip
-                              label={trangThaiLabel}
-                              size="small"
-                              color={trangThaiColor}
-                              icon={<TrangThaiIcon sx={{ fontSize: 14 }} />}
-                              sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700 }}
-                            />
-                          </Stack>
-                        }
-                        secondary={
-                          <Stack spacing={0.3} mt={0.5}>
-                            <Typography
-                              variant="caption"
-                              display="flex"
-                              alignItems="center"
-                              gap={0.5}
-                            >
-                              <Badge sx={{ fontSize: 14 }} /> MSSV: {item.sinhVien?.maSinhVien}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              display="flex"
-                              alignItems="center"
-                              gap={0.5}
-                            >
-                              <HomeWork sx={{ fontSize: 14 }} />
-                              {item.phongKtx?.maPhong || 'N/A'} - Giường{' '}
-                              {item.giuongKtx?.maGiuong || 'N/A'}
-                            </Typography>
-                          </Stack>
-                        }
-                      />
-                      <Tooltip title="Xem lịch sử cư trú">
-                        <History fontSize="small" color="action" />
-                      </Tooltip>
-                    </ListItemButton>
-                  </Paper>
-                );
-              })}
-            </Stack>
-          ) : (
-            <Box sx={{ textAlign: 'center', mt: 8 }}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                😔
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Không tìm thấy sinh viên phù hợp
-              </Typography>
-              <Typography variant="caption" color="text.secondary" mt={1} display="block">
-                Hãy thử điều chỉnh bộ lọc của bạn
-              </Typography>
+        <Stack spacing={2} sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
             </Box>
+          ) : students.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="text.secondary">Không tìm thấy sinh viên phù hợp</Typography>
+            </Box>
+          ) : (
+            students.map((student: any) => (
+              <Box
+                key={student.id}
+                onClick={() => onStudentClick(student)}
+                sx={{
+                  bgcolor: 'white',
+                  borderRadius: 2,
+                  p: 2,
+                  cursor: 'pointer',
+                  border: '1px solid #e2e8f0',
+                  '&:hover': { boxShadow: 2, borderColor: 'primary.main' },
+                }}
+              >
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                      <Person />
+                    </Avatar>
+                    <Box flex={1}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        {student.sinhVien?.hoDem} {student.sinhVien?.ten}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        MSSV: {student.sinhVien?.maSinhVien}
+                      </Typography>
+                    </Box>
+                    {getStatusChip(student.ngayRoiKtx)}
+                  </Stack>
+                  <Divider />
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Home fontSize="small" color="action" />
+                      <Typography variant="body2">
+                        <strong>Phòng:</strong> {student.phongKtx?.maPhong}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Bed fontSize="small" color="action" />
+                      <Typography variant="body2">
+                        <strong>Giường:</strong> {student.giuongKtx?.maGiuong?.split('-').pop()}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CalendarMonth fontSize="small" color="action" />
+                      <Typography variant="body2">
+                        <strong>Hết hạn:</strong>{' '}
+                        {student.ngayRoiKtx
+                          ? new Date(student.ngayRoiKtx).toLocaleDateString('vi-VN')
+                          : 'N/A'}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Box>
+            ))
           )}
-        </Box>
-      </Box>
+        </Stack>
+      </Stack>
     </Drawer>
   );
 };

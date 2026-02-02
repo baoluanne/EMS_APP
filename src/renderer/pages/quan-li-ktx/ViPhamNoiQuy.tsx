@@ -17,7 +17,13 @@ import { useMutation } from '@renderer/shared/mutations';
 import { useState, useCallback, useMemo } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
 import { useNavigate } from 'react-router-dom';
-import { DescriptionOutlined, Search as SearchIcon, Add, MoreVert } from '@mui/icons-material';
+import {
+  DescriptionOutlined,
+  Search as SearchIcon,
+  Add,
+  MoreVert,
+  Home,
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
 import { ViPhamNoiQuyForm } from '../../features/ktx-management/vi-pham-noi-quy/components/vi-pham-noi-quy-form';
@@ -32,13 +38,11 @@ import {
 import { exportPaginationToExcel } from '@renderer/shared/utils';
 
 const ViPhamNoiQuyPage = () => {
-  const [filters, setFilters] = useState<ViPhamNoiQuyFilterState>({});
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
   const openMenu = Boolean(menuAnchorEl);
-
   const { mutateAsync: createViolation, isPending: isSaving } = useMutation<any>('ViPhamNoiQuyKTX');
 
   const {
@@ -57,7 +61,6 @@ const ViPhamNoiQuyPage = () => {
     defaultValues: {
       sinhVienId: '',
       loaiViPham: LoaiViPhamNoiQuy.GayMatTratTu,
-      noiDungViPham: '',
       diemTru: 0,
       ngayViPham: new Date(),
       maBienBan: '',
@@ -65,7 +68,6 @@ const ViPhamNoiQuyPage = () => {
     schema: viPhamNoiQuySchema,
     entity: 'CuTruKtx',
     endpoint: 'pagination?TrangThai=0&ViPhamKtx=1',
-    defaultState: filters,
   });
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -81,87 +83,67 @@ const ViPhamNoiQuyPage = () => {
     if (!isValid) return;
 
     const values = formMethods.getValues();
-    const rawSV = values.sinhVienId;
-    const finalSinhVienId = typeof rawSV === 'object' ? rawSV?.sinhVienId || rawSV?.id : rawSV;
+    const finalSinhVienId =
+      typeof values.sinhVienId === 'object'
+        ? values.sinhVienId?.sinhVienId || values.sinhVienId?.id
+        : values.sinhVienId;
 
     const payload = {
-      id: values.id || undefined,
+      ...values,
       sinhVienId: finalSinhVienId,
       loaiViPham: Number(values.loaiViPham),
       diemTru: Number(values.diemTru),
-      ngayViPham: values.ngayViPham,
       maBienBan: values.maBienBan || `BB-${Date.now()}`,
-      ghiChu: values.ghiChu,
     };
 
     try {
-      const response = await createViolation(payload);
-      if (response) {
-        toast.success('Lưu biên bản thành công!');
-        handleCloseModal();
-        refetch();
-      }
+      await createViolation(payload);
+      toast.success('Lưu biên bản thành công!');
+      handleCloseModal();
+      refetch();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || error?.message || 'Lỗi khi lưu');
+      toast.error(error?.response?.data?.message || 'Lỗi khi lưu');
     }
   }, [formMethods, createViolation, handleCloseModal, refetch]);
 
-  const rowsData = useMemo(() => {
-    const rawData = (data as any)?.result || [];
-    return rawData.filter((row: any) => {
-      const hasViolation = (row.tongDiemViPham || 0) > 0;
-      if (!hasViolation) return false;
-
-      const searchText = filters.maSinhVien?.toLowerCase() || '';
-      const matchSV =
-        !searchText ||
-        row.sinhVien?.maSinhVien?.toLowerCase().includes(searchText) ||
-        `${row.sinhVien?.hoDem} ${row.sinhVien?.ten}`.toLowerCase().includes(searchText);
-
-      const matchPhong =
-        !filters.maPhong ||
-        row.phongKtx?.maPhong?.toLowerCase().includes(filters.maPhong.toLowerCase());
-
-      const matchDiem = !filters.viPhamTu || row.tongDiemViPham >= Number(filters.viPhamTu);
-      const matchSdt =
-        !filters.soDienThoai || row.sinhVien?.soDienThoai?.includes(filters.soDienThoai);
-
-      return matchSV && matchPhong && matchDiem && matchSdt;
-    });
-  }, [data, filters]);
-
   const handleFilterApply = useCallback(
     (val: ViPhamNoiQuyFilterState) => {
-      setFilters(val);
       mergeParams({
-        Keyword: val.maSinhVien,
+        Keyword: val.maSinhVien || val.hoTen,
         MaSinhVien: val.maSinhVien,
         MaPhong: val.maPhong,
         ViPhamKtx: val.viPhamTu || 1,
         SoDienThoai: val.soDienThoai,
       });
+      tableConfig.onPaginationModelChange({ ...tableConfig.paginationModel, page: 0 });
     },
-    [mergeParams],
+    [mergeParams, tableConfig],
   );
 
   const handleFilterReset = useCallback(() => {
-    setFilters({});
-    mergeParams({});
-  }, [mergeParams]);
+    mergeParams({
+      Keyword: undefined,
+      MaSinhVien: undefined,
+      MaPhong: undefined,
+      ViPhamKtx: 1,
+      SoDienThoai: undefined,
+    });
+    refetch();
+  }, [mergeParams, refetch]);
+
+  const rowsData = useMemo(() => (data as any)?.result || [], [data]);
 
   return (
     <FormProvider {...formMethods}>
-      <Stack height="100%" width="100%" p={2}>
+      <Stack height="100%" width="100%" p={2} spacing={1} sx={{ overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <ActionsToolbar
             customStartActions={
-              <Stack direction="row" spacing={1}>
-                <Button variant="text" size="small" startIcon={<Add />} onClick={() => onAdd()}>
-                  Lập biên bản mới
-                </Button>
-              </Stack>
+              <Button variant="text" size="small" startIcon={<Add />} onClick={() => onAdd()}>
+                Lập biên bản mới
+              </Button>
             }
-            onExport={(_dataOption, columnOption) => {
+            onExport={(_data, columnOption) => {
               exportPaginationToExcel({
                 entity: 'ViPhamNoiQuy',
                 filteredData: rowsData,
@@ -174,11 +156,7 @@ const ViPhamNoiQuyPage = () => {
           />
 
           <Box sx={{ pr: 1 }}>
-            <IconButton
-              onClick={handleMenuClick}
-              size="small"
-              sx={{ border: '1px solid #e2e8f0', borderRadius: 1 }}
-            >
+            <IconButton onClick={handleMenuClick} size="small">
               <MoreVert />
             </IconButton>
             <Menu
@@ -210,6 +188,17 @@ const ViPhamNoiQuyPage = () => {
                 </ListItemIcon>
                 <ListItemText>Tra cứu sinh viên KTX</ListItemText>
               </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  navigate('/dormitory-management/facilities-management');
+                  handleMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Home fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Cơ sở hạ tầng</ListItemText>
+              </MenuItem>
             </Menu>
           </Box>
         </Box>
@@ -229,16 +218,22 @@ const ViPhamNoiQuyPage = () => {
 
         <ViPhamNoiQuyFilter onApply={handleFilterApply} onReset={handleFilterReset} />
 
-        <DataGridTable
-          columns={columns}
-          rows={rowsData}
-          loading={isRefetching}
-          getRowId={(row) => row.id}
-          onRowClick={(params) => setSelectedStudent(params.row)}
-          height="calc(100% - 110px)"
-          sx={{ cursor: 'pointer' }}
-          {...tableConfig}
-        />
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <DataGridTable
+            columns={columns}
+            rows={rowsData}
+            loading={isRefetching}
+            getRowId={(row) => row.id}
+            onRowClick={(params) => setSelectedStudent(params.row)}
+            {...tableConfig}
+          />
+        </Box>
 
         <ViolationHistorySidebar
           open={!!selectedStudent}

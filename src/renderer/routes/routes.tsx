@@ -2224,44 +2224,7 @@ const _appRoutes = [
         label: 'Cơ sở hạ tầng',
         icon: <FcHome />,
         path: 'facilities-management',
-        children: [
-          {
-            label: 'Sơ đồ Tòa nhà',
-            icon: <FcFolder />,
-            path: 'toa-nha',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ToaNha'))),
-          },
-          // {
-          //   label: 'Phòng',
-          //   icon: <FcFolder />,
-          //   path: 'phong-ktx',
-          //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/phongktx'))),
-          // },
-          {
-            label: 'Giường',
-            icon: <FcFolder />,
-            path: 'giuongktx',
-            Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/giuongktx'))),
-          },
-          // {
-          //   label: 'Tài sản KTX',
-          //   icon: <FcFolder />,
-          //   path: 'tai-san-ktx',
-          //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
-          // },
-          // {
-          //   label: 'Yêu cầu sửa chữa',
-          //   icon: <FcFolder />,
-          //   path: 'yeu-cau-sua-chua',
-          //   Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/YeuCauSuaChua'))),
-          // },
-          // {
-          //   label: 'Báo cáo tài sản & sửa chữa',
-          //   path: 'bao-cao-co-so-vat-chat',
-          //   icon: <FcFolder />,
-          //   // Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/TaiSanKtx'))),
-          // },
-        ],
+        Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/QuanLyPhongKtx'))),
       },
       // {
       //   label: 'Chỉ số điện - nước',

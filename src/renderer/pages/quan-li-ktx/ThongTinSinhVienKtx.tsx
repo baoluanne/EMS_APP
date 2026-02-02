@@ -36,6 +36,7 @@ import {
   KeyboardArrowUp,
   KeyboardArrowDown,
   Analytics,
+  Home,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -250,6 +251,17 @@ export default function ThongTinSinhVienKtx() {
                         <ErrorSharp fontSize="small" />
                       </ListItemIcon>
                       <ListItemText>Vi phạm nội quy KTX</ListItemText>
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        navigate('/dormitory-management/facilities-management');
+                        handleMenuClose();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <Home fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Cơ sở hạ tầng</ListItemText>
                     </MenuItem>
                   </Menu>
                 </Box>

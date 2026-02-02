@@ -13,6 +13,8 @@ export interface ThongTinSinhVienKtx {
 }
 
 export interface ThongTinSvKtxFilterState {
+  isSapHetHan?: string;
+  isQuaHan?: string;
   maSinhVien?: string;
   hoTen?: string;
   maPhong?: string;
@@ -26,9 +28,11 @@ export const KtxTrangThaiSvOptions = [
 ];
 
 export const thongTinSvKtxDefaultFilters: ThongTinSvKtxFilterState = {
-  maSinhVien: '',
-  hoTen: '',
-  maPhong: '',
-  maGiuong: '',
+  maSinhVien: undefined,
+  hoTen: undefined,
+  maPhong: undefined,
+  maGiuong: undefined,
   trangThai: undefined,
+  isSapHetHan: undefined,
+  isQuaHan: undefined,
 };
