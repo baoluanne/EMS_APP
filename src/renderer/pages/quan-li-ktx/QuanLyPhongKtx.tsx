@@ -36,6 +36,7 @@ import {
 import { BedListSidebar } from '@renderer/features/ktx-management/phong-management/BedListSidebar';
 import { RoomForm } from '@renderer/features/ktx-management/phong-management/RoomForm';
 import { RoomFilter } from '@renderer/features/ktx-management/phong-management/RoomFilter';
+import { exportPaginationToExcel } from '@renderer/shared/utils';
 
 const QuanLyPhongKtx = () => {
   const navigate = useNavigate();
@@ -73,6 +74,7 @@ const QuanLyPhongKtx = () => {
     setIsDeleteOpenModal,
     refetch,
     mergeParams,
+    columnVisibilityModel,
   } = useCrudPaginationModal<PhongKtx, PhongKtx>({
     entity: 'PhongKtx',
     endpoint: `pagination?TangId=${activeTang?.id || ''}`,
@@ -89,7 +91,7 @@ const QuanLyPhongKtx = () => {
 
   return (
     <FormProvider {...formMethods}>
-      <Stack spacing={1} sx={{ p: 2, height: '100%', overflow: 'hidden' }}>
+      <Stack spacing={1} sx={{ p: 2, height: '100%', overflow: 'hidden', bgcolor: '#f8fafc' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={0.5}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Apartment color="primary" fontSize="small" />
@@ -107,7 +109,7 @@ const QuanLyPhongKtx = () => {
           </Button>
         </Stack>
         <Collapse in={showFloors}>
-          <Box sx={{ p: 1 }}>
+          <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 1.5, border: '1px solid #e2e8f0' }}>
             <Stack direction="row" spacing={1.5} sx={{ overflowX: 'auto', pb: 0.2 }}>
               {tangList.map((tang: any) => (
                 <Button
@@ -137,6 +139,7 @@ const QuanLyPhongKtx = () => {
             alignItems: 'center',
             bgcolor: 'background.paper',
             borderRadius: 1,
+            border: '1px solid #e2e8f0',
           }}
         >
           <ActionsToolbar
@@ -144,8 +147,18 @@ const QuanLyPhongKtx = () => {
             onAdd={() => onAdd()}
             onEdit={onEdit}
             onDelete={() => setIsDeleteOpenModal(true)}
+            onExport={(dataOption, columnOption) => {
+              exportPaginationToExcel({
+                entity: 'PhongKtx',
+                columns: getPhongColumns(() => {}),
+                options: { dataOption, columnOption },
+                fileName: `Danh_sach_phong_${activeTang?.tenTang || 'KTX'}`,
+                columnVisibilityModel,
+                filteredData: (data as any)?.result || [],
+              });
+            }}
           />
-          <Box>
+          <Box sx={{ pr: 1 }}>
             <IconButton
               onClick={(e) => setMenuAnchorEl(e.currentTarget)}
               size="small"
@@ -157,6 +170,8 @@ const QuanLyPhongKtx = () => {
               anchorEl={menuAnchorEl}
               open={Boolean(menuAnchorEl)}
               onClose={() => setMenuAnchorEl(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
               <MenuItem
                 onClick={() => {
@@ -214,14 +229,11 @@ const QuanLyPhongKtx = () => {
             flexDirection: 'column',
             bgcolor: 'white',
             borderRadius: 1.5,
+            border: '1px solid #e2e8f0',
             overflow: 'hidden',
-            textAlign: 'center',
-            '& .MuiDataGrid-root': { justifyContent: 'center', alignContent: 'center' },
-            '& .MuiDataGrid-cell': { justifyContent: 'center', alignContent: 'center' },
           }}
         >
           <DataGridTable
-            optimizeGrid={false}
             rows={(data as any)?.result || []}
             columns={getPhongColumns((phong) => setViewingPhong(phong))}
             loading={isRefetching}
@@ -230,7 +242,6 @@ const QuanLyPhongKtx = () => {
             getRowId={(row) => row.id}
             onRowSelectionModelChange={handleRowSelectionModelChange}
             rowSelectionModel={selectedRows}
-            height="calc(100% - 150px)"
             {...tableConfig}
           />
         </Box>

@@ -1,11 +1,16 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Stack, Typography, Collapse } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
+import { Add, Business, Analytics, KeyboardArrowUp, KeyboardArrowDown } from '@mui/icons-material';
 import { DataGridTable } from '@renderer/components/Table';
-import { DeleteConfirmationModal, FormDetailsModal } from '@renderer/components/modals';
+import {
+  DeleteConfirmationModal as DeleteModal,
+  FormDetailsModal,
+} from '@renderer/components/modals';
 import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
+import { TITLE_MODE } from '@renderer/shared/enums';
 import { DanhSachThietBiForm } from '../../features/equip-management/danh-sach-thiet-bi/components/danh-sach-thiet-bi-form';
 import { DanhSachThietBiFilter } from '../../features/equip-management/danh-sach-thiet-bi/components/danh-sach-thiet-bi-filter';
 import { NhapHangLoatModal } from '../../features/equip-management/danh-sach-thiet-bi/NhapHangLoatModal';
@@ -17,26 +22,24 @@ import {
   DanhSachThietBi,
   danhSachThietBiSchema,
 } from '../../features/equip-management/danh-sach-thiet-bi/validation';
-import { TITLE_MODE } from '@renderer/shared/enums';
 import { getTrangThaiLabel } from '../../features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
-import { Add, Business, Analytics, KeyboardArrowUp, KeyboardArrowDown } from '@mui/icons-material';
 
-const removeAccents = (str: string) => {
-  return str
-    ? str
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
-        .replace(/Đ/g, 'D')
-        .toLowerCase()
-    : '';
-};
+const UNASSIGNED_LOCATION = 'chua phan bo';
+const TABLE_HEIGHT = 'calc(100% - 200px)';
 
 const DanhSachThietBiPage = () => {
   const [filters, setFilters] = useState<DanhSachThietBiFilterState>({});
-  const [nhapHangLoatOpen, setNhapHangLoatOpen] = useState(false);
-  const [assignRoomOpen, setAssignRoomOpen] = useState(false);
+  const [modals, setModals] = useState({
+    nhapHangLoat: false,
+    assignRoom: false,
+  });
   const [showStats, setShowStats] = useState(true);
+
+  const crudHandlers = useCrudPaginationModal<DanhSachThietBi, DanhSachThietBi>({
+    defaultValues: { tenThietBi: '' },
+    schema: danhSachThietBiSchema,
+    entity: 'ThietBi',
+  });
 
   const {
     formMethods,
@@ -55,87 +58,16 @@ const DanhSachThietBiPage = () => {
     isAddMode,
     tableConfig,
     refetch,
-  } = useCrudPaginationModal<DanhSachThietBi, DanhSachThietBi>({
-    defaultValues: { tenThietBi: '' },
-    schema: danhSachThietBiSchema,
-    entity: 'ThietBi',
-  });
+  } = crudHandlers;
 
-  const selectedIds = useMemo(
-    () => Array.from((selectedRows as any)?.ids || []).map((id) => String(id)),
-    [selectedRows],
-  );
-
-  const rowsData = useMemo(() => {
-    const raw = (data as any)?.result || [];
-    return raw.filter((r: any) => {
-      const matchBasic =
-        (!filters.maThietBi ||
-          removeAccents(r.maThietBi).includes(removeAccents(filters.maThietBi))) &&
-        (!filters.tenThietBi ||
-          removeAccents(r.tenThietBi).includes(removeAccents(filters.tenThietBi))) &&
-        (!filters.model || removeAccents(r.model).includes(removeAccents(filters.model))) &&
-        (!filters.serialNumber ||
-          removeAccents(r.serialNumber).includes(removeAccents(filters.serialNumber)));
-
-      let matchViTri = true;
-      if ((filters as any).viTri) {
-        const val = (filters as any).viTri;
-        const cleanSearch = removeAccents(val);
-        if (cleanSearch === 'chua phan bo') {
-          matchViTri = !r.phongHocId && !r.phongKtxId;
-        } else {
-          const tenPhong = removeAccents(r.phongHoc?.tenPhong || '');
-          const maKtx = removeAccents(r.phongKtx?.maPhong || '');
-          matchViTri = tenPhong.includes(cleanSearch) || maKtx.includes(cleanSearch);
-        }
-      }
-
-      let matchTrangThai = true;
-      if ((filters as any).trangThaiText) {
-        const searchVal = removeAccents((filters as any).trangThaiText);
-        const label = removeAccents(getTrangThaiLabel(r.trangThai));
-        matchTrangThai = label.includes(searchVal);
-      }
-
-      return matchBasic && matchViTri && matchTrangThai;
-    });
-  }, [data, filters]);
-
-  const currentSelectedData = useMemo(
-    () => rowsData.find((r: any) => r.id === selectedIds[0]),
-    [rowsData, selectedIds],
-  );
-
-  const handleBulkSubmit = useCallback(async (fd: any) => {
-    const res = await fetch('http://localhost:5031/api/ThietBi/nhap-hang-loat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fd),
-    });
-    return await res.json();
-  }, []);
+  const selectedIds = useSelectedIds(selectedRows);
+  const rowsData = useFilteredRows(data, filters);
+  const currentSelectedData = useCurrentSelectedData(rowsData, selectedIds);
 
   return (
     <FormProvider {...formMethods}>
       <Stack height="100%" p={2} spacing={2} sx={{ overflowY: 'auto', bgcolor: '#f8fafc' }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Analytics color="action" fontSize="small" />
-            <Typography variant="overline" fontWeight={700} color="text.secondary">
-              BÁO CÁO THIẾT BỊ
-            </Typography>
-          </Stack>
-          <Button
-            size="small"
-            variant="text"
-            onClick={() => setShowStats(!showStats)}
-            startIcon={showStats ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-            sx={{ fontWeight: 700 }}
-          >
-            {showStats ? 'Thu gọn thống kê' : 'Mở rộng thống kê'}
-          </Button>
-        </Stack>
+        <StatsHeader showStats={showStats} onToggle={() => setShowStats(!showStats)} />
 
         <Collapse in={showStats} sx={{ pb: 1 }}>
           <DeviceStatsBoard data={rowsData} loading={isRefetching} />
@@ -149,30 +81,14 @@ const DanhSachThietBiPage = () => {
           onAdd={onAdd}
           onEdit={onEdit}
           onExport={(dOpt, cOpt) =>
-            exportPaginationToExcel({
-              entity: 'ThietBi',
-              filteredData: rowsData,
-              columns,
-              options: { dataOption: dOpt, columnOption: cOpt },
-              columnVisibilityModel: tableConfig.columnVisibilityModel,
-              fileName: 'Danh_sach_thiet_bi',
-            })
+            handleExport(rowsData, tableConfig.columnVisibilityModel, dOpt, cOpt)
           }
           customStartActions={
-            <Stack direction="row" spacing={1}>
-              <Button size="small" startIcon={<Add />} onClick={() => setNhapHangLoatOpen(true)}>
-                Nhập hàng loạt
-              </Button>
-              <Button
-                size="small"
-                color="secondary"
-                startIcon={<Business />}
-                disabled={selectedIds.length === 0}
-                onClick={() => setAssignRoomOpen(true)}
-              >
-                Phân phòng
-              </Button>
-            </Stack>
+            <CustomActions
+              onBulkImport={() => setModals({ ...modals, nhapHangLoat: true })}
+              onAssignRoom={() => setModals({ ...modals, assignRoom: true })}
+              hasSelection={selectedIds.length > 0}
+            />
           }
         />
 
@@ -184,42 +100,36 @@ const DanhSachThietBiPage = () => {
           getRowId={(r) => r.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
-          height="calc(100% - 200px)"
+          height={TABLE_HEIGHT}
           {...tableConfig}
         />
 
-        {isModalOpen && (
-          <FormDetailsModal
-            title={isAddMode ? 'Thêm mới' : 'Sửa'}
-            onClose={handleCloseModal}
-            onSave={onSave}
-            maxWidth="sm"
-            titleMode={TITLE_MODE.COLORED}
-          >
-            <DanhSachThietBiForm />
-          </FormDetailsModal>
-        )}
+        <DeviceFormModal
+          isOpen={isModalOpen}
+          isAddMode={isAddMode}
+          onClose={handleCloseModal}
+          onSave={onSave}
+        />
 
-        {nhapHangLoatOpen && (
+        {modals.nhapHangLoat && (
           <NhapHangLoatModal
-            open={nhapHangLoatOpen}
-            onClose={() => setNhapHangLoatOpen(false)}
+            open={modals.nhapHangLoat}
+            onClose={() => setModals({ ...modals, nhapHangLoat: false })}
             onSuccess={refetch}
-            onSubmitBulk={handleBulkSubmit}
           />
         )}
 
-        {assignRoomOpen && (
+        {modals.assignRoom && (
           <AssignRoomModal
             selectedIds={selectedIds}
             initialData={currentSelectedData}
-            onClose={() => setAssignRoomOpen(false)}
+            onClose={() => setModals({ ...modals, assignRoom: false })}
             onSuccess={refetch}
           />
         )}
 
         {isDeleteOpenModal && (
-          <DeleteConfirmationModal
+          <DeleteModal
             onClose={() => setIsDeleteOpenModal(false)}
             onDelete={async () => {
               await handleDeleteRecord();
@@ -233,3 +143,187 @@ const DanhSachThietBiPage = () => {
 };
 
 export default DanhSachThietBiPage;
+
+// ============================================================================
+// Custom Hooks
+// ============================================================================
+
+function useSelectedIds(selectedRows: any): string[] {
+  return useMemo(
+    () => Array.from((selectedRows as any)?.ids || []).map((id) => String(id)),
+    [selectedRows],
+  );
+}
+
+function useFilteredRows(data: any, filters: DanhSachThietBiFilterState): any[] {
+  return useMemo(() => {
+    const raw = (data as any)?.result || [];
+    return raw.filter((row: any) => applyAllFilters(row, filters));
+  }, [data, filters]);
+}
+
+function useCurrentSelectedData(rowsData: any[], selectedIds: string[]): any {
+  return useMemo(() => rowsData.find((r: any) => r.id === selectedIds[0]), [rowsData, selectedIds]);
+}
+
+// ============================================================================
+// Filter Functions
+// ============================================================================
+
+function applyAllFilters(row: any, filters: DanhSachThietBiFilterState): boolean {
+  return (
+    applyBasicFilters(row, filters) &&
+    applyLocationFilter(row, filters) &&
+    applyStatusFilter(row, filters)
+  );
+}
+
+function applyBasicFilters(row: any, filters: DanhSachThietBiFilterState): boolean {
+  return (
+    matchesField(row.maThietBi, filters.maThietBi) &&
+    matchesField(row.tenThietBi, filters.tenThietBi) &&
+    matchesField(row.model, filters.model) &&
+    matchesField(row.serialNumber, filters.serialNumber)
+  );
+}
+
+function applyLocationFilter(row: any, filters: DanhSachThietBiFilterState): boolean {
+  const viTri = (filters as any).viTri;
+  if (!viTri) return true;
+
+  const cleanSearch = removeAccents(viTri);
+
+  if (cleanSearch === UNASSIGNED_LOCATION) {
+    return !row.phongHocId && !row.phongKtxId;
+  }
+
+  const tenPhong = removeAccents(row.phongHoc?.tenPhong || '');
+  const maKtx = removeAccents(row.phongKtx?.maPhong || '');
+
+  return tenPhong.includes(cleanSearch) || maKtx.includes(cleanSearch);
+}
+
+function applyStatusFilter(row: any, filters: DanhSachThietBiFilterState): boolean {
+  const trangThaiText = (filters as any).trangThaiText;
+  if (!trangThaiText) return true;
+
+  const searchVal = removeAccents(trangThaiText);
+  const label = removeAccents(getTrangThaiLabel(row.trangThai));
+
+  return label.includes(searchVal);
+}
+
+function matchesField(value: string | undefined, filter: string | undefined): boolean {
+  if (!filter) return true;
+  return removeAccents(value || '').includes(removeAccents(filter));
+}
+
+function removeAccents(str: string): string {
+  return str
+    ? str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .toLowerCase()
+    : '';
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function handleExport(
+  rowsData: any[],
+  columnVisibilityModel: any,
+  dataOption: any,
+  columnOption: any,
+) {
+  exportPaginationToExcel({
+    entity: 'ThietBi',
+    filteredData: rowsData,
+    columns,
+    options: { dataOption, columnOption },
+    columnVisibilityModel,
+    fileName: 'Danh_sach_thiet_bi',
+  });
+}
+
+// ============================================================================
+// Components
+// ============================================================================
+
+interface StatsHeaderProps {
+  showStats: boolean;
+  onToggle: () => void;
+}
+
+function StatsHeader({ showStats, onToggle }: StatsHeaderProps) {
+  return (
+    <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <Analytics color="action" fontSize="small" />
+        <Typography variant="overline" fontWeight={700} color="text.secondary">
+          BÁO CÁO THIẾT BỊ
+        </Typography>
+      </Stack>
+      <Button
+        size="small"
+        variant="text"
+        onClick={onToggle}
+        startIcon={showStats ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+        sx={{ fontWeight: 700 }}
+      >
+        {showStats ? 'Thu gọn thống kê' : 'Mở rộng thống kê'}
+      </Button>
+    </Stack>
+  );
+}
+
+interface CustomActionsProps {
+  onBulkImport: () => void;
+  onAssignRoom: () => void;
+  hasSelection: boolean;
+}
+
+function CustomActions({ onBulkImport, onAssignRoom, hasSelection }: CustomActionsProps) {
+  return (
+    <Stack direction="row" spacing={1}>
+      <Button size="small" startIcon={<Add />} onClick={onBulkImport}>
+        Nhập hàng loạt
+      </Button>
+      <Button
+        size="small"
+        color="secondary"
+        startIcon={<Business />}
+        disabled={!hasSelection}
+        onClick={onAssignRoom}
+      >
+        Phân phòng
+      </Button>
+    </Stack>
+  );
+}
+
+interface DeviceFormModalProps {
+  isOpen: boolean;
+  isAddMode: boolean;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+function DeviceFormModal({ isOpen, isAddMode, onClose, onSave }: DeviceFormModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <FormDetailsModal
+      title={isAddMode ? 'Thêm mới' : 'Sửa'}
+      onClose={onClose}
+      onSave={onSave}
+      maxWidth="sm"
+      titleMode={TITLE_MODE.COLORED}
+    >
+      <DanhSachThietBiForm />
+    </FormDetailsModal>
+  );
+}

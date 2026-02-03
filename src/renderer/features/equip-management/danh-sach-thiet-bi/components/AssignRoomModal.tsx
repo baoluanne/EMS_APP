@@ -51,7 +51,11 @@ export const AssignRoomModal = ({ onClose, selectedIds, onSuccess, initialData }
   );
 
   const handleConfirm = async () => {
-    if (!selectedRoom) return toast.error('Vui lòng chọn phòng đích.');
+    if (!selectedRoom) {
+      toast.error('Vui lòng chọn phòng đích.');
+      return;
+    }
+
     setLoading(true);
     try {
       await assignRoomAsync(selectedIds);
@@ -65,7 +69,79 @@ export const AssignRoomModal = ({ onClose, selectedIds, onSuccess, initialData }
     }
   };
 
-  const InfoItem = ({ label, value }: { label: string; value: string | number }) => (
+  return (
+    <FormDetailsModal
+      title="Điều chuyển thiết bị"
+      onClose={onClose}
+      onSave={handleConfirm}
+      maxWidth="sm"
+      saveTitle={loading ? 'Đang xử lý...' : 'Xác nhận gán'}
+      isRefetching={loading}
+    >
+      <Stack spacing={3} sx={{ mt: 1 }}>
+        {selectedIds.length === 1 && initialData && <DeviceInfoCard data={initialData} />}
+
+        <RoomTypeSelector
+          value={targetType}
+          onChange={(type) => {
+            setTargetType(type);
+            setSelectedRoom(null);
+            setSearchTerm('');
+          }}
+        />
+
+        <RoomSearchAutocomplete
+          targetType={targetType}
+          options={options}
+          loading={loadingHoc || loadingKtx}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onRoomSelect={setSelectedRoom}
+        />
+      </Stack>
+    </FormDetailsModal>
+  );
+};
+
+// ============================================================================
+// Sub-components
+// ============================================================================
+
+interface DeviceInfoCardProps {
+  data: any;
+}
+
+function DeviceInfoCard({ data }: DeviceInfoCardProps) {
+  const currentLocation = data.phongKtx
+    ? `KTX: ${data.phongKtx.maPhong}`
+    : data.phongHoc
+      ? `Phòng: ${data.phongHoc.tenPhong}`
+      : 'Trong kho';
+
+  return (
+    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+      <Grid container spacing={2}>
+        <Grid size={12}>
+          <InfoItem label="Tên thiết bị" value={data.tenThietBi} />
+        </Grid>
+        <Grid size={6}>
+          <InfoItem label="Mã thiết bị" value={data.maThietBi} />
+        </Grid>
+        <Grid size={6}>
+          <InfoItem label="Vị trí hiện tại" value={currentLocation} />
+        </Grid>
+      </Grid>
+    </Box>
+  );
+}
+
+interface InfoItemProps {
+  label: string;
+  value: string | number;
+}
+
+function InfoItem({ label, value }: InfoItemProps) {
+  return (
     <Box>
       <Typography
         variant="caption"
@@ -80,99 +156,88 @@ export const AssignRoomModal = ({ onClose, selectedIds, onSuccess, initialData }
       </Typography>
     </Box>
   );
+}
+
+interface RoomTypeSelectorProps {
+  value: 'HOC' | 'KTX';
+  onChange: (type: 'HOC' | 'KTX') => void;
+}
+
+function RoomTypeSelector({ value, onChange }: RoomTypeSelectorProps) {
+  return (
+    <TextField
+      select
+      fullWidth
+      size="small"
+      label="Loại phòng đích"
+      value={value}
+      onChange={(e) => onChange(e.target.value as 'HOC' | 'KTX')}
+    >
+      <MenuItem value="HOC">Phòng học / Khu hiệu bộ</MenuItem>
+      <MenuItem value="KTX">Phòng Ký túc xá (Nội trú)</MenuItem>
+    </TextField>
+  );
+}
+
+interface RoomSearchAutocompleteProps {
+  targetType: 'HOC' | 'KTX';
+  options: any[];
+  loading: boolean;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  onRoomSelect: (room: any) => void;
+}
+
+function RoomSearchAutocomplete({
+  targetType,
+  options,
+  loading,
+  onSearchChange,
+  onRoomSelect,
+}: RoomSearchAutocompleteProps) {
+  const getOptionLabel = (option: any) => {
+    return targetType === 'HOC' ? option.tenPhong : option.maPhong;
+  };
+
+  const getPlaceholder = () => {
+    return targetType === 'HOC' ? 'Tìm tên phòng học...' : 'Nhập mã phòng KTX (vd: 20...)';
+  };
 
   return (
-    <FormDetailsModal
-      title="Điều chuyển thiết bị"
-      onClose={onClose}
-      onSave={handleConfirm}
-      maxWidth="sm"
-      saveTitle={loading ? 'Đang xử lý...' : 'Xác nhận gán'}
-    >
-      <Stack spacing={3} sx={{ mt: 1 }}>
-        {selectedIds.length === 1 && initialData && (
-          <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-            <Grid container spacing={2}>
-              <Grid size={12}>
-                <InfoItem label="Tên thiết bị" value={initialData.tenThietBi} />
-              </Grid>
-              <Grid size={6}>
-                <InfoItem label="Mã thiết bị" value={initialData.maThietBi} />
-              </Grid>
-              <Grid size={6}>
-                <InfoItem
-                  label="Vị trí hiện tại"
-                  value={
-                    initialData.phongKtx
-                      ? `KTX: ${initialData.phongKtx.maPhong}`
-                      : initialData.phongHoc
-                        ? `Phòng: ${initialData.phongHoc.tenPhong}`
-                        : 'Trong kho'
-                  }
-                />
-              </Grid>
-            </Grid>
-          </Box>
-        )}
+    <Autocomplete
+      options={options}
+      loading={loading}
+      getOptionLabel={getOptionLabel}
+      onInputChange={(_, val) => onSearchChange(val)}
+      onChange={(_, val) => onRoomSelect(val)}
+      renderInput={(params) => (
         <TextField
-          select
-          fullWidth
+          {...params}
           size="small"
-          label="Loại phòng đích"
-          value={targetType}
-          onChange={(e) => {
-            setTargetType(e.target.value as any);
-            setSelectedRoom(null);
-            setSearchTerm('');
+          label={getPlaceholder()}
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
           }}
-        >
-          <MenuItem value="HOC">Phòng học / Khu hiệu bộ</MenuItem>
-          <MenuItem value="KTX">Phòng Ký túc xá (Nội trú)</MenuItem>
-        </TextField>
-        <Autocomplete
-          options={options}
-          loading={loadingHoc || loadingKtx}
-          getOptionLabel={(option: any) =>
-            targetType === 'HOC' ? option.tenPhong : option.maPhong
-          }
-          onInputChange={(_, val) => setSearchTerm(val)}
-          onChange={(_, val) => setSelectedRoom(val)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              size="small"
-              label={
-                targetType === 'HOC' ? 'Tìm tên phòng học...' : 'Nhập mã phòng KTX (vd: 20...)'
-              }
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {loadingHoc || loadingKtx ? (
-                      <CircularProgress color="inherit" size={20} />
-                    ) : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-          renderOption={(props, option: any) => (
-            <li {...props}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                {targetType === 'HOC' ? (
-                  <BusinessIcon fontSize="small" color="disabled" />
-                ) : (
-                  <HomeWorkIcon fontSize="small" color="disabled" />
-                )}
-                <Typography variant="body2">
-                  {targetType === 'HOC' ? option.tenPhong : option.maPhong}
-                </Typography>
-              </Stack>
-            </li>
-          )}
         />
-      </Stack>
-    </FormDetailsModal>
+      )}
+      renderOption={(props, option: any) => (
+        <li {...props}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            {targetType === 'HOC' ? (
+              <BusinessIcon fontSize="small" color="disabled" />
+            ) : (
+              <HomeWorkIcon fontSize="small" color="disabled" />
+            )}
+            <Typography variant="body2">{getOptionLabel(option)}</Typography>
+          </Stack>
+        </li>
+      )}
+    />
   );
-};
+}

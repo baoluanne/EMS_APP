@@ -2,220 +2,162 @@ import { useCallback, useState } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'react-toastify';
 import { ControlledTextField } from '@renderer/components/controlled-fields';
-import { FilterSelect } from '@renderer/components/fields';
 import { FormDetailsModal } from '@renderer/components/modals';
 import { LoaiThietBiSelection } from '@renderer/components/selections/equipManagement/LoaiThietBiSelection';
 import { NhaCungCapSelection } from '@renderer/components/selections/equipManagement/NhaCungCapFilter';
-import {
-  TrangThaiThietBiOptions,
-  TrangThaiThietBiEnum,
-} from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
+import { TrangThaiThietBiEnum } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
 import {
   nhapHangLoatSchema,
   NhapHangLoat,
 } from '@renderer/features/equip-management/danh-sach-thiet-bi/validation';
+import { useMutation } from '@renderer/shared/mutations';
 
-interface NhapHangLoatResultDto {
-  soLuongTaoThanhCong: number;
-  danhSachIdThietBi: string[];
-  danhSachMaThietBi: string[];
-  thoiGianTao: string;
-}
-
-interface NhapHangLoatModalProps {
+interface Props {
   open: boolean;
   onClose: () => void;
-  onSuccess?: (resultData: NhapHangLoatResultDto) => void;
-  onSubmitBulk?: (data: any) => Promise<NhapHangLoatResultDto>;
-  refetch?: (() => void) | (() => Promise<any>);
+  onSuccess: () => void;
 }
 
-const defaultValues = {
-  id: undefined,
-  soLuong: 10,
-  tenThietBi: '',
-  loaiThietBiId: '',
-  nhaCungCapId: '',
-  model: '',
-  thongSoKyThuat: '',
-  nguyenGia: undefined,
-  namSanXuat: new Date().getFullYear().toString(),
-  ngayMua: new Date().toISOString().split('T')[0],
-  ngayHetHanBaoHanh: undefined,
-  giaTriKhauHao: undefined,
-  trangThai: TrangThaiThietBiEnum.MoiNhap,
-  ghiChu: '',
-};
+const DEFAULT_QUANTITY = 10;
+const CODE_PADDING_LENGTH = 4;
 
-export const NhapHangLoatModal = ({
-  open,
-  onClose,
-  onSuccess,
-  onSubmitBulk,
-  refetch,
-}: NhapHangLoatModalProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// ============================================================================
+// Helper Functions (Outside component to avoid dependency issues)
+// ============================================================================
+
+function getDefaultFormValues(): Partial<NhapHangLoat> {
+  return {
+    soLuong: DEFAULT_QUANTITY,
+    tenThietBi: '',
+    namSanXuat: new Date().getFullYear().toString(),
+    ngayMua: new Date().toISOString().split('T')[0],
+    trangThai: TrangThaiThietBiEnum.MoiNhap,
+  };
+}
+
+function createDeviceEntities(data: NhapHangLoat) {
+  return Array.from({ length: data.soLuong }).map((_, index) =>
+    createSingleDeviceEntity(data, index),
+  );
+}
+
+function createSingleDeviceEntity(data: NhapHangLoat, index: number) {
+  return {
+    tenThietBi: data.tenThietBi,
+    loaiThietBiId: data.loaiThietBiId,
+    nhaCungCapId: data.nhaCungCapId,
+    model: data.model ?? undefined,
+    thongSoKyThuat: data.thongSoKyThuat ?? undefined,
+    nguyenGia: data.nguyenGia,
+    namSanXuat: Number(data.namSanXuat),
+    ngayMua: formatPurchaseDate(data.ngayMua),
+    trangThai: TrangThaiThietBiEnum.MoiNhap,
+    ghiChu: data.ghiChu ?? undefined,
+    maThietBi: generateDeviceCode(data.prefixMaThietBi, index),
+  };
+}
+
+function formatPurchaseDate(date?: string | null): string | null {
+  return date ? `${date}T00:00:00Z` : null;
+}
+
+function generateDeviceCode(prefix: string | null | undefined, index: number): string | null {
+  if (!prefix) return null;
+
+  const sequence = String(index + 1).padStart(CODE_PADDING_LENGTH, '0');
+  return `${prefix}${sequence}`;
+}
+
+export const NhapHangLoatModal = ({ open, onClose, onSuccess }: Props) => {
+  const [loading, setLoading] = useState(false);
+  const { mutateAsync: createMultiple } = useMutation<any>('ThietBi/multiple');
 
   const formMethods = useForm<NhapHangLoat>({
     resolver: zodResolver(nhapHangLoatSchema),
-    defaultValues,
-    mode: 'onBlur',
+    defaultValues: getDefaultFormValues(),
   });
-
-  const { control } = formMethods;
-
-  const formatDateForSave = (dateString: string | null | undefined): string | null => {
-    if (!dateString) return null;
-    if (dateString.includes('T')) return dateString;
-    return `${dateString}T00:00:00Z`;
-  };
 
   const onSubmit = useCallback(
     async (data: NhapHangLoat) => {
+      setLoading(true);
       try {
-        setIsSubmitting(true);
+        const entities = createDeviceEntities(data);
+        await createMultiple(entities);
 
-        const transformedData = {
-          ...data,
-          soLuong: Number(data.soLuong),
-          ngayMua: formatDateForSave(data.ngayMua),
-          ngayHetHanBaoHanh: formatDateForSave(data.ngayHetHanBaoHanh),
-          trangThai:
-            data.trangThai !== null && data.trangThai !== undefined
-              ? Number(data.trangThai)
-              : TrangThaiThietBiEnum.MoiNhap,
-        };
-        let result: NhapHangLoatResultDto;
-
-        if (onSubmitBulk) {
-          result = await onSubmitBulk(transformedData);
-        } else {
-          result = {
-            soLuongTaoThanhCong: transformedData.soLuong,
-            danhSachIdThietBi: [],
-            danhSachMaThietBi: [],
-            thoiGianTao: new Date().toISOString(),
-          };
-        }
-
-        if (result) {
-          formMethods.reset(defaultValues);
-
-          if (onSuccess) {
-            setTimeout(async () => {
-              if (refetch) {
-                const refetchResult = refetch();
-                if (refetchResult instanceof Promise) {
-                  await refetchResult;
-                }
-              }
-              onSuccess(result);
-            }, 500);
-          }
-
-          onClose();
-        }
+        toast.success(`Đã tạo thành công ${data.soLuong} thiết bị`);
+        onSuccess();
+        onClose();
+        formMethods.reset();
       } catch (error: any) {
-        console.error('Error:', error);
+        toast.error(error?.message || 'Lỗi khi nhập hàng loạt');
       } finally {
-        setIsSubmitting(false);
+        setLoading(false);
       }
     },
-    [onSubmitBulk, formMethods, onSuccess, refetch, onClose],
+    [createMultiple, onSuccess, onClose, formMethods],
   );
-
-  const handleClose = useCallback(() => {
-    if (!isSubmitting) {
-      formMethods.reset(defaultValues);
-      onClose();
-    }
-  }, [isSubmitting, formMethods, onClose]);
-
-  //   const handleReset = useCallback(() => {
-  //     formMethods.reset(defaultValues);
-  //   }, [formMethods]);
 
   if (!open) return null;
 
   return (
     <FormDetailsModal
       title="Nhập hàng loạt thiết bị"
-      onClose={handleClose}
+      onClose={onClose}
       onSave={formMethods.handleSubmit(onSubmit)}
-      isRefetching={isSubmitting}
+      isRefetching={loading}
       maxWidth="sm"
-      saveTitle="Tạo thiết bị"
-      cancelTitle="Hủy"
+      saveTitle="Xác nhận tạo"
     >
       <FormProvider {...formMethods}>
         <Stack spacing={2}>
-          <LoaiThietBiSelection control={control} name="loaiThietBiId" label="Loại thiết bị" />
-          <NhaCungCapSelection control={control} name="nhaCungCapId" label="Nhà cung cấp" />
-
-          <Stack direction="row" spacing={2}>
-            <ControlledTextField
-              name="tenThietBi"
-              control={control}
-              label="Tên thiết bị"
-              helperText=""
-            />
-          </Stack>
-
-          <Stack direction="row" spacing={2}>
-            <ControlledTextField
-              name="soLuong"
-              control={control}
-              label="Số lượng"
-              type="number"
-              inputProps={{ min: 1, max: 1000 }}
-              helperText=""
-            />
-            <ControlledTextField
-              name="prefixMaThietBi"
-              control={control}
-              label="Tiền tố mã thiết bị"
-              placeholder="VD: PC-, PROJECTOR-..."
-            />
-          </Stack>
-
-          <Stack direction="row" spacing={2}>
-            <ControlledTextField name="model" control={control} label="Model" />
-            <ControlledTextField
-              name="thongSoKyThuat"
-              control={control}
-              label="Thông số kỹ thuật"
-            />
-          </Stack>
-
-          <Stack direction="row" spacing={2}>
-            <ControlledTextField
-              name="namSanXuat"
-              control={control}
-              label="Năm sản xuất"
-              type="number"
-            />
-            <ControlledTextField
-              name="nguyenGia"
-              control={control}
-              label="Nguyên giá"
-              type="number"
-            />
-          </Stack>
-
-          <FilterSelect
-            label="Trạng thái"
-            options={TrangThaiThietBiOptions.map((opt) => ({
-              label: opt.label,
-              value: opt.value.toString(),
-            }))}
-            name="trangThai"
-            control={control}
-            disabled
-          />
-          <ControlledTextField name="ghiChu" control={control} label="Ghi chú" multiline rows={2} />
+          <DeviceTypeSection control={formMethods.control} />
+          <DeviceInfoSection control={formMethods.control} />
+          <QuantityAndCodeSection control={formMethods.control} />
+          <PriceAndModelSection control={formMethods.control} />
+          <NotesSection control={formMethods.control} />
         </Stack>
       </FormProvider>
     </FormDetailsModal>
   );
 };
+
+// ============================================================================
+// Form Sections
+// ============================================================================
+
+function DeviceTypeSection({ control }: { control: any }) {
+  return (
+    <>
+      <LoaiThietBiSelection control={control} name="loaiThietBiId" label="Loại thiết bị" />
+      <NhaCungCapSelection control={control} name="nhaCungCapId" label="Nhà cung cấp" />
+    </>
+  );
+}
+
+function DeviceInfoSection({ control }: { control: any }) {
+  return <ControlledTextField name="tenThietBi" control={control} label="Tên thiết bị chung" />;
+}
+
+function QuantityAndCodeSection({ control }: { control: any }) {
+  return (
+    <Stack direction="row" spacing={2}>
+      <ControlledTextField name="soLuong" control={control} label="Số lượng" type="number" />
+      <ControlledTextField name="prefixMaThietBi" control={control} label="Tiền tố mã (VD: PC-)" />
+    </Stack>
+  );
+}
+
+function PriceAndModelSection({ control }: { control: any }) {
+  return (
+    <Stack direction="row" spacing={2}>
+      <ControlledTextField name="model" control={control} label="Model" />
+      <ControlledTextField name="nguyenGia" control={control} label="Nguyên giá" type="number" />
+    </Stack>
+  );
+}
+
+function NotesSection({ control }: { control: any }) {
+  return <ControlledTextField name="ghiChu" control={control} label="Ghi chú" multiline rows={2} />;
+}

@@ -1,28 +1,31 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Stack, Box, Typography, LinearProgress, Chip, IconButton, Tooltip } from '@mui/material';
-import { MeetingRoom, BedOutlined } from '@mui/icons-material';
-
+import { BedOutlined } from '@mui/icons-material';
+import { format } from 'date-fns';
 export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] => [
   {
     field: 'maPhong',
     headerName: 'Phòng',
-    width: 250,
-    minWidth: 120,
+    width: 140,
     renderCell: (p) => (
       <Stack direction="row" alignItems="center" spacing={1.5}>
-        <MeetingRoom fontSize="small" sx={{ color: 'text.secondary' }} />
         <Typography variant="body2" fontWeight={600}>
-          Phòng {p.value}
+          {p.value}
         </Typography>
       </Stack>
     ),
   },
-  { field: 'loaiPhong', headerName: 'Loại phòng', width: 120, minWidth: 100 },
+  {
+    field: 'loaiPhong',
+    headerName: 'Loại phòng',
+    width: 110,
+    align: 'center',
+    headerAlign: 'center',
+  },
   {
     field: 'capacity',
-    headerName: 'Đang ở/Sức chưa',
-    width: 400,
-    minWidth: 180,
+    headerName: 'Đang ở/Sức chứa',
+    width: 300,
     renderCell: (p) => {
       const occupied =
         p.row.giuongs?.filter((g: any) => !g.isDeleted && g.trangThai === 1).length || 0;
@@ -36,10 +39,10 @@ export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] 
               variant="determinate"
               value={percent}
               color={color as any}
-              sx={{ height: 6, borderRadius: 3, bgcolor: '#f1f5f9' }}
+              sx={{ height: 6, borderRadius: 3, bgcolor: '#dcfce7' }}
             />
           </Box>
-          <Typography variant="caption" fontWeight={600}>
+          <Typography variant="caption" fontWeight={600} sx={{ minWidth: 15 }}>
             {occupied} / {total}
           </Typography>
         </Stack>
@@ -49,8 +52,9 @@ export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] 
   {
     field: 'status',
     headerName: 'Trạng thái',
-    width: 200,
-    minWidth: 100,
+    width: 110,
+    align: 'center',
+    headerAlign: 'center',
     renderCell: (p) => {
       const occupied =
         p.row.giuongs?.filter((g: any) => !g.isDeleted && g.trangThai === 1).length || 0;
@@ -60,8 +64,9 @@ export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] 
           label={isFull ? 'ĐẦY' : 'TRỐNG'}
           size="small"
           sx={{
-            fontWeight: 600,
+            fontWeight: 700,
             borderRadius: 1,
+            fontSize: '0.7rem',
             bgcolor: isFull ? '#fee2e2' : '#dcfce7',
             color: isFull ? '#dc2626' : '#16a34a',
           }}
@@ -70,14 +75,30 @@ export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] 
     },
   },
   {
+    field: 'ngayTao',
+    headerName: 'Ngày tạo',
+    width: 130,
+    align: 'center',
+    headerAlign: 'center',
+    // Chỉ lấy ngày, bỏ giờ
+    valueFormatter: (value) => (value ? format(new Date(value as string), 'dd/MM/yyyy') : '---'),
+  },
+  {
+    field: 'ngayCapNhat',
+    headerName: 'Ngày cập nhật',
+    width: 130,
+    align: 'center',
+    headerAlign: 'center',
+    // Chỉ lấy ngày, bỏ giờ
+    valueFormatter: (value) => (value ? format(new Date(value as string), 'dd/MM/yyyy') : '---'),
+  },
+  {
     field: 'actions',
-    headerName: 'Danh sách giường',
+    headerName: 'Chi tiết',
     width: 100,
-    minWidth: 100,
     sortable: false,
     align: 'center',
     headerAlign: 'center',
-    flex: 1,
     renderCell: (p) => (
       <Tooltip title="Xem chi tiết giường">
         <IconButton

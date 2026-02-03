@@ -8,7 +8,7 @@ import {
   Chip,
   InputAdornment,
 } from '@mui/material';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import { MeetingRoom } from '@mui/icons-material';
 
 const filterFields = [
   { key: 'maPhong', label: 'Mã phòng' },
@@ -71,7 +71,7 @@ export const RoomFilter = ({ onApply, onReset }: Props) => {
               ...params.InputProps,
               startAdornment: (
                 <InputAdornment position="start">
-                  <PersonSearchIcon sx={{ color: 'text.secondary', ml: 0.5, fontSize: 18 }} />
+                  <MeetingRoom sx={{ color: 'text.secondary', ml: 0.5, fontSize: 18 }} />
                 </InputAdornment>
               ),
             }}
