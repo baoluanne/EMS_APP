@@ -88,13 +88,19 @@ const ViPhamNoiQuyPage = () => {
         ? values.sinhVienId?.sinhVienId || values.sinhVienId?.id
         : values.sinhVienId;
 
-    const payload = {
-      ...values,
+    const payload: any = {
       sinhVienId: finalSinhVienId,
       loaiViPham: Number(values.loaiViPham),
       diemTru: Number(values.diemTru),
+      ngayViPham: values.ngayViPham,
       maBienBan: values.maBienBan || `BB-${Date.now()}`,
+      ghiChu: values.ghiChu || '',
     };
+
+    // Chỉ thêm id khi đang ở chế độ edit (id có giá trị hợp lệ)
+    if (values.id && values.id !== '') {
+      payload.id = values.id;
+    }
 
     try {
       await createViolation(payload);

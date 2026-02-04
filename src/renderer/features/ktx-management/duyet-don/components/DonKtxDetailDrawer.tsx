@@ -54,7 +54,20 @@ export const DonKtxDetailDrawer = ({ don, onClose }: Props) => {
   );
 
   return (
-    <Drawer anchor="right" open={!!don} onClose={onClose}>
+    <Drawer
+      anchor="right"
+      open={!!don}
+      onClose={onClose}
+      sx={{
+        '& .MuiDrawer-root': {
+          zIndex: 1500,
+        },
+        '& .MuiPaper-root': {
+          zIndex: 1500,
+        },
+        zIndex: 1500,
+      }}
+    >
       <Box
         sx={{
           width: 500,
@@ -100,7 +113,6 @@ export const DonKtxDetailDrawer = ({ don, onClose }: Props) => {
                 fontSize: '2rem',
               }}
             >
-              {/* {don.sinhVien?.anhSinhVienUrl} */}
               {don.sinhVien?.ten?.charAt(0)}
             </Avatar>
             <Typography variant="h6" fontWeight={900}>

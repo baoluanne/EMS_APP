@@ -10,8 +10,9 @@ import {
   Chip,
   CircularProgress,
 } from '@mui/material';
-import { Close, Person, Home, Bed, CalendarMonth } from '@mui/icons-material';
+import { Close, Person, Home, Bed, CalendarMonth, FileDownload } from '@mui/icons-material';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
+import { exportStyledExcel } from '@renderer/shared/utils/export-excel';
 import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
 
 interface Props {
@@ -75,6 +76,37 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
     return <Chip label="Còn hạn" color="success" size="small" sx={{ fontWeight: 700 }} />;
   };
 
+  const getStatusText = (ngayRoiKtx: string) => {
+    if (!ngayRoiKtx) return 'N/A';
+    const roiKtx = new Date(ngayRoiKtx);
+    const now = new Date();
+    const warning = new Date();
+    warning.setDate(warning.getDate() + 15);
+
+    if (roiKtx < now) return 'Quá hạn';
+    if (roiKtx <= warning) return 'Sắp hết hạn';
+    return 'Còn hạn';
+  };
+
+  const handleExportExcel = () => {
+    const exportData = students.map((student: any) => ({
+      'Mã sinh viên': student.sinhVien?.maSinhVien || '',
+      'Họ và tên': `${student.sinhVien?.hoDem || ''} ${student.sinhVien?.ten || ''}`.trim(),
+      'Giới tính': student.sinhVien?.gioiTinh === 0 ? 'Nam' : 'Nữ',
+      'Mã phòng': student.phongKtx?.maPhong || '',
+      'Mã giường': student.giuongKtx?.maGiuong || '',
+      'Ngày vào KTX': student.ngayVaoKtx
+        ? new Date(student.ngayVaoKtx).toLocaleDateString('vi-VN')
+        : '',
+      'Ngày hết hạn': student.ngayRoiKtx
+        ? new Date(student.ngayRoiKtx).toLocaleDateString('vi-VN')
+        : '',
+      'Trạng thái': getStatusText(student.ngayRoiKtx),
+    }));
+
+    exportStyledExcel(exportData, 'Danh_sach_sinh_vien_KTX');
+  };
+
   return (
     <Drawer
       anchor="right"
@@ -101,9 +133,24 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
               Thông tin sinh viên nội trú
             </Typography>
           </Box>
-          <IconButton onClick={onClose} sx={{ color: 'white' }}>
-            <Close />
-          </IconButton>
+          <Stack direction="row" spacing={1}>
+            {students.length > 0 && (
+              <IconButton
+                onClick={handleExportExcel}
+                sx={{
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                }}
+                size="small"
+              >
+                <FileDownload />
+              </IconButton>
+            )}
+            <IconButton onClick={onClose} sx={{ color: 'white' }}>
+              <Close />
+            </IconButton>
+          </Stack>
         </Box>
 
         <Stack spacing={2} sx={{ flex: 1, overflowY: 'auto', p: 2 }}>

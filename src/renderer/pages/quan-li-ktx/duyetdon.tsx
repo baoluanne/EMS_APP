@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Stack, Menu, MenuItem, IconButton, ListItemIcon, ListItemText, Box } from '@mui/material';
+import {
+  Stack,
+  Menu,
+  MenuItem,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Button,
+} from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
 import { FormDetailsModal, DeleteConfirmationModal } from '@renderer/components/modals';
@@ -17,8 +26,15 @@ import { DuyetDonForm } from '@renderer/features/ktx-management/duyet-don/compon
 import { DuyetDonFilter } from '@renderer/features/ktx-management/duyet-don/components/DuyetDonFilter';
 import { ApproveDonModal } from '@renderer/features/ktx-management/duyet-don/components/ApproveDonModal';
 import { DonKtxDetailDrawer } from '@renderer/features/ktx-management/duyet-don/components/DonKtxDetailDrawer';
+import { BulkApproveModal } from '@renderer/features/ktx-management/duyet-don/components/BulkApproveModal';
 import { KtxDonTrangThai } from '@renderer/features/ktx-management/duyet-don/configs/KtxDonEnum';
-import { ErrorSharp, Search as SearchIcon, MoreVert, Home } from '@mui/icons-material';
+import {
+  ErrorSharp,
+  Search as SearchIcon,
+  MoreVert,
+  Home,
+  CheckCircleOutline,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const removeAccents = (str: string) => {
@@ -44,10 +60,9 @@ const DuyetDonPage = () => {
   const [filters, setFilters] = useState<DuyetDonFilterState>({});
   const [targetId, setTargetId] = useState<string | null>(null);
   const [viewingDon, setViewingDon] = useState<any>(null);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
-
-  const openMenu = Boolean(menuAnchorEl);
 
   const {
     formMethods,
@@ -58,7 +73,7 @@ const DuyetDonPage = () => {
     onAdd,
     onEdit,
     onSave,
-    selectedRows,
+    selectedRows, // Biến này cần được theo dõi kỹ
     handleDeleteRecord,
     setIsDeleteOpenModal,
     isDeleteOpenModal,
@@ -117,6 +132,18 @@ const DuyetDonPage = () => {
     });
   }, [data, filters]);
 
+  const safeSelectedIds = useMemo(() => {
+    if (!selectedRows) return [];
+
+    const idsSet = (selectedRows as any)?.ids;
+    return idsSet ? Array.from(idsSet) : [];
+  }, [selectedRows]);
+
+  const selectedRowsData = useMemo(() => {
+    if (safeSelectedIds.length === 0) return [];
+    return rowsData.filter((row: any) => safeSelectedIds.includes(row.id));
+  }, [rowsData, safeSelectedIds]);
+
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setMenuAnchorEl(event.currentTarget);
   };
@@ -138,22 +165,35 @@ const DuyetDonPage = () => {
             borderRadius: 1,
           }}
         >
-          <ActionsToolbar
-            selectedRowIds={selectedRows}
-            onDelete={() => setIsDeleteOpenModal(true)}
-            onAdd={onAdd}
-            onEdit={onEdit}
-            onExport={(dataOption, columnOption) => {
-              exportPaginationToExcel<DuyetDon>({
-                entity: 'don-ktx',
-                filteredData: rowsData,
-                columns: columns,
-                options: { dataOption, columnOption },
-                columnVisibilityModel,
-                fileName: 'Danh_sach_don_ktx',
-              });
-            }}
-          />
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <ActionsToolbar
+              selectedRowIds={selectedRows}
+              onDelete={() => setIsDeleteOpenModal(true)}
+              onAdd={onAdd}
+              onEdit={onEdit}
+              onExport={(dataOption, columnOption) => {
+                exportPaginationToExcel<DuyetDon>({
+                  entity: 'don-ktx',
+                  filteredData: rowsData,
+                  columns: columns,
+                  options: { dataOption, columnOption },
+                  columnVisibilityModel,
+                  fileName: 'Danh_sach_don_ktx',
+                });
+              }}
+            />
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
+              startIcon={<CheckCircleOutline />}
+              disabled={safeSelectedIds.length === 0}
+              onClick={() => setIsBulkModalOpen(true)}
+              sx={{ fontWeight: 700, height: 32, borderRadius: 1.5, ml: 1 }}
+            >
+              Duyệt hàng loạt ({safeSelectedIds.length})
+            </Button>
+          </Stack>
 
           <Box sx={{ pr: 2 }}>
             <IconButton
@@ -165,7 +205,7 @@ const DuyetDonPage = () => {
             </IconButton>
             <Menu
               anchorEl={menuAnchorEl}
-              open={openMenu}
+              open={Boolean(menuAnchorEl)}
               onClose={handleMenuClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -233,6 +273,16 @@ const DuyetDonPage = () => {
           </FormDetailsModal>
         )}
 
+        <BulkApproveModal
+          open={isBulkModalOpen}
+          onClose={() => setIsBulkModalOpen(false)}
+          selectedRowsData={selectedRowsData}
+          onSuccess={() => {
+            refetch();
+            setIsBulkModalOpen(false);
+          }}
+          onViewDetail={(item) => setViewingDon(item)}
+        />
         <DonKtxDetailDrawer don={viewingDon} onClose={() => setViewingDon(null)} />
 
         {targetId && (
