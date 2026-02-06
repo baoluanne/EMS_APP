@@ -26,6 +26,7 @@ import {
 } from 'react-icons/fc';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { generateFullPath } from './router-map';
+import path from 'path';
 
 const _appRoutes = [
   {
@@ -2173,7 +2174,24 @@ const _appRoutes = [
         label: 'Nghiệp vụ vận hành tài sản thiết bị',
         icon: <FcFolder />,
         path: 'asset-equipment-operation-tasks',
-        children: [],
+        children: [
+          {
+            label: 'Mượn trả thiết bị',
+            icon: <FcFolder />,
+            path: 'muon-tra-thiet-bi',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/muon-tra-thiet-bi')),
+            ),
+          },
+          {
+            label: 'Thanh lý thiết bị',
+            icon: <FcFolder />,
+            path: 'thanh-ly-thiet-bi',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/thanh-ly-thiet-bi')),
+            ),
+          },
+        ],
       },
       {
         label: 'Kiểm kê và bảo trì tài sản thiết bị',
