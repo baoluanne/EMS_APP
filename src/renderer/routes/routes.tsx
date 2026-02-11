@@ -26,7 +26,6 @@ import {
 } from 'react-icons/fc';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { generateFullPath } from './router-map';
-import path from 'path';
 
 const _appRoutes = [
   {
@@ -2188,7 +2187,7 @@ const _appRoutes = [
             icon: <FcFolder />,
             path: 'thanh-ly-thiet-bi',
             Component: Lazy(
-              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/thanh-ly-thiet-bi')),
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/phieu-thanh-li')),
             ),
           },
         ],
