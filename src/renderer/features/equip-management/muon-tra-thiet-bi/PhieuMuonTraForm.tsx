@@ -14,7 +14,6 @@ export const PhieuMuonTraForm = () => {
     name: 'chiTietPhieuMuons',
   });
 
-  // Fetch danh sách sinh viên
   const { data: sinhVienData } = useCrudPagination<any>({
     entity: 'SinhVien',
     endpoint: '',
@@ -22,18 +21,10 @@ export const PhieuMuonTraForm = () => {
   });
 
   const listSinhVien = useMemo(() => {
-    console.log('SinhVien Data:', sinhVienData);
-    // API trả về array trực tiếp, không có .result
-    if (Array.isArray(sinhVienData)) {
-      return sinhVienData;
-    }
-    // Fallback nếu có wrapper
-    const result = (sinhVienData as any)?.result || (sinhVienData as any)?.data || [];
-    console.log('SinhVien Result:', result);
-    return result;
+    if (Array.isArray(sinhVienData)) return sinhVienData;
+    return (sinhVienData as any)?.result || (sinhVienData as any)?.data || [];
   }, [sinhVienData]);
 
-  // Fetch danh sách giảng viên
   const { data: giangVienData } = useCrudPagination<any>({
     entity: 'GiangVien',
     endpoint: '',
@@ -41,18 +32,10 @@ export const PhieuMuonTraForm = () => {
   });
 
   const listGiangVien = useMemo(() => {
-    console.log('GiangVien Data:', giangVienData);
-    // API trả về array trực tiếp, không có .result
-    if (Array.isArray(giangVienData)) {
-      return giangVienData;
-    }
-    // Fallback nếu có wrapper
-    const result = (giangVienData as any)?.result || (giangVienData as any)?.data || [];
-    console.log('GiangVien Result:', result);
-    return result;
+    if (Array.isArray(giangVienData)) return giangVienData;
+    return (giangVienData as any)?.result || (giangVienData as any)?.data || [];
   }, [giangVienData]);
 
-  // Fetch danh sách thiết bị sẵn sàng (TrangThai = 0: Mới nhập)
   const { data: thietBiData } = useCrudPagination<any>({
     entity: 'ThietBi',
     endpoint: 'pagination?TrangThai=0&pageSize=1000',
@@ -60,14 +43,8 @@ export const PhieuMuonTraForm = () => {
   });
 
   const listThietBiSanSang = useMemo(() => {
-    console.log('ThietBi Data:', thietBiData);
-    // Endpoint pagination thường trả về { result: [...], totalCount: ... }
-    if (Array.isArray(thietBiData)) {
-      return thietBiData;
-    }
-    const result = (thietBiData as any)?.result || (thietBiData as any)?.data || [];
-    console.log('ThietBi Result:', result);
-    return result;
+    if (Array.isArray(thietBiData)) return thietBiData;
+    return (thietBiData as any)?.result || (thietBiData as any)?.data || [];
   }, [thietBiData]);
 
   return (
@@ -86,28 +63,25 @@ export const PhieuMuonTraForm = () => {
               name="loaiDoiTuong"
               select
             >
-              <MenuItem value={0}>Sinh viên</MenuItem>
-              <MenuItem value={1}>Giảng viên</MenuItem>
+              <MenuItem value={1}>Sinh viên</MenuItem>
+              <MenuItem value={2}>Giảng viên</MenuItem>
             </ControlledTextField>
           </Grid>
 
           <Grid size={6}>
-            {loaiDoiTuong === 0 ? (
+            {loaiDoiTuong === 1 ? (
               <ControlledTextField
                 label="Chọn Sinh viên"
                 control={control}
                 name="sinhVienId"
+                helperText=""
                 select
-                required
               >
-                {listSinhVien.map((sv) => {
-                  const hoTen = `${sv.hoDem || ''} ${sv.ten || ''}`.trim();
-                  return (
-                    <MenuItem key={sv.id} value={sv.id}>
-                      {sv.maSinhVien} - {hoTen}
-                    </MenuItem>
-                  );
-                })}
+                {listSinhVien.map((sv) => (
+                  <MenuItem key={sv.id} value={sv.id}>
+                    {sv.maSinhVien} - {`${sv.hoDem || ''} ${sv.ten || ''}`.trim()}
+                  </MenuItem>
+                ))}
               </ControlledTextField>
             ) : (
               <ControlledTextField
@@ -115,16 +89,13 @@ export const PhieuMuonTraForm = () => {
                 control={control}
                 name="giangVienId"
                 select
-                required
+                helperText=""
               >
-                {listGiangVien.map((gv) => {
-                  const hoTen = `${gv.hoDem || ''} ${gv.ten || ''}`.trim();
-                  return (
-                    <MenuItem key={gv.id} value={gv.id}>
-                      {gv.maGiangVien} - {hoTen}
-                    </MenuItem>
-                  );
-                })}
+                {listGiangVien.map((gv) => (
+                  <MenuItem key={gv.id} value={gv.id}>
+                    {gv.maGiangVien} - {`${gv.hoDem || ''} ${gv.ten || ''}`.trim()}
+                  </MenuItem>
+                ))}
               </ControlledTextField>
             )}
           </Grid>
@@ -174,7 +145,7 @@ export const PhieuMuonTraForm = () => {
                 control={control}
                 name={`chiTietPhieuMuons.${index}.thietBiId`}
                 select
-                required
+                helperText=""
               >
                 {listThietBiSanSang.map((tb) => (
                   <MenuItem key={tb.id} value={tb.id}>
@@ -188,6 +159,7 @@ export const PhieuMuonTraForm = () => {
                 label="Tình trạng"
                 control={control}
                 name={`chiTietPhieuMuons.${index}.tinhTrangKhiMuon`}
+                disabled
               />
             </Grid>
             <Grid size={1}>

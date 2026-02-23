@@ -1,3 +1,4 @@
+import { Button } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import { format } from 'date-fns';
 
@@ -29,10 +30,10 @@ export const phieuMuonTraColumns: GridColDef<PhieuMuonTraRow>[] = [
     minWidth: 180,
     flex: 1,
     valueGetter: (_, row) => {
-      if (row.loaiDoiTuong === 0) {
+      if (row.loaiDoiTuong === 1) {
         return `${row.sinhVien?.hoDem || ''} ${row.sinhVien?.ten || ''}`.trim() || 'N/A';
       }
-      if (row.loaiDoiTuong === 1) {
+      if (row.loaiDoiTuong === 2) {
         return `${row.giangVien?.hoDem || ''} ${row.giangVien?.ten || ''}`.trim() || 'N/A';
       }
       return 'N/A';
@@ -41,15 +42,30 @@ export const phieuMuonTraColumns: GridColDef<PhieuMuonTraRow>[] = [
   {
     field: 'danhSachThietBi',
     headerName: 'Thiết bị mượn',
-    minWidth: 250,
+    minWidth: 200,
     flex: 1.5,
-    // Lấy danh sách mã và tên thiết bị từ mảng chi tiết
-    valueGetter: (_, row) => {
-      if (!row.chiTietPhieuMuons || row.chiTietPhieuMuons.length === 0) return 'N/A';
+    renderCell: (params) => {
+      const chiTiet = params.row.chiTietPhieuMuons;
+      if (!chiTiet || chiTiet.length === 0) return 'N/A';
 
-      return row.chiTietPhieuMuons
-        .map((ct) => `${ct.thietBi?.maThietBi} (${ct.thietBi?.tenThietBi})`)
-        .join(', ');
+      if (chiTiet.length === 1) {
+        return `${chiTiet[0].thietBi?.maThietBi || 'N/A'}`;
+      }
+
+      return (
+        <div style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>
+          {chiTiet.slice(0, 2).map((ct, idx) => (
+            <div key={idx} style={{ fontSize: '0.75rem' }}>
+              {ct.thietBi?.maThietBi || 'N/A'}
+            </div>
+          ))}
+          {chiTiet.length > 2 && (
+            <div style={{ fontSize: '0.7rem', color: '#666', fontStyle: 'italic' }}>
+              +{chiTiet.length - 2} TB khác
+            </div>
+          )}
+        </div>
+      );
     },
   },
   {
@@ -78,5 +94,25 @@ export const phieuMuonTraColumns: GridColDef<PhieuMuonTraRow>[] = [
     headerName: 'Ghi chú',
     minWidth: 150,
     flex: 1,
+  },
+  {
+    field: 'actions',
+    headerName: 'Thao tác',
+    width: 100,
+    sortable: false,
+    renderCell: (params) => (
+      <Button
+        variant="outlined"
+        size="small"
+        color="success"
+        onClick={(e) => {
+          e.stopPropagation();
+          (params as any).onReturn(params.row);
+        }}
+        disabled={params.row.trangThai === 1}
+      >
+        Trả thiết bị
+      </Button>
+    ),
   },
 ];
