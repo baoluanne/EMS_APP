@@ -16,7 +16,6 @@ export const PhieuMuonTraForm = () => {
 
   const { data: sinhVienData } = useCrudPagination<any>({
     entity: 'SinhVien',
-    endpoint: '',
     enabled: true,
   });
 
@@ -27,7 +26,6 @@ export const PhieuMuonTraForm = () => {
 
   const { data: giangVienData } = useCrudPagination<any>({
     entity: 'GiangVien',
-    endpoint: '',
     enabled: true,
   });
 
@@ -38,7 +36,10 @@ export const PhieuMuonTraForm = () => {
 
   const { data: thietBiData } = useCrudPagination<any>({
     entity: 'ThietBi',
-    endpoint: 'pagination?TrangThai=0&pageSize=1000',
+    defaultState: {
+      pageSize: 1000,
+      TrangThai: 0,
+    },
     enabled: true,
   });
 

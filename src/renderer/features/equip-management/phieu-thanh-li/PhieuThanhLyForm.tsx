@@ -1,22 +1,32 @@
 import { Stack, Grid, Typography, Box, IconButton, MenuItem } from '@mui/material';
 import { ControlledTextField, ControlledDatePicker } from '@renderer/components/controlled-fields';
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
 import { AddCircleOutline, DeleteOutline } from '@mui/icons-material';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
 
 export const PhieuThanhLyForm = () => {
-  const { control, register } = useFormContext();
-
+  const { control, register, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'chiTietThanhLys',
   });
 
-  // Load danh sách nhân viên để chọn Người lập phiếu
+  const chiTietValues = useWatch({ control, name: 'chiTietThanhLys' });
+
+  useEffect(() => {
+    if (Array.isArray(chiTietValues)) {
+      const total = chiTietValues.reduce(
+        (sum: number, item: any) => sum + (Number(item.giaBan) || 0),
+        0,
+      );
+      setValue('tongTienThuHoi', total);
+    }
+  }, [chiTietValues, setValue]);
+
   const { data: userData } = useCrudPagination<any>({
     entity: 'NguoiDung',
-    endpoint: '',
+    defaultState: { pageSize: 1000 },
     enabled: true,
   });
 
@@ -25,16 +35,16 @@ export const PhieuThanhLyForm = () => {
     return (userData as any)?.result || (userData as any)?.data || [];
   }, [userData]);
 
-  // Load danh sách thiết bị HỎNG (TrangThai = 4)
   const { data: thietBiData } = useCrudPagination<any>({
     entity: 'ThietBi',
-    endpoint: 'pagination?TrangThai=4&pageSize=1000',
+    defaultState: { pageSize: 2000 },
     enabled: true,
   });
 
   const listThietBiHong = useMemo(() => {
-    if (Array.isArray(thietBiData)) return thietBiData;
-    return (thietBiData as any)?.result || (thietBiData as any)?.data || [];
+    const all = Array.isArray(thietBiData) ? thietBiData : (thietBiData as any)?.result || [];
+    // Filter client side: Lấy cả Hỏng (4) và Chờ thanh lý (5)
+    return all.filter((tb: any) => tb.trangThai === 4 || tb.trangThai === 5);
   }, [thietBiData]);
 
   return (
@@ -72,6 +82,15 @@ export const PhieuThanhLyForm = () => {
               ))}
             </ControlledTextField>
           </Grid>
+          <Grid size={6}>
+            <ControlledTextField
+              label="Tổng tiền thu hồi"
+              control={control}
+              name="tongTienThuHoi"
+              disabled
+              type="number"
+            />
+          </Grid>
           <Grid size={12}>
             <ControlledTextField
               label="Lý do thanh lý"
@@ -85,13 +104,10 @@ export const PhieuThanhLyForm = () => {
       </Box>
 
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="subtitle2" color="primary">
-          DANH SÁCH THIẾT BỊ THANH LÝ (CHỈ THIẾT BỊ HỎNG)
+        <Typography variant="subtitle2" color="error">
+          DANH SÁCH THIẾT BỊ THANH LÝ
         </Typography>
-        <IconButton
-          color="primary"
-          onClick={() => append({ thietBiId: '', giaBan: 0, ghiChu: '' })}
-        >
+        <IconButton color="error" onClick={() => append({ thietBiId: '', giaBan: 0, ghiChu: '' })}>
           <AddCircleOutline />
         </IconButton>
       </Stack>
@@ -107,21 +123,21 @@ export const PhieuThanhLyForm = () => {
           >
             <Grid size={5}>
               <ControlledTextField
-                label="Chọn thiết bị hỏng"
+                label="Chọn thiết bị"
                 control={control}
                 name={`chiTietThanhLys.${index}.thietBiId`}
                 select
                 required
               >
                 {listThietBiHong.length > 0 ? (
-                  listThietBiHong.map((tb) => (
+                  listThietBiHong.map((tb: any) => (
                     <MenuItem key={tb.id} value={tb.id}>
-                      {tb.maThietBi} - {tb.tenThietBi} (Model: {tb.model})
+                      {tb.maThietBi} - {tb.tenThietBi} ({tb.trangThai === 4 ? 'Hỏng' : 'Chờ TL'})
                     </MenuItem>
                   ))
                 ) : (
                   <MenuItem disabled value="">
-                    <em>Không có thiết bị hỏng nào</em>
+                    <em>Không có thiết bị phù hợp</em>
                   </MenuItem>
                 )}
               </ControlledTextField>

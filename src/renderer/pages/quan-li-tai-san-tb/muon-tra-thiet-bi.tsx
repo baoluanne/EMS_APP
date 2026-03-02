@@ -39,6 +39,7 @@ const PhieuMuonTraPage = () => {
     data: null,
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [backupSelectedRow, setBackupSelectedRow] = useState<any>(null);
 
   const {
     formMethods,
@@ -61,6 +62,13 @@ const PhieuMuonTraPage = () => {
     defaultValues,
     schema: phieuMuonTraSchema,
     entity: 'PhieuMuonTra',
+    beforeEdit: (hookRow) => {
+      const validRow = hookRow || backupSelectedRow;
+      if (!validRow) {
+        return undefined;
+      }
+      return validRow;
+    },
   });
 
   const handleOpenReturnModal = useCallback((row: PhieuMuonTraRow) => {
@@ -80,7 +88,7 @@ const PhieuMuonTraPage = () => {
         ghiChu: returnModal.data.ghiChu,
         chiTietPhieuMuons: formData.chiTietPhieuMuons.map((ct: any) => ({
           thietBiId: ct.thietBiId,
-          isDaTra: ct.isDaTra,
+          isDaTra: true,
           tinhTrangKhiTra: ct.tinhTrangKhiTra || 'Bình thường',
         })),
       };
@@ -230,7 +238,16 @@ const PhieuMuonTraPage = () => {
           rows={rowsData}
           loading={isRefetching || isUpdating}
           checkboxSelection
-          onRowSelectionModelChange={handleRowSelectionModelChange}
+          onRowSelectionModelChange={(newSelection) => {
+            handleRowSelectionModelChange(newSelection);
+            if (Array.isArray(newSelection) && newSelection.length > 0) {
+              const currentSelectedId = newSelection[0];
+              const rowData = rowsData.find((item: any) => item.id == currentSelectedId);
+              setBackupSelectedRow(rowData);
+            } else {
+              setBackupSelectedRow(null);
+            }
+          }}
           rowSelectionModel={selectedRows}
           getRowId={(row) => row.id}
           height="calc(100% - 120px)"

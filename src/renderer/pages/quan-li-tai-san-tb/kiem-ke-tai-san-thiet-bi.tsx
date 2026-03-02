@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 import { DataGridTable } from '@renderer/components/Table';
@@ -7,52 +7,39 @@ import { ActionsToolbar } from '@renderer/components/toolbars';
 import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-pagination-modal';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 import { TITLE_MODE } from '@renderer/shared/enums';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { format } from 'date-fns';
 
 import { KiemKeTaiSanForm } from '../../features/equip-management/kiem-ke-tai-san/components/kiem-ke-tai-san-form';
 import { KiemKeTaiSanFilter } from '../../features/equip-management/kiem-ke-tai-san/components/kiem-ke-tai-san-filter';
 import { kiemKeTaiSanTableColumns } from '../../features/equip-management/kiem-ke-tai-san/configs/table.configs';
-import { KiemKeTaiSanFilterState } from '../../features/equip-management/kiem-ke-tai-san/type';
+import { KiemKeTaiSanFilterState } from '../../features/equip-management/kiem-ke-tai-san/validation';
 import {
   KiemKeTaiSan,
   kiemKeTaiSanSchema,
 } from '../../features/equip-management/kiem-ke-tai-san/validation';
-import { ChiTietKiemKeModal } from '../../features/equip-management/kiem-ke-tai-san/ChiTietKiemKe/ChiTietKiemKeModal';
 
 const defaultValues = {
   id: undefined,
   tenDotKiemKe: '',
-  ngayBatDau: '',
-  ngayKetThuc: '',
+  ngayBatDau: new Date(),
+  ngayKetThuc: new Date(),
   daHoanThanh: false,
   ghiChu: '',
+  chiTietKiemKes: [],
 };
 
-const getLocalDateFormat = (date: Date | string | null | undefined): string | undefined => {
-  if (!date) return undefined;
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return undefined;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const formatDateForSave = (dateString: string | null | undefined): string | null => {
-  if (!dateString) return null;
-  return dateString.includes('T') ? dateString : `${dateString}T00:00:00Z`;
-};
+// Helper: Convert mảng ID từ DataGrid sang cấu trúc Object cho Hook
+const convertToInternalSelection = (ids: any[]) => ({
+  type: 'include',
+  ids: new Set(ids),
+});
 
 const KiemKeTaiSanPage = () => {
   const [filters, setFilters] = useState<KiemKeTaiSanFilterState>({});
-  const [detailModal, setDetailModal] = useState<{
-    open: boolean;
-    id: string | null;
-    name: string;
-  }>({
-    open: false,
-    id: null,
-    name: '',
-  });
+  const [backupSelectedRow, setBackupSelectedRow] = useState<any>(null);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
   const {
     formMethods,
@@ -63,7 +50,7 @@ const KiemKeTaiSanPage = () => {
     isDeleteOpenModal,
     onAdd,
     onEdit,
-    onSave: originalOnSave,
+    onSave,
     handleDeleteRecord,
     selectedRows,
     setIsDeleteOpenModal,
@@ -75,142 +62,171 @@ const KiemKeTaiSanPage = () => {
     defaultValues,
     schema: kiemKeTaiSanSchema,
     entity: 'DotKiemKe',
+    beforeEdit: (hookRow) => {
+      const validRow = hookRow || backupSelectedRow;
+      if (!validRow) return undefined;
+
+      return {
+        ...validRow,
+        ngayBatDau: validRow.ngayBatDau ? new Date(validRow.ngayBatDau) : null,
+        ngayKetThuc: validRow.ngayKetThuc ? new Date(validRow.ngayKetThuc) : null,
+        // Map chi tiết đầy đủ để hiển thị đúng Ghi chú và Trạng thái
+        chiTietKiemKes:
+          validRow.chiTietKiemKes?.map((ct: any) => ({
+            id: ct.id,
+            thietBiId: ct.thietBiId,
+            maThietBi: ct.thietBi?.maThietBi,
+            tenThietBi: ct.thietBi?.tenThietBi,
+            trangThaiSoSach: ct.trangThaiSoSach,
+            trangThaiThucTe: ct.trangThaiThucTe,
+            khopDot: ct.khopDot,
+            ghiChu: ct.ghiChu || '', // Đảm bảo lấy field ghiChu từ DB
+          })) || [],
+      };
+    },
   });
 
-  const rawRowsData: KiemKeTaiSan[] = useMemo(() => {
+  const rawRowsData = useMemo(() => {
     if (!data) return [];
     const responseData = (data as any).data || (data as any).result;
     return Array.isArray(responseData) ? responseData : [];
   }, [data]);
 
-  const handleViewDetail = useCallback(
-    (id: string) => {
-      const row = rawRowsData.find((r) => r.id === id);
-      setDetailModal({ open: true, id, name: row?.tenDotKiemKe || '' });
-    },
-    [rawRowsData],
-  );
+  const getLocalDateFormat = (dateStr: string) => {
+    if (!dateStr) return '';
+    return format(new Date(dateStr), 'dd/MM/yyyy');
+  };
 
-  const columns = useMemo(() => kiemKeTaiSanTableColumns(handleViewDetail), [handleViewDetail]);
+  const rowsData = useMemo(() => {
+    if (Object.keys(filters).length === 0) return rawRowsData;
 
-  const onSave = useCallback(async () => {
-    const formData = formMethods.getValues();
-    const transformedData = {
-      ...formData,
-      ngayBatDau: formatDateForSave(formData.ngayBatDau),
-      ngayKetThuc: formatDateForSave(formData.ngayKetThuc),
-    };
-    Object.keys(transformedData).forEach((key) => {
-      formMethods.setValue(key as any, transformedData[key as keyof typeof transformedData]);
-    });
-    await originalOnSave();
-  }, [formMethods, originalOnSave]);
-
-  const rowsData: KiemKeTaiSan[] = useMemo(() => {
-    if (
-      !filters.tenDotKiemKe &&
-      !filters.ngayBatDau &&
-      !filters.ngayKetThuc &&
-      !filters.daHoanThanh
-    ) {
-      return rawRowsData;
-    }
-    return rawRowsData.filter((row) => {
+    return rawRowsData.filter((row: any) => {
       const matchName =
         !filters.tenDotKiemKe ||
         row.tenDotKiemKe?.toLowerCase().includes(filters.tenDotKiemKe.toLowerCase());
+
       const rowStart = getLocalDateFormat(row.ngayBatDau);
+      const matchStart = !filters.ngayBatDau || rowStart.includes(filters.ngayBatDau);
+
       const rowEnd = getLocalDateFormat(row.ngayKetThuc);
-      const matchStart = !filters.ngayBatDau || rowStart === filters.ngayBatDau;
-      const matchEnd = !filters.ngayKetThuc || rowEnd === filters.ngayKetThuc;
-      const matchStatus = !filters.daHoanThanh || String(row.daHoanThanh) === filters.daHoanThanh;
+      const matchEnd = !filters.ngayKetThuc || rowEnd.includes(filters.ngayKetThuc);
+
+      const statusText = row.daHoanThanh ? 'đã hoàn thành' : 'chưa hoàn thành';
+      const matchStatus =
+        !filters.trangThaiText || statusText.includes(filters.trangThaiText!.toLowerCase());
+
       return matchName && matchStart && matchEnd && matchStatus;
     });
   }, [rawRowsData, filters]);
 
-  const handleFilterApply = useCallback((filterValues: KiemKeTaiSanFilterState) => {
-    setFilters(filterValues);
-  }, []);
+  const handleFilterApply = (filterValues: KiemKeTaiSanFilterState) => setFilters(filterValues);
+  const handleFilterReset = () => setFilters({});
 
-  const handleFilterReset = useCallback(() => {
-    setFilters({});
-  }, []);
-
-  const handleRowClick = useCallback(
-    (params: any) => {
-      formMethods.reset({
-        ...params.row,
-        ngayBatDau: getLocalDateFormat(params.row.ngayBatDau),
-        ngayKetThuc: getLocalDateFormat(params.row.ngayKetThuc),
-      });
+  const handleViewDetail = useCallback(
+    (id: string) => {
+      const row = rawRowsData.find((r: any) => r.id === id);
+      if (row) {
+        setBackupSelectedRow(row);
+        handleRowSelectionModelChange(convertToInternalSelection([id]) as any);
+        setPendingActionId(id);
+      }
     },
-    [formMethods],
+    [rawRowsData, handleRowSelectionModelChange],
   );
 
+  useEffect(() => {
+    if (pendingActionId && selectedRows?.ids?.has(pendingActionId)) {
+      onEdit();
+      setPendingActionId(null);
+    }
+  }, [selectedRows, pendingActionId, onEdit]);
+
+  const columns = useMemo(() => kiemKeTaiSanTableColumns(handleViewDetail), [handleViewDetail]);
+
+  // Logic View Only: Nếu không phải thêm mới VÀ bản ghi đã hoàn thành
+  const isRecordCompleted = backupSelectedRow?.daHoanThanh === true;
+  const isViewOnly = !isAddMode && isRecordCompleted;
+
   return (
-    <FormProvider {...formMethods}>
-      <Stack height="100%" width="100%" p={2}>
-        <ActionsToolbar
-          selectedRowIds={selectedRows}
-          onDelete={() => setIsDeleteOpenModal(true)}
-          onAdd={onAdd}
-          onEdit={onEdit}
-          onExport={(dataOption, columnOption) => {
-            exportPaginationToExcel<KiemKeTaiSan>({
-              entity: 'kiem-ke-tai-san',
-              filteredData: rowsData,
-              columns,
-              options: { dataOption, columnOption },
-              columnVisibilityModel,
-              fileName: 'Danh_sach_kiem_ke',
-            });
-          }}
-        />
-
-        {isModalOpen && (
-          <FormDetailsModal
-            title={isAddMode ? 'Thêm mới đợt kiểm kê' : 'Chỉnh sửa đợt kiểm kê'}
-            onClose={handleCloseModal}
-            onSave={onSave}
-            maxWidth="sm"
-            titleMode={TITLE_MODE.COLORED}
-          >
-            <KiemKeTaiSanForm />
-          </FormDetailsModal>
-        )}
-
-        {detailModal.open && (
-          <ChiTietKiemKeModal
-            open={detailModal.open}
-            dotKiemKeId={detailModal.id}
-            tenDotKiemKe={detailModal.name}
-            onClose={() => setDetailModal({ ...detailModal, open: false })}
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <FormProvider {...formMethods}>
+        <Stack height="100%" width="100%" p={2}>
+          <ActionsToolbar
+            selectedRowIds={selectedRows}
+            onDelete={() => setIsDeleteOpenModal(true)}
+            onAdd={onAdd}
+            onEdit={onEdit}
+            onExport={(dataOption, columnOption) => {
+              exportPaginationToExcel<KiemKeTaiSan>({
+                entity: 'kiem-ke-tai-san',
+                filteredData: rowsData,
+                columns,
+                options: { dataOption, columnOption },
+                columnVisibilityModel,
+                fileName: 'Danh_sach_kiem_ke',
+              });
+            }}
           />
-        )}
 
-        {isDeleteOpenModal && (
-          <DeleteConfirmationModal
-            onClose={() => setIsDeleteOpenModal(false)}
-            onDelete={handleDeleteRecord}
+          <KiemKeTaiSanFilter onApply={handleFilterApply} onReset={handleFilterReset} />
+
+          {isModalOpen && (
+            <FormDetailsModal
+              title={
+                isAddMode
+                  ? 'Thêm mới đợt kiểm kê'
+                  : isViewOnly
+                    ? 'Chi tiết đợt kiểm kê'
+                    : 'Cập nhật kiểm kê'
+              }
+              onClose={handleCloseModal}
+              // Nếu ViewOnly -> Ẩn nút Lưu bằng cách không truyền onSave
+              onSave={isViewOnly ? undefined : onSave}
+              maxWidth="sm"
+              titleMode={TITLE_MODE.COLORED}
+            >
+              {/* Truyền prop readOnly vào Form */}
+              <KiemKeTaiSanForm readOnly={isViewOnly} />
+            </FormDetailsModal>
+          )}
+
+          {isDeleteOpenModal && (
+            <DeleteConfirmationModal
+              onClose={() => setIsDeleteOpenModal(false)}
+              onDelete={handleDeleteRecord}
+            />
+          )}
+
+          <DataGridTable
+            columns={columns}
+            rows={rowsData}
+            checkboxSelection
+            loading={isRefetching}
+            onRowSelectionModelChange={(newSelection: any) => {
+              // Xử lý sự kiện chọn dòng từ DataGrid (Array) -> Hook (Object)
+              if (Array.isArray(newSelection)) {
+                handleRowSelectionModelChange(convertToInternalSelection(newSelection) as any);
+              } else {
+                handleRowSelectionModelChange(newSelection);
+              }
+
+              // Backup dòng được chọn để dùng cho Logic ViewOnly
+              if (Array.isArray(newSelection) && newSelection.length > 0) {
+                const currentSelectedId = newSelection[0];
+                const rowData = rowsData.find((item: any) => item.id == currentSelectedId);
+                setBackupSelectedRow(rowData);
+              } else {
+                setBackupSelectedRow(null);
+              }
+            }}
+            rowSelectionModel={selectedRows}
+            getRowId={(row) => row.id!}
+            height="calc(100% - 120px)"
+            {...tableConfig}
           />
-        )}
-
-        <KiemKeTaiSanFilter onApply={handleFilterApply} onReset={handleFilterReset} />
-
-        <DataGridTable
-          columns={columns}
-          rows={rowsData}
-          checkboxSelection
-          loading={isRefetching}
-          onRowClick={handleRowClick}
-          getRowId={(row) => row.id!}
-          onRowSelectionModelChange={handleRowSelectionModelChange}
-          rowSelectionModel={selectedRows}
-          height="calc(100% - 85px)"
-          {...tableConfig}
-        />
-      </Stack>
-    </FormProvider>
+        </Stack>
+      </FormProvider>
+    </LocalizationProvider>
   );
 };
 

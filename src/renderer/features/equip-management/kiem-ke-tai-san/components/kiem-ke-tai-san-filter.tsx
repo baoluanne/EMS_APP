@@ -1,84 +1,183 @@
-import { Grid } from '@mui/material';
-import { FilterDrawerBottom } from '@renderer/components/modals';
-import { ControlledDatePicker, ControlledTextField } from '@renderer/components/controlled-fields';
-import { useForm } from 'react-hook-form';
-import { KiemKeTaiSanFilterState } from '../type';
-import { FilterSelect } from '@renderer/components/fields';
+import { useState, useMemo } from 'react';
+import {
+  Stack,
+  TextField,
+  Autocomplete,
+  Box,
+  Typography,
+  Chip,
+  InputAdornment,
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import { KiemKeTaiSanFilterState } from '../validation';
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const kiemKeTaiSanDefaultFilters: KiemKeTaiSanFilterState = {
-  id: undefined,
-  tenDotKiemKe: undefined,
-  ngayBatDau: undefined,
-  ngayKetThuc: undefined,
-  daHoanThanh: undefined,
-};
+const filterFields = [
+  { key: 'tenDotKiemKe', label: 'Tên đợt' },
+  { key: 'trangThaiText', label: 'Trạng thái' },
+];
 
 interface Props {
   onApply: (filters: KiemKeTaiSanFilterState) => void;
   onReset: () => void;
 }
+
 export const KiemKeTaiSanFilter = ({ onApply, onReset }: Props) => {
-  const filterMethods = useForm<KiemKeTaiSanFilterState>({
-    defaultValues: kiemKeTaiSanDefaultFilters,
-  });
+  const [inputValue, setInputValue] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
-  const { control } = filterMethods;
-  const handleClear = () => {
-    filterMethods.reset(kiemKeTaiSanDefaultFilters);
-    onReset();
-  };
-  const getLocalDateFormat = (date: Date | string | null | undefined) => {
-    if (!date) return undefined;
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const options = useMemo(() => {
+    if (!inputValue) return [];
+    const results: any[] = [];
+
+    const dateRegex = /^(\d{1,2})\/(\d{1,2})(\/(\d{4}))?$/;
+
+    if (dateRegex.test(inputValue)) {
+      results.push({
+        key: 'ngayBatDau',
+        label: 'Ngày bắt đầu',
+        value: inputValue,
+        display: `Ngày bắt đầu: "${inputValue}"`,
+        isDate: true,
+      });
+      results.push({
+        key: 'ngayKetThuc',
+        label: 'Ngày kết thúc',
+        value: inputValue,
+        display: `Ngày kết thúc: "${inputValue}"`,
+        isDate: true,
+      });
+    }
+
+    filterFields.forEach((field) => {
+      results.push({
+        key: field.key,
+        label: field.label,
+        value: inputValue,
+        display: `${field.label}: "${inputValue}"`,
+      });
+    });
+
+    return results;
+  }, [inputValue]);
+
+  const handleSelect = (_: any, newValue: any) => {
+    if (newValue && typeof newValue !== 'string') {
+      const updated = { ...activeFilters, [newValue.key]: newValue.value };
+      setActiveFilters(updated);
+      onApply(updated as any);
+      setInputValue('');
+    }
   };
 
-  const handleApply = (data: KiemKeTaiSanFilterState) => {
-    const cleanedData: KiemKeTaiSanFilterState = {
-      tenDotKiemKe: data.tenDotKiemKe?.trim() || undefined,
-      ngayBatDau: getLocalDateFormat(data.ngayBatDau),
-      ngayKetThuc: getLocalDateFormat(data.ngayKetThuc),
-      daHoanThanh: data.daHoanThanh || undefined,
-    };
-    onApply(cleanedData);
+  const handleDelete = (key: string) => {
+    const updated = { ...activeFilters };
+    delete updated[key];
+    setActiveFilters(updated);
+    if (Object.keys(updated).length === 0) onReset();
+    else onApply(updated as any);
   };
+
   return (
-    <FilterDrawerBottom<KiemKeTaiSanFilterState>
-      onApply={handleApply}
-      onClear={handleClear}
-      methods={filterMethods}
-    >
-      <Grid container spacing={2}>
-        <Grid size={6}>
-          <ControlledTextField
-            control={control}
-            name="tenDotKiemKe"
-            label="Tên đợt kiểm kê"
-            placeholder="Nhập để tìm kiếm"
+    <Stack spacing={1} sx={{ mb: 1 }}>
+      <Autocomplete
+        freeSolo
+        value={null}
+        options={options}
+        getOptionLabel={(option: any) => option.display || ''}
+        inputValue={inputValue}
+        onInputChange={(_, val) => setInputValue(val)}
+        onChange={handleSelect}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Tìm theo Tên đợt, Trạng thái (Hoàn thành...), hoặc gõ ngày (vd: 24/02)..."
+            size="small"
+            fullWidth
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', ml: 0.5, fontSize: 18 }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#fff',
+                borderRadius: 2,
+                paddingY: '1px !important',
+                px: 1,
+                fontSize: '0.9rem',
+                transition: 'all 0.2s',
+                '& fieldset': { borderColor: '#e2e8f0' },
+                '&:hover fieldset': { borderColor: 'primary.main' },
+              },
+              '& .MuiInputBase-input': {
+                paddingY: '4px !important',
+                height: '1.2rem',
+              },
+            }}
           />
-        </Grid>
-        <Grid size={6}>
-          <ControlledDatePicker control={control} name="ngayBatDau" label="Ngày bắt đầu" />
-        </Grid>
-        <Grid size={6}>
-          <ControlledDatePicker control={control} name="ngayKetThuc" label="Ngày kết thúc" />
-        </Grid>
-        <Grid size={6}>
-          <FilterSelect
-            control={control}
-            name="daHoanThanh"
-            label="Đã hoàn thành"
-            options={[
-              { label: 'Có', value: 'true' },
-              { label: 'Không', value: 'false' },
-            ]}
+        )}
+        renderOption={(props, option: any) => (
+          <Box component="li" {...props} sx={{ display: 'flex', gap: 1 }}>
+            <Typography
+              variant="body2"
+              fontWeight={700}
+              color={option.isDate ? 'secondary.main' : 'primary'}
+            >
+              {option.label}:
+            </Typography>
+            <Typography variant="body2">&quot;{option.value}&quot;</Typography>
+          </Box>
+        )}
+      />
+
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', minHeight: 1 }}>
+        {Object.entries(activeFilters).map(([key, value]) => {
+          let label = key;
+          const field = filterFields.find((f) => f.key === key);
+          if (field) label = field.label;
+          else if (key === 'ngayBatDau') label = 'Ngày bắt đầu';
+          else if (key === 'ngayKetThuc') label = 'Ngày kết thúc';
+
+          if (!value) return null;
+          return (
+            <Chip
+              key={key}
+              label={`${label}: ${value}`}
+              onDelete={() => handleDelete(key)}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{
+                fontWeight: 700,
+                bgcolor: '#e3f2fd',
+                borderRadius: 1.5,
+                height: 26,
+                fontSize: '0.75rem',
+              }}
+            />
+          );
+        })}
+        {Object.keys(activeFilters).length > 0 && (
+          <Chip
+            label="Xóa tất cả"
+            onClick={() => {
+              setActiveFilters({});
+              onReset();
+            }}
+            size="small"
+            color="error"
+            variant="filled"
+            sx={{
+              height: 26,
+              fontSize: '0.75rem',
+              fontWeight: 700,
+            }}
           />
-        </Grid>
-      </Grid>
-    </FilterDrawerBottom>
+        )}
+      </Box>
+    </Stack>
   );
 };
