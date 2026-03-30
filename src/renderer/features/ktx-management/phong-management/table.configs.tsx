@@ -1,8 +1,7 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { Stack, Box, Typography, LinearProgress, Chip, IconButton, Tooltip } from '@mui/material';
-import { BedOutlined } from '@mui/icons-material';
+import { Stack, Box, Typography, LinearProgress, Chip } from '@mui/material';
 import { format } from 'date-fns';
-export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] => [
+export const getPhongColumns = (): GridColDef[] => [
   {
     field: 'maPhong',
     headerName: 'Phòng',
@@ -91,26 +90,5 @@ export const getPhongColumns = (onViewBeds: (phong: any) => void): GridColDef[] 
     headerAlign: 'center',
     // Chỉ lấy ngày, bỏ giờ
     valueFormatter: (value) => (value ? format(new Date(value as string), 'dd/MM/yyyy') : '---'),
-  },
-  {
-    field: 'actions',
-    headerName: 'Chi tiết',
-    width: 100,
-    sortable: false,
-    align: 'center',
-    headerAlign: 'center',
-    renderCell: (p) => (
-      <Tooltip title="Xem chi tiết giường">
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewBeds(p.row);
-          }}
-        >
-          <BedOutlined color="primary" fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    ),
   },
 ];

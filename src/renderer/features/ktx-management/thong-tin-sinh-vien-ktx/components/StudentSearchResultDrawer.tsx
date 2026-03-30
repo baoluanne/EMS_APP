@@ -62,7 +62,11 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
 
   const students = (cuTruData as any)?.result || [];
 
-  const getStatusChip = (ngayRoiKtx: string) => {
+  const getStatusChip = (student: any) => {
+    const isRoiKtx = student.trangThai === 1; // Giả định 1 là đã rời KTX
+    if (isRoiKtx) return <Chip label="Rời KTX" color="default" size="small" sx={{ fontWeight: 700 }} />;
+
+    const ngayRoiKtx = student.ngayRoiKtx;
     if (!ngayRoiKtx) return null;
     const roiKtx = new Date(ngayRoiKtx);
     const now = new Date();
@@ -76,7 +80,9 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
     return <Chip label="Còn hạn" color="success" size="small" sx={{ fontWeight: 700 }} />;
   };
 
-  const getStatusText = (ngayRoiKtx: string) => {
+  const getStatusText = (student: any) => {
+    if (student.trangThai === 1) return 'Rời KTX';
+    const ngayRoiKtx = student.ngayRoiKtx;
     if (!ngayRoiKtx) return 'N/A';
     const roiKtx = new Date(ngayRoiKtx);
     const now = new Date();
@@ -101,7 +107,7 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
       'Ngày hết hạn': student.ngayRoiKtx
         ? new Date(student.ngayRoiKtx).toLocaleDateString('vi-VN')
         : '',
-      'Trạng thái': getStatusText(student.ngayRoiKtx),
+      'Trạng thái': getStatusText(student),
     }));
 
     exportStyledExcel(exportData, 'Danh_sach_sinh_vien_KTX');
@@ -112,7 +118,16 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
       anchor="right"
       open={open}
       onClose={onClose}
-      sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: 450 }, bgcolor: '#f8fafc' } }}
+      hideBackdrop={true}
+      sx={{
+        pointerEvents: 'none',
+        '& .MuiDrawer-paper': {
+          pointerEvents: 'auto',
+          width: { xs: '100%', sm: 450 },
+          bgcolor: '#f8fafc',
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.1)',
+        },
+      }}
     >
       <Stack spacing={0} sx={{ height: '100%' }}>
         <Box
@@ -189,7 +204,7 @@ export const StudentSearchResultDrawer = ({ open, filters, onClose, onStudentCli
                         MSSV: {student.sinhVien?.maSinhVien}
                       </Typography>
                     </Box>
-                    {getStatusChip(student.ngayRoiKtx)}
+                    {getStatusChip(student)}
                   </Stack>
                   <Divider />
                   <Stack spacing={1}>

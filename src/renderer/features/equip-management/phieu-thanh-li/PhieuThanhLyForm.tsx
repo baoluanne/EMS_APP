@@ -24,16 +24,18 @@ export const PhieuThanhLyForm = () => {
     }
   }, [chiTietValues, setValue]);
 
-  const { data: userData } = useCrudPagination<any>({
-    entity: 'NguoiDung',
-    defaultState: { pageSize: 1000 },
-    enabled: true,
-  });
+  const listNguoiDung = [
+    {
+      id: 'e5458128-e329-42d4-b9dc-82ffeb51eb0a',
+      hoDem: 'Nguyen',
+      ten: 'Admin',
+      userName: 'admin_test',
+    },
+  ];
 
-  const listNguoiDung = useMemo(() => {
-    if (Array.isArray(userData)) return userData;
-    return (userData as any)?.result || (userData as any)?.data || [];
-  }, [userData]);
+  useEffect(() => {
+    setValue('nguoiLapPhieuId', listNguoiDung[0].id);
+  }, [setValue]);
 
   const { data: thietBiData } = useCrudPagination<any>({
     entity: 'ThietBi',
@@ -43,7 +45,6 @@ export const PhieuThanhLyForm = () => {
 
   const listThietBiHong = useMemo(() => {
     const all = Array.isArray(thietBiData) ? thietBiData : (thietBiData as any)?.result || [];
-    // Filter client side: Lấy cả Hỏng (4) và Chờ thanh lý (5)
     return all.filter((tb: any) => tb.trangThai === 4 || tb.trangThai === 5);
   }, [thietBiData]);
 
@@ -61,7 +62,7 @@ export const PhieuThanhLyForm = () => {
               label="Số Quyết Định"
               control={control}
               name="soQuyetDinh"
-              required
+              helperText=""
             />
           </Grid>
           <Grid size={6}>
@@ -72,8 +73,8 @@ export const PhieuThanhLyForm = () => {
               label="Người lập phiếu"
               control={control}
               name="nguoiLapPhieuId"
+              helperText=""
               select
-              required
             >
               {listNguoiDung.map((user) => (
                 <MenuItem key={user.id} value={user.id}>
@@ -127,7 +128,7 @@ export const PhieuThanhLyForm = () => {
                 control={control}
                 name={`chiTietThanhLys.${index}.thietBiId`}
                 select
-                required
+                helperText=""
               >
                 {listThietBiHong.length > 0 ? (
                   listThietBiHong.map((tb: any) => (

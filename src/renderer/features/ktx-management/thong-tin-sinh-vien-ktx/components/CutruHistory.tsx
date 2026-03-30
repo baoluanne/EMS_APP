@@ -1,7 +1,5 @@
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
+  Drawer,
   IconButton,
   Typography,
   Stack,
@@ -20,7 +18,7 @@ interface Props {
   studentData: any;
 }
 
-export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => {
+export const ResidencyHistorySidebar = ({ open, onClose, studentData }: Props) => {
   const { data } = useCrudPagination<any>({
     entity: 'CuTruKtx',
     endpoint: `history/${studentData?.sinhVienId}`,
@@ -68,19 +66,21 @@ export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => 
     return history.reduce((sum: number, item: any) => sum + (item.diemViPhamHocKy || 0), 0);
   }, [history]);
   return (
-    <Dialog
+    <Drawer
+      anchor="right"
       open={open}
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+      hideBackdrop={true}
+      sx={{
+        pointerEvents: 'none',
+        '& .MuiPaper-root': {
+          pointerEvents: 'auto',
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.1)',
+          border: 'none',
         },
       }}
     >
-      <DialogTitle sx={{ p: 0 }}>
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', width: 'auto' }}>
         <Box
           sx={{
             background: 'linear-gradient(45deg, #1976d2 30%, #2196f3 90%)',
@@ -108,139 +108,141 @@ export const ResidencyHistoryModal = ({ open, onClose, studentData }: Props) => 
             <Close />
           </IconButton>
         </Box>
-      </DialogTitle>
 
-      <DialogContent sx={{ p: 3, bgcolor: '#fbfcfe' }}>
-        <Stack direction="row" spacing={2} sx={{ mb: 3, mt: 2 }}>
-          <SummaryItem
-            icon={<HomeWork />}
-            label="Phòng hiện tại"
-            value={currentRoom || 'N/A'}
-            color="#1976d2"
-          />
-          <SummaryItem
-            icon={<CalendarMonth />}
-            label="Tổng số kỳ đã ở"
-            value={`${uniqueSemesters} Học kỳ`}
-            color="#2e7d32"
-          />
-          <SummaryItem
-            icon={<HistoryEdu />}
-            label="Điểm vi phạm"
-            value={`${totalViolations} Điểm`}
-            color="#d32f2f"
-          />
-        </Stack>
+        <Box sx={{ p: 3, flexGrow: 1, overflowY: 'auto', bgcolor: '#fbfcfe' }}>
+          <Stack direction="row" spacing={2} sx={{ mb: 3, mt: 2 }}>
+            <SummaryItem
+              icon={<HomeWork />}
+              label="Phòng hiện tại"
+              value={currentRoom || 'N/A'}
+              color="#1976d2"
+            />
+            <SummaryItem
+              icon={<CalendarMonth />}
+              label="Tổng số kỳ đã ở"
+              value={`${uniqueSemesters} Học kỳ`}
+              color="#2e7d32"
+            />
+            <SummaryItem
+              icon={<HistoryEdu />}
+              label="Điểm vi phạm"
+              value={`${totalViolations} Điểm`}
+              color="#d32f2f"
+            />
+          </Stack>
 
-        <Stack spacing={2}>
-          {history.map((item: any, index: number) => {
-            const isRoiKtx = item.loaiDon === 3;
-            const nextRecord = history[index - 1];
+          <Stack spacing={2}>
+            {history.map((item: any, index: number) => {
+              const isRoiKtx = item.loaiDon === 3;
+              const nextRecord = history[index - 1];
 
-            let effectiveEndDate = item.ngayRoiThucTe;
-            if (!effectiveEndDate && nextRecord) {
-              effectiveEndDate =
-                nextRecord.loaiDon === 3 ? nextRecord.ngayRoiThucTe : nextRecord.ngayBatDau;
-            }
+              let effectiveEndDate = item.ngayRoiThucTe;
+              if (!effectiveEndDate && nextRecord) {
+                effectiveEndDate =
+                  nextRecord.loaiDon === 3 ? nextRecord.ngayRoiThucTe : nextRecord.ngayBatDau;
+              }
 
-            return (
-              <Paper
-                key={item.id}
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  bgcolor: 'white',
-                  '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
-                }}
-              >
-                <Stack spacing={1.5}>
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ pb: 1, borderBottom: '1px solid #eee' }}
-                  >
-                    <Typography variant="body2" fontWeight={700} color="primary.main">
-                      {item.hocKy?.tenDot || '---'}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      fontWeight={700}
-                      sx={{ color: isRoiKtx ? 'error.main' : 'text.secondary' }}
+              return (
+                <Paper
+                  key={item.id}
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'white',
+                    '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
+                  }}
+                >
+                  <Stack spacing={1.5}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ pb: 1, borderBottom: '1px solid #eee' }}
                     >
-                      {getLoaiDonLabel(item.loaiDon)}
-                    </Typography>
-                  </Stack>
-
-                  <Stack direction="row" spacing={3}>
-                    <Box flex={1}>
+                      <Typography variant="body2" fontWeight={700} color="primary.main">
+                        {item.hocKy?.tenDot || '---'}
+                      </Typography>
                       <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        gutterBottom
+                        variant="body2"
+                        fontWeight={700}
+                        sx={{ color: isRoiKtx ? 'error.main' : 'text.secondary' }}
                       >
-                        Phòng - Giường
+                        {getLoaiDonLabel(item.loaiDon)}
                       </Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {item.giuongMoi?.maGiuong}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Loại: {item.phongMoi?.loaiPhong || 'N/A'}
-                      </Typography>
-                    </Box>
+                    </Stack>
 
-                    <Box flex={1}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        gutterBottom
-                      >
-                        {isRoiKtx ? 'Ngày rời KTX' : 'Ngày bắt đầu ở'}
-                      </Typography>
-
-                      {isRoiKtx ? (
-                        <Typography variant="body2" fontWeight={600} color="error.main">
-                          {item.ngayRoiThucTe
-                            ? format(new Date(item.ngayRoiThucTe), 'dd/MM/yyyy')
-                            : '---'}
+                    <Stack direction="row" spacing={3}>
+                      <Box flex={1}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          gutterBottom
+                        >
+                          Phòng - Giường
                         </Typography>
-                      ) : (
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Typography variant="body2" fontWeight={600}>
-                            {format(new Date(item.ngayBatDau), 'dd/MM/yyyy')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            →
-                          </Typography>
-                          <Typography variant="body2" fontWeight={600}>
-                            {effectiveEndDate
-                              ? format(new Date(effectiveEndDate), 'dd/MM/yyyy')
-                              : 'Hiện tại'}
-                          </Typography>
-                        </Stack>
-                      )}
-                    </Box>
-                  </Stack>
-                </Stack>
-              </Paper>
-            );
-          })}
-        </Stack>
+                        <Typography variant="body2" fontWeight={600}>
+                          {item.giuongMoi?.maGiuong}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Loại: {item.phongMoi?.loaiPhong || 'N/A'}
+                        </Typography>
+                      </Box>
 
-        {history.length === 0 && (
-          <Box sx={{ py: 6, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Không tìm thấy dữ liệu lịch sử cư trú.
-            </Typography>
-          </Box>
-        )}
-      </DialogContent>
-    </Dialog>
+                      <Box flex={1}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          gutterBottom
+                        >
+                          {isRoiKtx ? 'Ngày rời KTX' : 'Ngày bắt đầu ở'}
+                        </Typography>
+
+                        {isRoiKtx ? (
+                          <Typography variant="body2" fontWeight={600} color="error.main">
+                            {item.ngayRoiThucTe
+                              ? format(new Date(item.ngayRoiThucTe), 'dd/MM/yyyy')
+                              : '---'}
+                          </Typography>
+                        ) : (
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {format(new Date(item.ngayBatDau), 'dd/MM/yyyy')}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              →
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                              {effectiveEndDate
+                                ? format(new Date(effectiveEndDate), 'dd/MM/yyyy')
+                                : 'Hiện tại'}
+                            </Typography>
+                          </Stack>
+                        )}
+                      </Box>
+                    </Stack>
+                  </Stack>
+                </Paper>
+              );
+            })}
+          </Stack>
+
+          {history.length === 0 && (
+            <Box sx={{ py: 6, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Không tìm thấy dữ liệu lịch sử cư trú.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    </Drawer>
   );
 };
+
+export const ResidencyHistoryModal = ResidencyHistorySidebar;
 
 const AvatarCustom = ({ icon }: { icon: React.ReactNode }) => (
   <Box

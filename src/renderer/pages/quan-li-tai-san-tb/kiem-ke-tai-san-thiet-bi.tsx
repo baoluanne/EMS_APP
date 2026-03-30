@@ -70,17 +70,23 @@ const KiemKeTaiSanPage = () => {
         ...validRow,
         ngayBatDau: validRow.ngayBatDau ? new Date(validRow.ngayBatDau) : null,
         ngayKetThuc: validRow.ngayKetThuc ? new Date(validRow.ngayKetThuc) : null,
-        // Map chi tiết đầy đủ để hiển thị đúng Ghi chú và Trạng thái
+
+        loaiDiaDiem: validRow.loaiDiaDiem || 'HOC',
+        diaDiemId: validRow.diaDiemId || '',
+
         chiTietKiemKes:
           validRow.chiTietKiemKes?.map((ct: any) => ({
             id: ct.id,
             thietBiId: ct.thietBiId,
             maThietBi: ct.thietBi?.maThietBi,
             tenThietBi: ct.thietBi?.tenThietBi,
+            loaiThietBi: ct.thietBi?.loaiThietBi?.tenLoai || 'Chưa phân loại',
+            tenLoaiThietBi: ct.thietBi?.loaiThietBi?.tenLoai || 'Chưa phân loại',
+            tenPhong: ct.thietBi?.phongHoc?.tenPhong || ct.thietBi?.phongKtx?.maPhong || 'Kho',
             trangThaiSoSach: ct.trangThaiSoSach,
             trangThaiThucTe: ct.trangThaiThucTe,
             khopDot: ct.khopDot,
-            ghiChu: ct.ghiChu || '', // Đảm bảo lấy field ghiChu từ DB
+            ghiChu: ct.ghiChu || '',
           })) || [],
       };
     },
@@ -141,7 +147,7 @@ const KiemKeTaiSanPage = () => {
     }
   }, [selectedRows, pendingActionId, onEdit]);
 
-  const columns = useMemo(() => kiemKeTaiSanTableColumns(handleViewDetail), [handleViewDetail]);
+  const columns = useMemo(() => kiemKeTaiSanTableColumns(), []);
 
   // Logic View Only: Nếu không phải thêm mới VÀ bản ghi đã hoàn thành
   const isRecordCompleted = backupSelectedRow?.daHoanThanh === true;
@@ -202,6 +208,7 @@ const KiemKeTaiSanPage = () => {
             rows={rowsData}
             checkboxSelection
             loading={isRefetching}
+            onRowClick={(params) => handleViewDetail(params.id as string)}
             onRowSelectionModelChange={(newSelection: any) => {
               // Xử lý sự kiện chọn dòng từ DataGrid (Array) -> Hook (Object)
               if (Array.isArray(newSelection)) {

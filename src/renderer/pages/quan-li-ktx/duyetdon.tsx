@@ -255,6 +255,7 @@ const DuyetDonPage = () => {
           checkboxSelection
           loading={isRefetching}
           getRowId={(row) => row.id}
+          onRowClick={(params) => setViewingDon(params.row)}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
           height="calc(100% - 150px)"

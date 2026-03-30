@@ -4,6 +4,7 @@ import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
 import { AddCircleOutline, DeleteOutline } from '@mui/icons-material';
 import { useMemo } from 'react';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
+import { LoaiDoiTuongMuonEnum } from '../enums';
 
 export const PhieuMuonTraForm = () => {
   const { control, register } = useFormContext();
@@ -64,13 +65,14 @@ export const PhieuMuonTraForm = () => {
               name="loaiDoiTuong"
               select
             >
-              <MenuItem value={1}>Sinh viên</MenuItem>
-              <MenuItem value={2}>Giảng viên</MenuItem>
+              <MenuItem value={LoaiDoiTuongMuonEnum.SinhVien}>Sinh viên</MenuItem>
+              <MenuItem value={LoaiDoiTuongMuonEnum.GiangVien}>Giảng viên</MenuItem>
+              <MenuItem value={LoaiDoiTuongMuonEnum.Khac}>Khác</MenuItem>
             </ControlledTextField>
           </Grid>
 
           <Grid size={6}>
-            {loaiDoiTuong === 1 ? (
+            {loaiDoiTuong === LoaiDoiTuongMuonEnum.SinhVien ? (
               <ControlledTextField
                 label="Chọn Sinh viên"
                 control={control}

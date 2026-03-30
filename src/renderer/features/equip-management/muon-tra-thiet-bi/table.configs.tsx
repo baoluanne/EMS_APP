@@ -1,6 +1,7 @@
 import { Button } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import { format } from 'date-fns';
+import { LoaiDoiTuongMuonEnum, TrangThaiPhieuMuonEnum, TrangThaiPhieuMuonOptions } from '../enums';
 
 export interface PhieuMuonTraRow {
   id: string;
@@ -30,10 +31,10 @@ export const phieuMuonTraColumns: GridColDef<PhieuMuonTraRow>[] = [
     minWidth: 180,
     flex: 1,
     valueGetter: (_, row) => {
-      if (row.loaiDoiTuong === 1) {
+      if (row.loaiDoiTuong === LoaiDoiTuongMuonEnum.SinhVien) {
         return `${row.sinhVien?.hoDem || ''} ${row.sinhVien?.ten || ''}`.trim() || 'N/A';
       }
-      if (row.loaiDoiTuong === 2) {
+      if (row.loaiDoiTuong === LoaiDoiTuongMuonEnum.GiangVien) {
         return `${row.giangVien?.hoDem || ''} ${row.giangVien?.ten || ''}`.trim() || 'N/A';
       }
       return 'N/A';
@@ -85,8 +86,8 @@ export const phieuMuonTraColumns: GridColDef<PhieuMuonTraRow>[] = [
     headerName: 'Trạng thái',
     width: 120,
     renderCell: (params) => {
-      const statusMap = ['Đang mượn', 'Đã trả', 'Quá hạn'];
-      return statusMap[params.value as number] || 'N/A';
+      const option = TrangThaiPhieuMuonOptions.find((opt) => opt.value === params.value);
+      return option?.label || 'N/A';
     },
   },
   {
@@ -109,7 +110,7 @@ export const phieuMuonTraColumns: GridColDef<PhieuMuonTraRow>[] = [
           e.stopPropagation();
           (params as any).onReturn(params.row);
         }}
-        disabled={params.row.trangThai === 1}
+        disabled={params.row.trangThai === TrangThaiPhieuMuonEnum.DaTra}
       >
         Trả thiết bị
       </Button>

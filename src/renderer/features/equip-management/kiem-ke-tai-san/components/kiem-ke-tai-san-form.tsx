@@ -1,7 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import {
   Stack,
-  Grid,
   Typography,
   Box,
   MenuItem,
@@ -17,26 +16,22 @@ import {
   Paper,
   TextField,
   IconButton,
+  Grid,
+  CircularProgress,
 } from '@mui/material';
 import { ControlledTextField, ControlledDatePicker } from '@renderer/components/controlled-fields';
 import { useFormContext, useFieldArray, useWatch, Controller } from 'react-hook-form';
 import { DeleteOutline, PlaylistAdd } from '@mui/icons-material';
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
+import { toast } from 'react-toastify';
+import React from 'react';
+import { TrangThaiThietBiEnum, TrangThaiThietBiOptions } from '../../enums';
 
-const TRANG_THAI_OPTIONS = [
-  { value: 0, label: 'Mới nhập', color: 'info' },
-  { value: 1, label: 'Đang sử dụng', color: 'success' },
-  { value: 2, label: 'Đang bảo trì', color: 'warning' },
-  { value: 3, label: 'Đang mượn', color: 'secondary' },
-  { value: 4, label: 'Hỏng', color: 'error' },
-  { value: 5, label: 'Chờ thanh lý', color: 'default' },
-  { value: 6, label: 'Đã thanh lý', color: 'default' },
-  { value: 7, label: 'Mất', color: 'error' },
-];
+// Xóa TRANG_THAI_OPTIONS cũ
 
-const LOAI_PHONG = {
-  PHONG_HOC: 'PHONG_HOC',
-  PHONG_KTX: 'PHONG_KTX',
+const LOAI_KHU_VUC = {
+  HOC: 'HOC',
+  KTX: 'KTX',
 };
 
 interface Props {
@@ -45,16 +40,77 @@ interface Props {
 
 export const KiemKeTaiSanForm = ({ readOnly = false }: Props) => {
   const { control, register, setValue } = useFormContext();
-  const [loaiPhong, setLoaiPhong] = useState(LOAI_PHONG.PHONG_HOC);
+  const [loaiKhuVuc, setLoaiKhuVuc] = useState(LOAI_KHU_VUC.HOC);
 
   const { fields, replace, remove } = useFieldArray({
     control,
     name: 'chiTietKiemKes',
   });
 
-  const selectedPhongId = useWatch({ control, name: 'phongId' });
+  const selectedToaNhaId = useWatch({ control, name: 'toaNhaId' });
   const chiTietValues = useWatch({ control, name: 'chiTietKiemKes' });
 
+  // 1. Hook lấy danh sách Dãy Nhà / Tòa Nhà (Dùng sẵn base pagination)
+  const { data: buildingsData, isRefetching: loadingBuildings } = useCrudPagination<any>({
+    entity: loaiKhuVuc === LOAI_KHU_VUC.HOC ? 'DayNha' : 'ToaNhaKtx',
+    endpoint: 'pagination?pageSize=1000',
+    enabled: true,
+  });
+
+  const listBuildings = useMemo(() => {
+    const raw = (buildingsData as any)?.data || (buildingsData as any)?.result || [];
+    return Array.isArray(raw) ? raw : [];
+  }, [buildingsData]);
+
+  // 2. Hook lấy danh sách Thiết Bị (Sử dụng API chuẩn của ThietBi)
+  const {
+    data: thietBiData,
+    isRefetching: loadingThietBi,
+    mergeParams,
+  } = useCrudPagination<any>({
+    entity: 'ThietBi',
+    defaultState: { pageSize: 2000 }, // Kéo page size to để lấy gọn trong 1 lần
+    enabled: !!selectedToaNhaId,
+  });
+
+  // Tự động merge params khi chọn tòa nhà
+  useEffect(() => {
+    if (selectedToaNhaId) {
+      if (loaiKhuVuc === LOAI_KHU_VUC.HOC) {
+        mergeParams({ DayNhaId: selectedToaNhaId, ToaNhaKtxId: undefined });
+      } else {
+        mergeParams({ ToaNhaKtxId: selectedToaNhaId, DayNhaId: undefined });
+      }
+    }
+  }, [selectedToaNhaId, loaiKhuVuc, mergeParams]);
+
+  // Hàm đổ data thiết bị vào Form
+  const handleLoadThietBi = () => {
+    const rawData = thietBiData as any;
+    const listThietBi = Array.isArray(rawData) ? rawData : rawData?.data || rawData?.result || [];
+
+    if (listThietBi.length === 0) {
+      toast.info('Khu vực này hiện không có thiết bị nào!');
+      return;
+    }
+
+    const newItems = listThietBi.map((tb: any) => ({
+      thietBiId: tb.id,
+      maThietBi: tb.maThietBi,
+      tenThietBi: tb.tenThietBi,
+      tenLoaiThietBi: tb.loaiThietBi?.tenLoai || 'Chưa phân loại',
+      tenPhong: tb.phongHoc?.tenPhong || tb.phongKtx?.maPhong || 'Kho',
+      trangThaiSoSach: tb.trangThai,
+      trangThaiThucTe: tb.trangThai,
+      khopDot: true,
+      ghiChu: '',
+    }));
+
+    replace(newItems);
+    toast.success(`Đã tải ${newItems.length} thiết bị vào danh sách.`);
+  };
+
+  // Tự động check khớp trạng thái
   useEffect(() => {
     if (chiTietValues) {
       chiTietValues.forEach((item: any, index: number) => {
@@ -66,97 +122,47 @@ export const KiemKeTaiSanForm = ({ readOnly = false }: Props) => {
     }
   }, [chiTietValues, setValue]);
 
-  // 1. Gọi API Lấy Phòng Học (Sửa entity và endpoint cho chuẩn)
-  const { data: phongHocData } = useCrudPagination<any>({
-    entity: 'DotKiemKe',
-    endpoint: 'active-phong-hoc',
-    defaultState: { pageSize: 1000 },
-    enabled: true,
-  });
+  const handleLoaiKhuVucChange = (e: any) => {
+    setLoaiKhuVuc(e.target.value);
+    setValue('toaNhaId', '');
+  };
 
-  // 2. Gọi API Lấy Phòng KTX
-  const { data: phongKtxData } = useCrudPagination<any>({
-    entity: 'DotKiemKe',
-    endpoint: 'active-phong-ktx',
-    defaultState: { pageSize: 1000 },
-    enabled: true,
-  });
+  // 3. Gom nhóm dữ liệu theo Loại Thiết Bị để hiển thị đẹp mắt
+  const groupedFields = useMemo(() => {
+    const groups: Record<string, { name: string; count: number; items: any[] }> = {};
 
-  const listPhongHoc = useMemo(() => {
-    // FIX: Thêm check .data vì API thường trả về { data: [...] } hoặc { result: [...] }
-    if (Array.isArray(phongHocData)) return phongHocData;
-    return (phongHocData as any)?.data || (phongHocData as any)?.result || [];
-  }, [phongHocData]);
-
-  const listPhongKtx = useMemo(() => {
-    if (Array.isArray(phongKtxData)) return phongKtxData;
-    return (phongKtxData as any)?.data || (phongKtxData as any)?.result || [];
-  }, [phongKtxData]);
-
-  const listPhongDisplay = loaiPhong === LOAI_PHONG.PHONG_HOC ? listPhongHoc : listPhongKtx;
-
-  // 3. API lấy Thiết bị
-  const { data: thietBiData, mergeParams } = useCrudPagination<any>({
-    entity: 'ThietBi',
-    defaultState: { pageSize: 1000 },
-    enabled: !!selectedPhongId,
-  });
-
-  useEffect(() => {
-    if (selectedPhongId) {
-      if (loaiPhong === LOAI_PHONG.PHONG_HOC) {
-        mergeParams({ PhongHocId: selectedPhongId, PhongKtxId: null });
-      } else {
-        mergeParams({ PhongKtxId: selectedPhongId, PhongHocId: null });
+    fields.forEach((field: any, index: number) => {
+      const loai = field.tenLoaiThietBi || 'Chưa phân loại';
+      if (!groups[loai]) {
+        groups[loai] = { name: loai, count: 0, items: [] };
       }
-    }
-  }, [selectedPhongId, loaiPhong, mergeParams]);
+      groups[loai].items.push({ field, originalIndex: index });
+      groups[loai].count += 1;
+    });
 
-  const handleLoadThietBi = () => {
-    // FIX: Tương tự, thêm check .data cho thiết bị
-    const rawData = thietBiData as any;
-    const listThietBi = Array.isArray(rawData) ? rawData : rawData?.data || rawData?.result || [];
-
-    if (listThietBi.length === 0) return;
-
-    const newItems = listThietBi.map((tb: any) => ({
-      thietBiId: tb.id,
-      maThietBi: tb.maThietBi,
-      tenThietBi: tb.tenThietBi,
-      trangThaiSoSach: tb.trangThai,
-      trangThaiThucTe: tb.trangThai,
-      khopDot: true,
-      ghiChu: '',
-    }));
-
-    replace(newItems);
-  };
-
-  const handleLoaiPhongChange = (e: any) => {
-    setLoaiPhong(e.target.value);
-    setValue('phongId', '');
-  };
+    return groups;
+  }, [fields, chiTietValues]);
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={3}>
       <input type="hidden" {...register('id')} />
 
-      <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-        <Typography variant="subtitle2" color="primary" sx={{ mb: 1 }}>
+      {/* THÔNG TIN CHUNG */}
+      <Box sx={{ p: 2.5, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 2 }}>
+        <Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ mb: 2 }}>
           THÔNG TIN ĐỢT KIỂM KÊ
         </Typography>
         <Grid container spacing={2}>
-          <Grid size={12}>
+          <Grid size={{ xs: 12 }}>
             <ControlledTextField
               label="Tên đợt kiểm kê"
               control={control}
               name="tenDotKiemKe"
-              helperText=""
-              size="small"
               disabled={readOnly}
+              helperText=""
             />
           </Grid>
-          <Grid size={4}>
+          <Grid size={{ xs: 4 }}>
             <ControlledDatePicker
               label="Ngày bắt đầu"
               control={control}
@@ -164,7 +170,7 @@ export const KiemKeTaiSanForm = ({ readOnly = false }: Props) => {
               disabled={readOnly}
             />
           </Grid>
-          <Grid size={4}>
+          <Grid size={{ xs: 4 }}>
             <ControlledDatePicker
               label="Ngày kết thúc"
               control={control}
@@ -172,227 +178,294 @@ export const KiemKeTaiSanForm = ({ readOnly = false }: Props) => {
               disabled={readOnly}
             />
           </Grid>
-          <Grid size={4}>
+          <Grid size={{ xs: 4 }}>
             <Controller
               name="daHoanThanh"
               control={control}
               render={({ field }) => (
-                <Box display="flex" alignItems="center" height="100%">
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  height="100%"
+                  sx={{ bgcolor: 'white', px: 1, borderRadius: 1, border: '1px solid #e2e8f0' }}
+                >
                   <Checkbox
                     checked={field.value}
                     onChange={(e) => field.onChange(e.target.checked)}
                     size="small"
                     disabled={readOnly}
+                    color="success"
                   />
-                  <Typography variant="body2">Đã hoàn thành</Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight={field.value ? 700 : 400}
+                    color={field.value ? 'success.main' : 'text.primary'}
+                  >
+                    Chốt hoàn thành
+                  </Typography>
                 </Box>
               )}
             />
           </Grid>
-          <Grid size={12}>
+          <Grid size={{ xs: 12 }}>
             <ControlledTextField
               label="Ghi chú chung"
               control={control}
               name="ghiChu"
               multiline
-              minRows={1}
-              size="small"
+              minRows={2}
               disabled={readOnly}
             />
           </Grid>
         </Grid>
       </Box>
 
-      <Box
-        sx={{
-          p: 2,
-          border: '1px solid #e0e0e0',
-          borderRadius: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="subtitle2" color="primary">
-            DANH SÁCH TÀI SẢN
-          </Typography>
-
-          <Box display="flex" gap={1}>
+      {/* DANH SÁCH THIẾT BỊ THEO TÒA NHÀ */}
+      <Box sx={{ border: '1px solid #e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
+        <Box sx={{ p: 2, borderBottom: '1px solid #e2e8f0', bgcolor: 'white' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle2" color="primary" fontWeight={700}>
+              TÀI SẢN THEO TÒA NHÀ ({fields.length})
+            </Typography>
+          </Stack>
+          <Box display="flex" gap={1.5}>
             <TextField
               select
-              label="Loại phòng"
-              value={loaiPhong}
-              onChange={handleLoaiPhongChange}
+              value={loaiKhuVuc}
+              onChange={handleLoaiKhuVucChange}
               size="small"
               sx={{ width: 140 }}
               disabled={readOnly}
             >
-              <MenuItem value={LOAI_PHONG.PHONG_HOC}>Phòng học</MenuItem>
-              <MenuItem value={LOAI_PHONG.PHONG_KTX}>Ký túc xá</MenuItem>
+              <MenuItem value={LOAI_KHU_VUC.HOC}>Giảng Đường</MenuItem>
+              <MenuItem value={LOAI_KHU_VUC.KTX}>Ký túc xá</MenuItem>
             </TextField>
 
-            <ControlledTextField
-              name="phongId"
-              control={control}
-              label={
-                loaiPhong === LOAI_PHONG.PHONG_HOC ? 'Phòng có thiết bị' : 'Phòng KTX có thiết bị'
-              }
-              select
-              sx={{ width: 220 }}
-              size="small"
-              disabled={readOnly}
-            >
-              {listPhongDisplay.length > 0 ? (
-                listPhongDisplay.map((p: any) => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.tenPhong}
+            <Box position="relative">
+              <ControlledTextField
+                name="toaNhaId"
+                control={control}
+                select
+                sx={{ width: 220 }}
+                size="small"
+                disabled={readOnly || loadingBuildings}
+              >
+                {listBuildings.length > 0 ? (
+                  listBuildings.map((p: any) => (
+                    <MenuItem key={p.id} value={p.id}>
+                      {loaiKhuVuc === LOAI_KHU_VUC.HOC ? p.tenDayNha : p.tenToaNha}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>
+                    <em>Không có dữ liệu</em>
                   </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  <em>Không có phòng nào</em>
-                </MenuItem>
+                )}
+              </ControlledTextField>
+              {loadingBuildings && (
+                <CircularProgress size={18} sx={{ position: 'absolute', right: 30, top: 10 }} />
               )}
-            </ControlledTextField>
+            </Box>
 
             {!readOnly && (
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
-                startIcon={<PlaylistAdd />}
+                startIcon={
+                  loadingThietBi ? <CircularProgress size={16} color="inherit" /> : <PlaylistAdd />
+                }
                 onClick={handleLoadThietBi}
-                disabled={!selectedPhongId}
+                disabled={!selectedToaNhaId || loadingThietBi}
               >
-                Tải DS
+                Tải Danh sách
               </Button>
             )}
           </Box>
-        </Stack>
+        </Box>
 
         <TableContainer
           component={Paper}
-          variant="outlined"
-          sx={{ maxHeight: 400, overflowY: 'auto' }}
+          elevation={0}
+          sx={{ maxHeight: 500, overflowY: 'auto', borderRadius: 0 }}
         >
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', width: 100, bgcolor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: '#f1f5f9' }}>
                   Mã TB
                 </TableCell>
-                <TableCell sx={{ fontWeight: 'bold', minWidth: 150, bgcolor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 700, minWidth: 150, bgcolor: '#f1f5f9' }}>
                   Tên TB
                 </TableCell>
-                <TableCell sx={{ fontWeight: 'bold', width: 140, bgcolor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 700, width: 100, bgcolor: '#f1f5f9' }}>
+                  Phòng
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, width: 130, bgcolor: '#f1f5f9' }}>
                   TT Sổ Sách
                 </TableCell>
-                <TableCell sx={{ fontWeight: 'bold', width: 150, bgcolor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 700, width: 140, bgcolor: '#f1f5f9' }}>
                   TT Thực Tế
                 </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', width: 60, bgcolor: '#f5f5f5' }}
-                  align="center"
-                >
+                <TableCell sx={{ fontWeight: 700, width: 60, bgcolor: '#f1f5f9' }} align="center">
                   Khớp
                 </TableCell>
-                <TableCell sx={{ fontWeight: 'bold', minWidth: 120, bgcolor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 700, minWidth: 120, bgcolor: '#f1f5f9' }}>
                   Ghi chú
                 </TableCell>
-                <TableCell sx={{ fontWeight: 'bold', width: 50, bgcolor: '#f5f5f5' }}></TableCell>
+                <TableCell sx={{ bgcolor: '#f1f5f9', width: 40 }}></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {fields.map((field, index) => {
-                const statusSoSach = TRANG_THAI_OPTIONS.find(
-                  (x) => x.value === (field as any).trangThaiSoSach,
-                );
-                const isMatch = chiTietValues?.[index]?.khopDot;
-
-                return (
-                  <TableRow key={field.id} hover>
-                    <TableCell>
-                      <input type="hidden" {...register(`chiTietKiemKes.${index}.thietBiId`)} />
-                      <input type="hidden" {...register(`chiTietKiemKes.${index}.maThietBi`)} />
-                      <input type="hidden" {...register(`chiTietKiemKes.${index}.tenThietBi`)} />
-                      <input
-                        type="hidden"
-                        {...register(`chiTietKiemKes.${index}.trangThaiSoSach`)}
-                      />
-
-                      <Typography variant="caption" fontWeight="bold">
-                        {(field as any).maThietBi}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" noWrap sx={{ maxWidth: 150, display: 'block' }}>
-                        {(field as any).tenThietBi}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={statusSoSach?.label || 'N/A'}
-                        color={(statusSoSach?.color as any) || 'default'}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: '0.7rem' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <ControlledTextField
-                        control={control}
-                        name={`chiTietKiemKes.${index}.trangThaiThucTe`}
-                        select
-                        size="small"
-                        variant="standard"
-                        sx={{ '& .MuiInputBase-root': { fontSize: '0.8rem' } }}
-                        disabled={readOnly}
-                      >
-                        {TRANG_THAI_OPTIONS.map((opt) => (
-                          <MenuItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </MenuItem>
-                        ))}
-                      </ControlledTextField>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Typography
-                        color={isMatch ? 'success.main' : 'error.main'}
-                        fontWeight="bold"
-                        fontSize="1rem"
-                      >
-                        {isMatch ? '✓' : '✕'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <ControlledTextField
-                        control={control}
-                        name={`chiTietKiemKes.${index}.ghiChu`}
-                        size="small"
-                        placeholder="..."
-                        variant="standard"
-                        sx={{ '& .MuiInputBase-root': { fontSize: '0.8rem' } }}
-                        disabled={readOnly}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {!readOnly && (
-                        <IconButton size="small" color="error" onClick={() => remove(index)}>
-                          <DeleteOutline fontSize="small" />
-                        </IconButton>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {fields.length === 0 && (
+              {Object.keys(groupedFields).length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Vui lòng chọn Loại phòng & Phòng để tải danh sách
+                      Vui lòng chọn Tòa nhà và bấm Tải DS để bắt đầu kiểm kê.
                     </Typography>
                   </TableCell>
                 </TableRow>
+              ) : (
+                Object.values(groupedFields).map((group) => (
+                  <React.Fragment key={group.name}>
+                    <TableRow sx={{ bgcolor: '#e0e7ff' }}>
+                      <TableCell colSpan={8} sx={{ py: 1.5 }}>
+                        <Typography variant="body2" fontWeight={700} color="primary.dark">
+                          📁 Loại: {group.name} —{' '}
+                          <Box component="span" color="error.main">
+                            Số lượng: {group.count}
+                          </Box>
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+
+                    {group.items.map(({ field, originalIndex: index }) => {
+                      const statusSoSach = TrangThaiThietBiOptions.find(
+                        (x) => x.value === field.trangThaiSoSach,
+                      );
+                      const isMatch = chiTietValues?.[index]?.khopDot;
+
+                      return (
+                        <TableRow
+                          key={field.id}
+                          hover
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                          <TableCell>
+                            <input
+                              type="hidden"
+                              {...register(`chiTietKiemKes.${index}.thietBiId`)}
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`chiTietKiemKes.${index}.maThietBi`)}
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`chiTietKiemKes.${index}.tenThietBi`)}
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`chiTietKiemKes.${index}.tenLoaiThietBi`)}
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`chiTietKiemKes.${index}.tenPhong`)}
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`chiTietKiemKes.${index}.trangThaiSoSach`)}
+                            />
+                            <Typography variant="caption" fontWeight="bold">
+                              {field.maThietBi}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              variant="caption"
+                              noWrap
+                              sx={{ maxWidth: 150, display: 'block' }}
+                            >
+                              {field.tenThietBi}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={field.tenPhong || 'N/A'}
+                              size="small"
+                              sx={{ fontSize: '0.65rem', height: 20 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={statusSoSach?.label || 'N/A'}
+                              color={
+                                field.trangThaiSoSach === TrangThaiThietBiEnum.DangSuDung
+                                  ? 'success'
+                                  : field.trangThaiSoSach === TrangThaiThietBiEnum.CanBaoTri
+                                    ? 'warning'
+                                    : field.trangThaiSoSach === TrangThaiThietBiEnum.Mat ||
+                                        field.trangThaiSoSach === TrangThaiThietBiEnum.ThanhLy
+                                      ? 'error'
+                                      : 'info'
+                              }
+                              size="small"
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <ControlledTextField
+                              control={control}
+                              name={`chiTietKiemKes.${index}.trangThaiThucTe`}
+                              select
+                              size="small"
+                              variant="outlined"
+                              sx={{ '& .MuiInputBase-root': { fontSize: '0.75rem', height: 30 } }}
+                              disabled={readOnly}
+                            >
+                              {TrangThaiThietBiOptions.map((opt) => (
+                                <MenuItem
+                                  key={opt.value}
+                                  value={opt.value}
+                                  sx={{ fontSize: '0.8rem' }}
+                                >
+                                  {opt.label}
+                                </MenuItem>
+                              ))}
+                            </ControlledTextField>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Typography
+                              color={isMatch ? 'success.main' : 'error.main'}
+                              fontWeight="bold"
+                              fontSize="1rem"
+                            >
+                              {isMatch ? '✓' : '✕'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <ControlledTextField
+                              control={control}
+                              name={`chiTietKiemKes.${index}.ghiChu`}
+                              size="small"
+                              placeholder="Ghi chú..."
+                              variant="standard"
+                              sx={{ '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                              disabled={readOnly}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {!readOnly && (
+                              <IconButton size="small" color="error" onClick={() => remove(index)}>
+                                <DeleteOutline fontSize="small" />
+                              </IconButton>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </React.Fragment>
+                ))
               )}
             </TableBody>
           </Table>

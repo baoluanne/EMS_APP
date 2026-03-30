@@ -41,7 +41,20 @@ export const ViolationHistorySidebar = ({ open, onClose, studentData }: Props) =
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: 800 } }}>
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      hideBackdrop={true}
+      sx={{
+        pointerEvents: 'none',
+        '& .MuiPaper-root': {
+          pointerEvents: 'auto',
+          width: 800,
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.1)',
+        },
+      }}
+    >
       <Box sx={{ p: 3, height: '100%' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={700}>

@@ -5,16 +5,20 @@ export const kiemKeTaiSanSchema = z.object({
   tenDotKiemKe: z.string().min(1, 'Tên đợt không được để trống'),
   ngayBatDau: z.any(),
   ngayKetThuc: z.any(),
-  // Sửa: Dùng optional() thay vì default() để khớp type input
   daHoanThanh: z.boolean().optional(),
   ghiChu: z.string().optional().nullable(),
-  phongId: z.string().optional(),
+
+  // Thêm 2 trường quản lý địa điểm Tòa Nhà
+  loaiDiaDiem: z.string().optional(), // 'HOC' hoặc 'KTX'
+  diaDiemId: z.string().optional(), // ID của DayNha hoặc ToaNhaKtx
+
   chiTietKiemKes: z
     .array(
       z.object({
         thietBiId: z.string(),
         maThietBi: z.string().optional(),
         tenThietBi: z.string().optional(),
+        loaiThietBi: z.string().optional(), // Thêm trường này để đếm số lượng
         trangThaiSoSach: z.number(),
         trangThaiThucTe: z.number(),
         khopDot: z.boolean(),

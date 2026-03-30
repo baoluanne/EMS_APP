@@ -5,12 +5,12 @@ export const phieuThanhLySchema = z.object({
   soQuyetDinh: z.string().min(1, 'Số quyết định là bắt buộc').max(50, 'Tối đa 50 ký tự'),
   ngayThanhLy: z.any(),
   lyDo: z.string().max(500).optional(),
-  nguoiLapPhieuId: z.string().uuid().optional(),
+  nguoiLapPhieuId: z.string().min(1, 'Người lập phiếu là bắt buộc').max(50, 'Tối đa 50 ký tự'),
   chiTietThanhLys: z
     .array(
       z.object({
         thietBiId: z.string().min(1, 'Phải chọn thiết bị'),
-        giaBan: z.number().min(0, 'Giá bán không được âm').default(0),
+        giaBan: z.coerce.number().min(0, 'Giá bán không được âm').default(0),
         ghiChu: z.string().max(500).optional(),
       }),
     )

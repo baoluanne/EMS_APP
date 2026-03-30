@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const danhSachThietBiSchema = z.object({
   id: z.string().optional(),
   maThietBi: z.string().min(1, 'Mã thiết bị không được để trống'),
+  maQrCode: z.string().optional().nullable(),
   tenThietBi: z.string().min(1, 'Tên thiết bị không được để trống'),
   loaiThietBiId: z.string().min(1, 'Loại thiết bị không được để trống'),
   nhaCungCapId: z.string().min(1, 'Nhà cung cấp không được để trống'),
@@ -36,12 +37,18 @@ export const nhapHangLoatSchema = z.object({
   model: z.string().optional().nullable(),
   thongSoKyThuat: z.string().optional().nullable(),
   nguyenGia: z.coerce.number().min(0, 'Nguyên giá phải lớn hơn hoặc bằng 0').optional().nullable(),
+  giaTriKhauHao: z.coerce
+    .number()
+    .min(0, 'Giá trị khấu hao phải lớn hơn hoặc bằng 0')
+    .optional()
+    .nullable(),
   prefixMaThietBi: z.string().optional().nullable(),
   namSanXuat: z.string().optional().nullable(),
   ngayMua: z.string().optional().nullable(),
   ngayHetHanBaoHanh: z.string().optional().nullable(),
   ghiChu: z.string().optional().nullable(),
   trangThai: z.coerce.number().optional().nullable(),
+  hinhAnh: z.string().optional().nullable(),
 });
 
 export type NhapHangLoat = z.infer<typeof nhapHangLoatSchema>;

@@ -9,9 +9,11 @@ import { TITLE_MODE } from '@renderer/shared/enums';
 import { format } from 'date-fns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { matchesSearch } from '@renderer/shared/utils/string';
 
 import { PhieuThanhLyForm } from '@renderer/features/equip-management/phieu-thanh-li/PhieuThanhLyForm';
 import { PhieuThanhLyFilter } from '@renderer/features/equip-management/phieu-thanh-li/PhieuThanhLyFilter';
+import { PhieuThanhLyDetailsDrawer } from '@renderer/features/equip-management/phieu-thanh-li/PhieuThanhLyDetailsDrawer';
 import {
   phieuThanhLyColumns as columns,
   PhieuThanhLyRow,
@@ -31,6 +33,10 @@ const defaultValues = {
 
 const PhieuThanhLyPage = () => {
   const [filters, setFilters] = useState<PhieuThanhLyFilterState>({});
+  const [viewModal, setViewModal] = useState<{ open: boolean; data: any }>({
+    open: false,
+    data: null,
+  });
 
   const {
     formMethods,
@@ -40,13 +46,11 @@ const PhieuThanhLyPage = () => {
     handleRowSelectionModelChange,
     isDeleteOpenModal,
     onAdd,
-    onEdit,
     onSave,
     handleDeleteRecord,
     selectedRows,
     setIsDeleteOpenModal,
     handleCloseModal,
-    isAddMode,
     tableConfig,
   } = useCrudPaginationModal<any, any>({
     defaultValues,
@@ -55,9 +59,12 @@ const PhieuThanhLyPage = () => {
     endpoint: 'pagination?pageSize=1000',
   });
 
+  const finalColumns = useMemo(() => {
+    return columns;
+  }, []);
+
   const rowsData = useMemo<PhieuThanhLyRow[]>(() => {
     if (!data) return [];
-
     let rows: PhieuThanhLyRow[] = [];
 
     if ('data' in data && Array.isArray(data.data)) {
@@ -71,58 +78,41 @@ const PhieuThanhLyPage = () => {
     if (Object.keys(filters).length === 0) return rows;
 
     return rows.filter((row) => {
-      if (
-        filters.soQuyetDinh &&
-        !row.soQuyetDinh?.toLowerCase().includes(filters.soQuyetDinh.toLowerCase())
-      ) {
+      if (filters.soQuyetDinh && !matchesSearch(row.soQuyetDinh, filters.soQuyetDinh)) {
         return false;
       }
-
       if (filters.nguoiLapPhieu) {
         const tenNguoiLap =
           `${row.nguoiLapPhieu?.hoDem || ''} ${row.nguoiLapPhieu?.ten || ''}`.trim();
-        if (!tenNguoiLap.toLowerCase().includes(filters.nguoiLapPhieu!.toLowerCase())) {
+        if (!matchesSearch(tenNguoiLap, filters.nguoiLapPhieu)) {
           return false;
         }
       }
-
-      if (filters.lyDo && !row.lyDo?.toLowerCase().includes(filters.lyDo.toLowerCase())) {
+      if (filters.lyDo && !matchesSearch(row.lyDo, filters.lyDo)) {
         return false;
       }
-
       if (filters.thietBi) {
         const hasMatchingDevice = row.chiTietThanhLys?.some((ct) => {
-          const matchMa = ct.thietBi?.maThietBi
-            ?.toLowerCase()
-            .includes(filters.thietBi!.toLowerCase());
-          const matchTen = ct.thietBi?.tenThietBi
-            ?.toLowerCase()
-            .includes(filters.thietBi!.toLowerCase());
-          return matchMa || matchTen;
+          return (
+            matchesSearch(ct.thietBi?.maThietBi, filters.thietBi || '') ||
+            matchesSearch(ct.thietBi?.tenThietBi, filters.thietBi || '')
+          );
         });
         if (!hasMatchingDevice) return false;
       }
-
       if (filters.ngayThanhLy) {
         const rowDate = new Date(row.ngayThanhLy);
         const rowDateString = format(rowDate, 'dd/MM/yyyy');
-
         if (!rowDateString.includes(filters.ngayThanhLy!)) {
           return false;
         }
       }
-
       return true;
     });
   }, [data, filters]);
 
-  const handleApplyFilter = (newFilters: PhieuThanhLyFilterState) => {
-    setFilters(newFilters);
-  };
-
-  const handleResetFilter = () => {
-    setFilters({});
-  };
+  const handleApplyFilter = (newFilters: PhieuThanhLyFilterState) => setFilters(newFilters);
+  const handleResetFilter = () => setFilters({});
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -132,17 +122,16 @@ const PhieuThanhLyPage = () => {
             selectedRowIds={selectedRows}
             onDelete={() => setIsDeleteOpenModal(true)}
             onAdd={onAdd}
-            onEdit={onEdit}
           />
 
           <PhieuThanhLyFilter onApply={handleApplyFilter} onReset={handleResetFilter} />
 
           {isModalOpen && (
             <FormDetailsModal
-              title={isAddMode ? 'Lập phiếu thanh lý' : 'Cập nhật phiếu thanh lý'}
+              title="Lập phiếu thanh lý"
               onClose={handleCloseModal}
               onSave={onSave}
-              maxWidth="md"
+              maxWidth="sm"
               titleMode={TITLE_MODE.COLORED}
             >
               <PhieuThanhLyForm />
@@ -156,11 +145,18 @@ const PhieuThanhLyPage = () => {
             />
           )}
 
+          <PhieuThanhLyDetailsDrawer
+            open={viewModal.open}
+            data={viewModal.data}
+            onClose={() => setViewModal({ open: false, data: null })}
+          />
+
           <DataGridTable
-            columns={columns}
+            columns={finalColumns}
             rows={rowsData}
             loading={isRefetching}
             checkboxSelection
+            onRowClick={(params) => setViewModal({ open: true, data: params.row })}
             onRowSelectionModelChange={handleRowSelectionModelChange}
             rowSelectionModel={selectedRows}
             getRowId={(row) => row.id}

@@ -1,10 +1,7 @@
-import { GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
+import { GridColDef } from '@mui/x-data-grid';
 import { KiemKeTaiSan } from '../validation';
-import { Visibility } from '@mui/icons-material';
 
-export const kiemKeTaiSanTableColumns = (
-  onViewDetail: (id: string) => void,
-): GridColDef<KiemKeTaiSan>[] => [
+export const kiemKeTaiSanTableColumns = (): GridColDef<KiemKeTaiSan>[] => [
   {
     field: 'tenDotKiemKe',
     headerName: 'Tên đợt kiểm kê',
@@ -43,19 +40,5 @@ export const kiemKeTaiSanTableColumns = (
     headerName: 'Ghi chú',
     minWidth: 200,
     flex: 1,
-  },
-  {
-    field: 'actions',
-    type: 'actions',
-    headerName: 'Chi tiết',
-    width: 100,
-    getActions: (params) => [
-      <GridActionsCellItem
-        key="view"
-        icon={<Visibility color="primary" />}
-        label="Xem chi tiết kiểm kê"
-        onClick={() => onViewDetail(params.id as string)}
-      />,
-    ],
   },
 ];

@@ -2170,28 +2170,37 @@ const _appRoutes = [
         ],
       },
       {
-        label: 'Nghiệp vụ vận hành tài sản thiết bị',
-        icon: <FcFolder />,
-        path: 'asset-equipment-operation-tasks',
-        children: [
-          {
-            label: 'Mượn trả thiết bị',
-            icon: <FcFolder />,
-            path: 'muon-tra-thiet-bi',
-            Component: Lazy(
-              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/muon-tra-thiet-bi')),
-            ),
-          },
-          {
-            label: 'Thanh lý thiết bị',
-            icon: <FcFolder />,
-            path: 'thanh-ly-thiet-bi',
-            Component: Lazy(
-              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/phieu-thanh-li')),
-            ),
-          },
-        ],
+        label: 'Nghiệp vụ vận hành', // Rút gọn tên cho đẹp
+        icon: <FcFolder />, // Bạn có thể đổi icon khác như <FcSupport /> cho hợp lý
+        path: 'nghiep-vu-van-hanh', // Đổi path cho ngắn gọn
+        // Trỏ thẳng đến file Hub chứa 3 Tabs thay vì chia children
+        Component: Lazy(
+          lazy(() => import('@renderer/pages/quan-li-tai-san-tb/EquipmentOperationsHub')),
+        ),
       },
+      // {
+      //   label: 'Nghiệp vụ vận hành tài sản thiết bị',
+      //   icon: <FcFolder />,
+      //   path: 'asset-equipment-operation-tasks',
+      //   children: [
+      //     {
+      //       label: 'Mượn trả thiết bị',
+      //       icon: <FcFolder />,
+      //       path: 'muon-tra-thiet-bi',
+      //       Component: Lazy(
+      //         lazy(() => import('@renderer/pages/quan-li-tai-san-tb/muon-tra-thiet-bi')),
+      //       ),
+      //     },
+      //     {
+      //       label: 'Thanh lý thiết bị',
+      //       icon: <FcFolder />,
+      //       path: 'thanh-ly-thiet-bi',
+      //       Component: Lazy(
+      //         lazy(() => import('@renderer/pages/quan-li-tai-san-tb/phieu-thanh-li')),
+      //       ),
+      //     },
+      //   ],
+      // },
       {
         label: 'Kiểm kê và bảo trì tài sản thiết bị',
         icon: <FcFolder />,
@@ -2208,6 +2217,10 @@ const _appRoutes = [
           {
             label: 'Bảo trì tài sản thiết bị',
             icon: <FcFolder />,
+            path: 'bao-tri-tai-san-thiet-bi',
+            Component: Lazy(
+              lazy(() => import('@renderer/pages/quan-li-tai-san-tb/PhieuBaoTriPage')),
+            ),
           },
         ],
       },
@@ -2221,25 +2234,25 @@ const _appRoutes = [
     children: [
       {
         label: 'Duyệt đơn kí túc xá',
-        icon: <FcBusinessman />,
+        icon: <FcFolder />,
         path: 'dormitory-student-list',
         Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/duyetdon'))),
       },
       {
         label: 'Tra cứu sinh viên KTX',
-        icon: <FcBusinessman />,
+        icon: <FcFolder />,
         path: 'student-dormitory-lookup',
         Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ThongTinSinhVienKtx'))),
       },
       {
         label: 'Vi phạm nội quy KTX',
-        icon: <FcBusinessman />,
+        icon: <FcFolder />,
         path: 'student-dormitory-Vi-Pham',
         Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/ViPhamNoiQuy'))),
       },
       {
         label: 'Cơ sở hạ tầng',
-        icon: <FcHome />,
+        icon: <FcFolder />,
         path: 'facilities-management',
         Component: Lazy(lazy(() => import('@renderer/pages/quan-li-ktx/QuanLyPhongKtx'))),
       },

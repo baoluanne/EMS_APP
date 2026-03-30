@@ -1,9 +1,28 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { Typography, Chip } from '@mui/material';
-import { getTrangThaiLabel } from '../TrangThaiThietBiEnum';
+import { Typography, Chip, Box } from '@mui/material';
+import { QRCodeSVG } from 'qrcode.react';
+import { getTrangThaiThietBiLabel, TrangThaiThietBiEnum } from '../../enums';
 import { format } from 'date-fns';
 
-export const danhSachThietBiColumns: GridColDef[] = [
+export const getDanhSachThietBiColumns = (): GridColDef[] => [
+  {
+    field: 'maQrCode',
+    headerName: 'Mã QR',
+    width: 80,
+    align: 'center',
+    headerAlign: 'center',
+    renderCell: (p) => {
+      const qrValue = p.row.maQrCode || p.row.maThietBi;
+      if (!qrValue) return null;
+      return (
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+        >
+          <QRCodeSVG value={qrValue} size={40} />
+        </Box>
+      );
+    },
+  },
   {
     field: 'maThietBi',
     headerName: 'Mã thiết bị',
@@ -17,7 +36,7 @@ export const danhSachThietBiColumns: GridColDef[] = [
   {
     field: 'tenThietBi',
     headerName: 'Tên thiết bị',
-    flex: 1, // Cột này sẽ giãn ra chiếm hết chỗ trống thay vì cột cuối
+    flex: 1,
     minWidth: 200,
     renderCell: (p) => (
       <Typography variant="body2" fontWeight={600} noWrap>
@@ -55,8 +74,10 @@ export const danhSachThietBiColumns: GridColDef[] = [
     align: 'center',
     headerAlign: 'center',
     renderCell: (p) => {
-      const label = getTrangThaiLabel(p.value);
-      const isOk = p.value === 0 || p.value === 1;
+      const label = getTrangThaiThietBiLabel(p.value);
+      const isOk =
+        p.value === TrangThaiThietBiEnum.TrongKho ||
+        p.value === TrangThaiThietBiEnum.DangSuDung;
       return (
         <Chip
           label={label}

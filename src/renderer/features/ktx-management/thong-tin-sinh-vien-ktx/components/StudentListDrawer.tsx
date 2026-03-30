@@ -153,7 +153,17 @@ export const BedListDrawer = ({ phong, onClose, onStudentClick }: BedListDrawerP
       anchor="right"
       open={!!phong}
       onClose={onClose}
-      PaperProps={{ sx: { width: `${drawerWidth}px`, borderLeft: 'none', maxWidth: '95vw' } }}
+      hideBackdrop={true}
+      sx={{
+        pointerEvents: 'none',
+        '& .MuiPaper-root': {
+          pointerEvents: 'auto',
+          width: `${drawerWidth}px`,
+          borderLeft: 'none',
+          maxWidth: '95vw',
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.1)',
+        },
+      }}
     >
       <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
         <Box

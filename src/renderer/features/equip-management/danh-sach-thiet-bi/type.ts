@@ -2,6 +2,7 @@ export interface DanhSachThietBiFilterState {
   id?: string;
   tenThietBi?: string;
   maThietBi?: string;
+  maQrCode?: string;
   loaiThietBiId?: string;
   nhaCungCapId?: string;
   model?: string;

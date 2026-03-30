@@ -8,7 +8,6 @@ import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-paginati
 import { TITLE_MODE } from '@renderer/shared/enums';
 import { axios } from '@renderer/shared/lib';
 import { toast } from 'react-toastify';
-
 import { PhieuMuonTraForm } from '../../features/equip-management/muon-tra-thiet-bi/PhieuMuonTraForm';
 import { PhieuMuonTraFilter } from '../../features/equip-management/muon-tra-thiet-bi/PhieuMuonTraFilter ';
 import {
@@ -20,6 +19,8 @@ import {
   PhieuMuonTraFilterState,
 } from '../../features/equip-management/muon-tra-thiet-bi/validation';
 import { ReturnEquipmentModal } from '../../features/equip-management/muon-tra-thiet-bi/ReturnEquipmentModal';
+import { PhieuMuonTraDetailsDrawer } from '@renderer/features/equip-management/muon-tra-thiet-bi/PhieuMuonTraDetailsDrawer';
+import { matchesSearch } from '@renderer/shared/utils/string';
 
 const defaultValues = {
   id: undefined,
@@ -38,8 +39,11 @@ const PhieuMuonTraPage = () => {
     open: false,
     data: null,
   });
+  const [viewModal, setViewModal] = useState<{ open: boolean; data: any }>({
+    open: false,
+    data: null,
+  });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [backupSelectedRow, setBackupSelectedRow] = useState<any>(null);
 
   const {
     formMethods,
@@ -49,26 +53,17 @@ const PhieuMuonTraPage = () => {
     handleRowSelectionModelChange,
     isDeleteOpenModal,
     onAdd,
-    onEdit,
     onSave,
     handleDeleteRecord,
     selectedRows,
     setIsDeleteOpenModal,
     handleCloseModal,
-    isAddMode,
     tableConfig,
     refetch,
   } = useCrudPaginationModal<any, any>({
     defaultValues,
     schema: phieuMuonTraSchema,
     entity: 'PhieuMuonTra',
-    beforeEdit: (hookRow) => {
-      const validRow = hookRow || backupSelectedRow;
-      if (!validRow) {
-        return undefined;
-      }
-      return validRow;
-    },
   });
 
   const handleOpenReturnModal = useCallback((row: PhieuMuonTraRow) => {
@@ -98,7 +93,6 @@ const PhieuMuonTraPage = () => {
       setReturnModal({ open: false, data: null });
       await refetch();
     } catch (error: any) {
-      console.error('Update error:', error.response?.data);
       toast.error(error?.response?.data?.message || error?.message || 'Lỗi khi cập nhật phiếu trả');
     } finally {
       setIsUpdating(false);
@@ -110,19 +104,23 @@ const PhieuMuonTraPage = () => {
       if (col.field === 'actions') {
         return {
           ...col,
+          width: 140,
           renderCell: (params: any) => (
-            <Button
-              variant="contained"
-              size="small"
-              color="success"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenReturnModal(params.row);
-              }}
-              disabled={params.row.trangThai === 1}
-            >
-              Trả máy
-            </Button>
+            <Stack direction="row" spacing={1} alignItems="center">
+
+              <Button
+                variant="contained"
+                size="small"
+                color="success"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenReturnModal(params.row);
+                }}
+                disabled={params.row.trangThai === 1}
+              >
+                Trả máy
+              </Button>
+            </Stack>
           ),
         };
       }
@@ -142,7 +140,7 @@ const PhieuMuonTraPage = () => {
     if (Object.keys(filters).length === 0) return rows;
 
     return rows.filter((row) => {
-      if (filters.maPhieu && !row.maPhieu?.toLowerCase().includes(filters.maPhieu.toLowerCase())) {
+      if (filters.maPhieu && !matchesSearch(row.maPhieu, filters.maPhieu)) {
         return false;
       }
 
@@ -152,19 +150,15 @@ const PhieuMuonTraPage = () => {
             ? `${row.sinhVien?.hoDem || ''} ${row.sinhVien?.ten || ''}`.trim()
             : `${row.giangVien?.hoDem || ''} ${row.giangVien?.ten || ''}`.trim();
 
-        if (!tenNguoiMuon.toLowerCase().includes(filters.tenNguoiMuon.toLowerCase())) {
+        if (!matchesSearch(tenNguoiMuon, filters.tenNguoiMuon)) {
           return false;
         }
       }
 
       if (filters.maThietBi || filters.tenThietBi) {
         const hasMatchingThietBi = row.chiTietPhieuMuons?.some((ct) => {
-          const matchMa =
-            !filters.maThietBi ||
-            ct.thietBi?.maThietBi?.toLowerCase().includes(filters.maThietBi.toLowerCase());
-          const matchTen =
-            !filters.tenThietBi ||
-            ct.thietBi?.tenThietBi?.toLowerCase().includes(filters.tenThietBi.toLowerCase());
+          const matchMa = matchesSearch(ct.thietBi?.maThietBi, filters.maThietBi || '');
+          const matchTen = matchesSearch(ct.thietBi?.tenThietBi, filters.tenThietBi || '');
           return matchMa && matchTen;
         });
         if (!hasMatchingThietBi) return false;
@@ -173,7 +167,7 @@ const PhieuMuonTraPage = () => {
       if (filters.trangThaiText) {
         const statusMap = { 0: 'Đang mượn', 1: 'Đã trả', 2: 'Quá hạn' };
         const currentStatus = statusMap[row.trangThai as keyof typeof statusMap] || '';
-        if (!currentStatus.toLowerCase().includes(filters.trangThaiText.toLowerCase())) {
+        if (!matchesSearch(currentStatus, filters.trangThaiText)) {
           return false;
         }
       }
@@ -181,7 +175,7 @@ const PhieuMuonTraPage = () => {
       if (filters.loaiDoiTuongText) {
         const loaiMap = { 1: 'Sinh viên', 2: 'Giảng viên' };
         const currentLoai = loaiMap[row.loaiDoiTuong as keyof typeof loaiMap] || '';
-        if (!currentLoai.toLowerCase().includes(filters.loaiDoiTuongText.toLowerCase())) {
+        if (!matchesSearch(currentLoai, filters.loaiDoiTuongText)) {
           return false;
         }
       }
@@ -200,14 +194,13 @@ const PhieuMuonTraPage = () => {
           selectedRowIds={selectedRows}
           onDelete={() => setIsDeleteOpenModal(true)}
           onAdd={onAdd}
-          onEdit={onEdit}
         />
 
         <PhieuMuonTraFilter onApply={handleApplyFilter} onReset={handleResetFilter} />
 
         {isModalOpen && (
           <FormDetailsModal
-            title={isAddMode ? 'Lập phiếu mượn' : 'Cập nhật phiếu mượn'}
+            title="Lập phiếu mượn"
             onClose={handleCloseModal}
             onSave={onSave}
             maxWidth="sm"
@@ -227,10 +220,14 @@ const PhieuMuonTraPage = () => {
         <ReturnEquipmentModal
           open={returnModal.open}
           data={returnModal.data}
-          onClose={() => {
-            setReturnModal({ open: false, data: null });
-          }}
+          onClose={() => setReturnModal({ open: false, data: null })}
           onSave={handleSaveReturn}
+        />
+
+        <PhieuMuonTraDetailsDrawer
+          open={viewModal.open}
+          data={viewModal.data}
+          onClose={() => setViewModal({ open: false, data: null })}
         />
 
         <DataGridTable
@@ -238,16 +235,8 @@ const PhieuMuonTraPage = () => {
           rows={rowsData}
           loading={isRefetching || isUpdating}
           checkboxSelection
-          onRowSelectionModelChange={(newSelection) => {
-            handleRowSelectionModelChange(newSelection);
-            if (Array.isArray(newSelection) && newSelection.length > 0) {
-              const currentSelectedId = newSelection[0];
-              const rowData = rowsData.find((item: any) => item.id == currentSelectedId);
-              setBackupSelectedRow(rowData);
-            } else {
-              setBackupSelectedRow(null);
-            }
-          }}
+          onRowClick={(params) => setViewModal({ open: true, data: params.row })}
+          onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}
           getRowId={(row) => row.id}
           height="calc(100% - 120px)"

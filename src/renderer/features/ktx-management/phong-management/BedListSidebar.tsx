@@ -6,7 +6,20 @@ export const BedListSidebar = ({ phong, onClose }: any) => {
   const beds = phong.giuongs?.filter((g: any) => !g.isDeleted) || [];
 
   return (
-    <Drawer anchor="right" open={!!phong} onClose={onClose} PaperProps={{ sx: { width: 550 } }}>
+    <Drawer
+      anchor="right"
+      open={!!phong}
+      onClose={onClose}
+      hideBackdrop={true}
+      sx={{
+        pointerEvents: 'none',
+        '& .MuiPaper-root': {
+          pointerEvents: 'auto',
+          width: 550,
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.1)',
+        },
+      }}
+    >
       <Stack height="100%">
         <Stack
           direction="row"

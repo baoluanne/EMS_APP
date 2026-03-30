@@ -4,7 +4,7 @@ import { ControlledDatePicker, ControlledTextField } from '@renderer/components/
 import { FilterSelect } from '@renderer/components/fields';
 import { LoaiThietBiSelection } from '@renderer/components/selections/equipManagement/LoaiThietBiSelection';
 import { NhaCungCapSelection } from '@renderer/components/selections/equipManagement/NhaCungCapFilter';
-import { TrangThaiThietBiOptions } from '@renderer/features/equip-management/danh-sach-thiet-bi/TrangThaiThietBiEnum';
+import { TrangThaiThietBiOptions } from '../../enums';
 
 export const DanhSachThietBiForm = () => {
   const { control, register } = useFormContext();

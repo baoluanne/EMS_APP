@@ -11,6 +11,7 @@ import {
   ListItemText,
   Collapse,
   Button,
+  Divider,
 } from '@mui/material';
 import { DataGridTable } from '@renderer/components/Table';
 import { ActionsToolbar } from '@renderer/components/toolbars';
@@ -18,31 +19,32 @@ import { useCrudPaginationModal } from '@renderer/shared/hooks/use-crud-paginati
 import { useCrudPagination } from '@renderer/shared/hooks/use-crud-pagination';
 import { exportPaginationToExcel } from '@renderer/shared/utils/export-excel';
 
-import { roomColumns } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/configs/table.configs';
-import { KtxSidebar } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/KtxSidebar';
+import { getStudentResidencyColumns } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/configs/table.configs';
 import { FloorStatsCard } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/FloorStatsCard';
 import { ThongTinSvKtxFilter } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/ThongTinSinhVienFilter';
-import { floorStatsConfig } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/configs/floorStats';
 import type { ThongTinSvKtxFilterState } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/type';
 import { thongTinSvKtxSchema } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/validation';
 import { FormProvider } from 'react-hook-form';
 import { BedListDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentListDrawer';
 import { StudentSearchResultDrawer } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/StudentSearchResultDrawer';
-import { ResidencyHistoryModal } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/CutruHistory';
+import { ResidencyHistorySidebar } from '@renderer/features/ktx-management/thong-tin-sinh-vien-ktx/components/CutruHistory';
 import {
+  Apartment,
   DescriptionOutlined,
   ErrorSharp,
   MoreVert,
   KeyboardArrowUp,
   KeyboardArrowDown,
-  Analytics,
   Home,
+  People,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 export default function ThongTinSinhVienKtx() {
-  const [expandedToa, setExpandedToa] = useState<string | null>(null);
+  const [activeToa, setActiveToa] = useState<any>(null);
   const [selectedTang, setSelectedTang] = useState<any>(null);
+  const [showFilters, setShowFilters] = useState(true);
   const [selectedPhong, setSelectedPhong] = useState<any>(null);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
@@ -59,17 +61,18 @@ export default function ThongTinSinhVienKtx() {
 
   const {
     formMethods,
-    data: phongData,
-    isRefetching: loadingPhong,
+    data: residencyData,
+    isRefetching: loadingResidency,
     tableConfig,
     mergeParams,
     selectedRows,
     handleRowSelectionModelChange,
     columnVisibilityModel,
   } = useCrudPaginationModal<any, any>({
-    defaultValues: { maPhong: '' },
+    defaultValues: { Keyword: '' },
     schema: thongTinSvKtxSchema,
-    entity: 'PhongKtx',
+    entity: 'CuTruKtx',
+    endpoint: 'pagination?TrangThai=0', // Chỉ lấy những người đang ở (TrangThai = 0 hoặc tương đương)
   });
 
   const { data: toaNhaData } = useCrudPagination<any>({
@@ -78,19 +81,29 @@ export default function ThongTinSinhVienKtx() {
   });
   const { data: tangData } = useCrudPagination<any>({
     entity: 'Tang',
-    endpoint: `pagination?ToaNhaId=${expandedToa}&pageSize=100`,
-    enabled: !!expandedToa,
+    endpoint: `pagination?ToaNhaId=${activeToa?.id || ''}&pageSize=100`,
+    enabled: !!activeToa?.id,
   });
+
+  const toaList = useMemo(() => (toaNhaData as any)?.result || [], [toaNhaData]);
+  const tangList = useMemo(() => (tangData as any)?.result || [], [tangData]);
+
+  useEffect(() => {
+    if (toaList.length > 0 && !activeToa) setActiveToa(toaList[0]);
+  }, [toaList, activeToa]);
+
+  useEffect(() => {
+    setSelectedTang(null);
+  }, [activeToa]);
+
+  useEffect(() => {
+    if (tangList.length > 0 && !selectedTang) setSelectedTang(tangList[0]);
+  }, [tangList, selectedTang]);
 
   useEffect(() => {
     if (selectedTang?.id) mergeParams({ TangId: selectedTang.id });
   }, [selectedTang, mergeParams]);
 
-  const handleExpandToa = useCallback((id: string | null) => setExpandedToa(id), []);
-  const handleSelectTang = useCallback((tang: any) => {
-    setSelectedTang(tang);
-    setSelectedPhong(null);
-  }, []);
 
   const handleFilterApply = (filters: ThongTinSvKtxFilterState) => {
     setFilterState(filters);
@@ -99,6 +112,10 @@ export default function ThongTinSinhVienKtx() {
     );
     setIsSearchResultOpen(hasRealFilter);
   };
+
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(filterState).some((v) => v !== undefined && v !== '' && v !== null);
+  }, [filterState]);
 
   const handleFilterReset = useCallback(() => {
     setFilterState({});
@@ -113,21 +130,19 @@ export default function ThongTinSinhVienKtx() {
     setMenuAnchorEl(null);
   };
 
-  const floorStats = useMemo(() => {
-    const phongs = (phongData as any)?.result || [];
-    let tBeds = 0;
-    let oBeds = 0;
-    phongs.forEach((p: any) => {
-      tBeds += p.soLuongGiuong || 0;
-      oBeds += p.giuongs?.filter((g: any) => g.trangThai === 1).length || 0;
-    });
+  const stats = useMemo(() => {
+    const records = (residencyData as any)?.result || [];
+    const uniqueStudents = new Set(records.map((r: any) => r.sinhVienId)).size;
+    const maleCount = records.filter((r: any) => r.sinhVien?.gioiTinh === 0).length;
+    const femaleCount = records.filter((r: any) => r.sinhVien?.gioiTinh === 1).length;
+
     return {
-      totalRooms: phongs.length,
-      totalBeds: tBeds,
-      occupiedBeds: oBeds,
-      availableBeds: tBeds - oBeds,
+      totalStudents: uniqueStudents,
+      maleCount,
+      femaleCount,
+      totalRecords: records.length,
     };
-  }, [phongData]);
+  }, [residencyData]);
 
   return (
     <FormProvider {...formMethods}>
@@ -140,31 +155,102 @@ export default function ThongTinSinhVienKtx() {
           overflow: 'hidden',
         }}
       >
-        <KtxSidebar
-          toaNhaData={(toaNhaData as any)?.result}
-          tangData={(tangData as any)?.result}
-          expandedToa={expandedToa}
-          selectedTangId={selectedTang?.id}
-          onExpandToa={handleExpandToa}
-          onSelectTang={handleSelectTang}
-        />
-
         <Stack flexGrow={1} p={2} spacing={2} sx={{ overflowY: 'auto' }}>
+          {/* Header & Filter Pattern giống Infrastructure */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={0.5}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Apartment color="primary" fontSize="small" />
+              <Typography variant="overline" fontWeight={800} color="text.secondary">
+                CHỌN TÒA & TẦNG TRA CỨU
+              </Typography>
+            </Stack>
+            <Button
+              size="small"
+              onClick={() => setShowFilters(!showFilters)}
+              startIcon={showFilters ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+              sx={{ fontWeight: 600 }}
+            >
+              {showFilters ? 'Thu gọn' : 'Mở rộng'}
+            </Button>
+          </Stack>
+
+          <Collapse in={showFilters}>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: 'white',
+                borderRadius: 1.5,
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                mb: 1,
+              }}
+            >
+              {/* Chọn Tòa */}
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Typography variant="body2" fontWeight={700} sx={{ minWidth: 80 }}>
+                  Tòa nhà:
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5 }}>
+                  {toaList.map((toa: any) => (
+                    <Button
+                      key={toa.id}
+                      variant={activeToa?.id === toa.id ? 'contained' : 'outlined'}
+                      size="small"
+                      onClick={() => setActiveToa(toa)}
+                      sx={{
+                        borderRadius: 1,
+                        minWidth: 100,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                      }}
+                    >
+                      {toa.tenToaNha}
+                    </Button>
+                  ))}
+                </Stack>
+              </Stack>
+
+              <Divider />
+
+              {/* Chọn Tầng */}
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Typography variant="body2" fontWeight={700} sx={{ minWidth: 80 }}>
+                  Tầng:
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5 }}>
+                  {tangList.length > 0 ? (
+                    tangList.map((tang: any) => (
+                      <Button
+                        key={tang.id}
+                        variant={selectedTang?.id === tang.id ? 'contained' : 'outlined'}
+                        size="small"
+                        color="secondary"
+                        onClick={() => setSelectedTang(tang)}
+                        sx={{
+                          borderRadius: 1,
+                          minWidth: 80,
+                          fontWeight: 700,
+                          textTransform: 'none',
+                        }}
+                      >
+                        {tang.tenTang}
+                      </Button>
+                    ))
+                  ) : (
+                    <Typography variant="caption" color="text.disabled">
+                      Vui lòng chọn Tòa nhà
+                    </Typography>
+                  )}
+                </Stack>
+              </Stack>
+            </Box>
+          </Collapse>
           {selectedTang ? (
             <>
               {/* Header điều khiển Thống kê */}
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Analytics color="action" fontSize="small" />
-                  <Typography
-                    variant="overline"
-                    fontWeight={600}
-                    color="text.secondary"
-                    sx={{ letterSpacing: 1 }}
-                  >
-                    Báo cáo nhanh tầng {selectedTang.tenTang}
-                  </Typography>
-                </Stack>
+              <Stack direction="row" alignItems="center" justifyContent="flex-end" sx={{ mt: 1 }}>
                 <Button
                   size="small"
                   variant="text"
@@ -179,16 +265,30 @@ export default function ThongTinSinhVienKtx() {
               {/* Khu vực thống kê có khả năng thu gọn */}
               <Collapse in={showStats}>
                 <Grid container spacing={2} sx={{ mb: 3 }}>
-                  {floorStatsConfig.map((stat) => (
-                    <Grid key={stat.key} size={3}>
-                      <FloorStatsCard
-                        label={stat.label}
-                        value={floorStats[stat.key as keyof typeof floorStats]}
-                        icon={stat.icon}
-                        color={stat.color}
-                      />
-                    </Grid>
-                  ))}
+                  <Grid size={4}>
+                    <FloorStatsCard
+                      label="Tổng sinh viên"
+                      value={stats.totalStudents}
+                      icon={<People />}
+                      color="#1976d2"
+                    />
+                  </Grid>
+                  <Grid size={4}>
+                    <FloorStatsCard
+                      label="Sinh viên Nam"
+                      value={stats.maleCount}
+                      icon={<People />}
+                      color="#0288d1"
+                    />
+                  </Grid>
+                  <Grid size={4}>
+                    <FloorStatsCard
+                      label="Sinh viên Nữ"
+                      value={stats.femaleCount}
+                      icon={<People />}
+                      color="#d32f2f"
+                    />
+                  </Grid>
                 </Grid>
               </Collapse>
 
@@ -199,21 +299,35 @@ export default function ThongTinSinhVienKtx() {
                   alignItems: 'center',
                   bgcolor: 'background.paper',
                   borderRadius: 1,
+                  border: '1px solid #e2e8f0',
                 }}
               >
-                <ActionsToolbar
-                  selectedRowIds={selectedRows}
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <ActionsToolbar
+                    selectedRowIds={selectedRows}
                   onExport={(dataOption, columnOption) =>
                     exportPaginationToExcel<any>({
-                      entity: 'DanhSachPhong',
-                      filteredData: (phongData as any)?.result || [],
-                      columns: roomColumns,
+                      entity: 'CuTruKtx',
+                      filteredData: (residencyData as any)?.result || [],
+                      columns: getStudentResidencyColumns(),
                       options: { dataOption, columnOption },
-                      fileName: `Phong_Tang_${selectedTang.tenTang}`,
+                      fileName: `Danh_sach_SV_Tang_${selectedTang.tenTang}`,
                       columnVisibilityModel,
                     })
                   }
-                />
+                  />
+                  {hasActiveFilters && !isSearchResultOpen && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<SearchIcon />}
+                      onClick={() => setIsSearchResultOpen(true)}
+                      sx={{ fontWeight: 800, borderRadius: 1.5, height: 32 }}
+                    >
+                      Kết quả tìm kiếm
+                    </Button>
+                  )}
+                </Stack>
 
                 <Box sx={{ pr: 2 }}>
                   <IconButton
@@ -268,49 +382,36 @@ export default function ThongTinSinhVienKtx() {
               </Box>
 
               {/* FILTER MỚI - Autocomplete search */}
-              <Box>
+              <Box sx={{ bgcolor: 'white', p: 0.5, borderRadius: 2, border: '1px solid #e2e8f0' }}>
                 <ThongTinSvKtxFilter onApply={handleFilterApply} onReset={handleFilterReset} />
               </Box>
 
               <Box
-                flexGrow={1}
                 sx={{
-                  bgcolor: '#fff',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  border: '1px solid #e2e8f0',
+                  flex: 1,
+                  minHeight: 0,
                   display: 'flex',
                   flexDirection: 'column',
-                  width: '100%',
-                  height: '100%',
+                  bgcolor: 'white',
+                  borderRadius: 1.5,
+                  border: '1px solid #e2e8f0',
+                  overflow: 'hidden',
                 }}
               >
                 <DataGridTable
                   {...tableConfig}
-                  columns={roomColumns}
-                  rows={(phongData as any)?.result || []}
-                  loading={loadingPhong}
-                  onRowClick={(params) => setSelectedPhong(params.row)}
+                  columns={getStudentResidencyColumns()}
+                  rows={(residencyData as any)?.result || []}
+                  loading={loadingResidency}
+                  checkboxSelection
+                  disableRowSelectionOnClick={false}
+                  onRowClick={(params) => {
+                    setSelectedStudent(params.row);
+                    setOpenHistoryModal(true);
+                  }}
                   onRowSelectionModelChange={handleRowSelectionModelChange}
                   rowSelectionModel={selectedRows}
                   getRowId={(row) => row.id}
-                  sx={{
-                    flex: 1,
-                    '& .MuiDataGrid-root': { border: 'none', height: '100%' },
-                    '& .MuiDataGrid-columnHeaders': {
-                      borderBottom: '1px solid #e2e8f0',
-                      backgroundColor: '#fafafa',
-                    },
-                    '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 700, fontSize: '14px' },
-                    '& .MuiDataGrid-cell': {
-                      borderRight: '1px solid #f0f0f0',
-                      padding: '12px 8px',
-                      fontSize: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  }}
                 />
               </Box>
             </>
@@ -352,8 +453,8 @@ export default function ThongTinSinhVienKtx() {
           }}
         />
 
-        {/* ResidencyHistoryModal - Lịch sử cư trú */}
-        <ResidencyHistoryModal
+        {/* ResidencyHistorySidebar - Lịch sử cư trú */}
+        <ResidencyHistorySidebar
           open={openHistoryModal}
           onClose={() => {
             setOpenHistoryModal(false);

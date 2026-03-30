@@ -16,6 +16,7 @@ import {
 } from '../../features/equip-management/loai-thiet-bi/validation';
 import React, { useMemo, useCallback } from 'react';
 import { TITLE_MODE } from '@renderer/shared/enums';
+import { matchesSearch } from '@renderer/shared/utils/string';
 
 const defaultValues = {
   id: undefined,
@@ -44,6 +45,7 @@ const LoaiThietBiPage = () => {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
+    openEditModal,
   } = useCrudPaginationModal<LoaiThietBi, LoaiThietBi>({
     defaultValues,
     schema: loaiThietBiSchema,
@@ -69,12 +71,8 @@ const LoaiThietBiPage = () => {
     }
 
     return rawRowsData.filter((row) => {
-      const matchMaLoai =
-        !filters.maLoai || row.maLoai?.toLowerCase().includes(filters.maLoai.toLowerCase());
-
-      const matchTenLoai =
-        !filters.tenLoai || row.tenLoai?.toLowerCase().includes(filters.tenLoai.toLowerCase());
-
+      const matchMaLoai = matchesSearch(row.maLoai, filters.maLoai || '');
+      const matchTenLoai = matchesSearch(row.tenLoai, filters.tenLoai || '');
       return matchMaLoai && matchTenLoai;
     });
   }, [rawRowsData, filters]);
@@ -133,7 +131,7 @@ const LoaiThietBiPage = () => {
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => formMethods.reset(params.row)}
+          onRowClick={(params) => openEditModal(params.row)}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}

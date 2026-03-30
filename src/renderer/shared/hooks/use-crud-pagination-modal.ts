@@ -154,12 +154,7 @@ export const useCrudPaginationModal = <
     openModalForAdd();
   };
 
-  const onEdit = () => {
-    if (selectedRows.ids.size != 1) {
-      toast.warning('Vui lòng chọn 1 dữ liệu để sửa');
-      return;
-    }
-    const row = data?.result?.find((item) => item.id && selectedRows.ids.has(item.id));
+  const openEditModal = (row: TEntity) => {
     let payload = row;
 
     if (beforeEdit) {
@@ -174,6 +169,15 @@ export const useCrudPaginationModal = <
     setIsAddMode(false);
     setIsCloneMode(false);
     handleOpenModal();
+  };
+
+  const onEdit = () => {
+    if (selectedRows.ids.size != 1) {
+      toast.warning('Vui lòng chọn 1 dữ liệu để sửa');
+      return;
+    }
+    const row = data?.result?.find((item) => item.id && selectedRows.ids.has(item.id));
+    openEditModal(row as TEntity);
   };
 
   const onSave = methods.handleSubmit(
@@ -229,6 +233,7 @@ export const useCrudPaginationModal = <
     isDeleteOpenModal,
     onAdd,
     onEdit,
+    openEditModal,
     onSave,
     handleDeleteRecord,
     setIsDeleteOpenModal,

@@ -10,9 +10,9 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Divider,
 } from '@mui/material';
 import {
-  Layers,
   Apartment,
   KeyboardArrowUp,
   DescriptionOutlined,
@@ -40,17 +40,33 @@ import { exportPaginationToExcel } from '@renderer/shared/utils';
 
 const QuanLyPhongKtx = () => {
   const navigate = useNavigate();
+  const [activeToa, setActiveToa] = useState<any>(null);
   const [activeTang, setActiveTang] = useState<any>(null);
   const [viewingPhong, setViewingPhong] = useState<any>(null);
-  const [showFloors, setShowFloors] = useState(true);
+  const [showFilters, setShowFilters] = useState(true);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-  const { data: tangData } = useCrudPagination<any>({
-    entity: 'Tang',
+  const { data: toaData } = useCrudPagination<any>({
+    entity: 'ToaNhaKtx',
     endpoint: 'pagination?pageSize=100',
   });
 
+  const { data: tangData } = useCrudPagination<any>({
+    entity: 'Tang',
+    endpoint: `pagination?ToaNhaId=${activeToa?.id || ''}&pageSize=100`,
+    enabled: !!activeToa?.id,
+  });
+
+  const toaList = useMemo(() => (toaData as any)?.result || [], [toaData]);
   const tangList = useMemo(() => (tangData as any)?.result || [], [tangData]);
+
+  useEffect(() => {
+    if (toaList.length > 0 && !activeToa) setActiveToa(toaList[0]);
+  }, [toaList, activeToa]);
+
+  useEffect(() => {
+    setActiveTang(null);
+  }, [activeToa]);
 
   useEffect(() => {
     if (tangList.length > 0 && !activeTang) setActiveTang(tangList[0]);
@@ -96,38 +112,88 @@ const QuanLyPhongKtx = () => {
           <Stack direction="row" alignItems="center" spacing={1}>
             <Apartment color="primary" fontSize="small" />
             <Typography variant="overline" fontWeight={800} color="text.secondary">
-              DANH SÁCH TẦNG
+              CHỌN TÒA & TẦNG
             </Typography>
           </Stack>
           <Button
             size="small"
-            onClick={() => setShowFloors(!showFloors)}
-            startIcon={showFloors ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+            onClick={() => setShowFilters(!showFilters)}
+            startIcon={showFilters ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
             sx={{ fontWeight: 600 }}
           >
-            {showFloors ? 'Thu gọn' : 'Mở rộng'}
+            {showFilters ? 'Thu gọn' : 'Mở rộng'}
           </Button>
         </Stack>
-        <Collapse in={showFloors}>
-          <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 1.5, border: '1px solid #e2e8f0' }}>
-            <Stack direction="row" spacing={1.5} sx={{ overflowX: 'auto', pb: 0.2 }}>
-              {tangList.map((tang: any) => (
-                <Button
-                  key={tang.id}
-                  variant={activeTang?.id === tang.id ? 'contained' : 'outlined'}
-                  startIcon={<Layers />}
-                  onClick={() => setActiveTang(tang)}
-                  sx={{
-                    borderRadius: 1,
-                    minWidth: 130,
-                    fontWeight: 700,
-                    textTransform: 'none',
-                    boxShadow: activeTang?.id === tang.id ? 2 : 0,
-                  }}
-                >
-                  {tang.tenTang}
-                </Button>
-              ))}
+
+        <Collapse in={showFilters}>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: 'white',
+              borderRadius: 1.5,
+              border: '1px solid #e2e8f0',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            {/* Chọn Tòa */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography variant="body2" fontWeight={700} sx={{ minWidth: 60 }}>
+                Tòa nhà:
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5 }}>
+                {toaList.map((toa: any) => (
+                  <Button
+                    key={toa.id}
+                    variant={activeToa?.id === toa.id ? 'contained' : 'outlined'}
+                    size="small"
+                    onClick={() => setActiveToa(toa)}
+                    sx={{
+                      borderRadius: 1,
+                      minWidth: 100,
+                      fontWeight: 700,
+                      textTransform: 'none',
+                    }}
+                  >
+                    {toa.tenToaNha}
+                  </Button>
+                ))}
+              </Stack>
+            </Stack>
+
+            <Divider />
+
+            {/* Chọn Tầng */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography variant="body2" fontWeight={700} sx={{ minWidth: 60 }}>
+                Tầng:
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5 }}>
+                {tangList.length > 0 ? (
+                  tangList.map((tang: any) => (
+                    <Button
+                      key={tang.id}
+                      variant={activeTang?.id === tang.id ? 'contained' : 'outlined'}
+                      size="small"
+                      color="secondary"
+                      onClick={() => setActiveTang(tang)}
+                      sx={{
+                        borderRadius: 1,
+                        minWidth: 80,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                      }}
+                    >
+                      {tang.tenTang}
+                    </Button>
+                  ))
+                ) : (
+                  <Typography variant="caption" color="text.disabled">
+                    Vui lòng chọn Tòa nhà
+                  </Typography>
+                )}
+              </Stack>
             </Stack>
           </Box>
         </Collapse>
@@ -150,7 +216,7 @@ const QuanLyPhongKtx = () => {
             onExport={(dataOption, columnOption) => {
               exportPaginationToExcel({
                 entity: 'PhongKtx',
-                columns: getPhongColumns(() => {}),
+                columns: getPhongColumns(),
                 options: { dataOption, columnOption },
                 fileName: `Danh_sach_phong_${activeTang?.tenTang || 'KTX'}`,
                 columnVisibilityModel,
@@ -235,11 +301,12 @@ const QuanLyPhongKtx = () => {
         >
           <DataGridTable
             rows={(data as any)?.result || []}
-            columns={getPhongColumns((phong) => setViewingPhong(phong))}
+            columns={getPhongColumns()}
             loading={isRefetching}
             checkboxSelection
             disableRowSelectionOnClick={false}
             getRowId={(row) => row.id}
+            onRowClick={(params) => setViewingPhong(params.row)}
             onRowSelectionModelChange={handleRowSelectionModelChange}
             rowSelectionModel={selectedRows}
             {...tableConfig}

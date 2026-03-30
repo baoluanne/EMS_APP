@@ -46,6 +46,7 @@ const NhaCungCapPage = () => {
     isAddMode,
     tableConfig,
     columnVisibilityModel,
+    openEditModal,
   } = useCrudPaginationModal<NhaCungCap, NhaCungCap>({
     defaultValues,
     schema: nhaCungCapSchema,
@@ -145,7 +146,7 @@ const NhaCungCapPage = () => {
           rows={rowsData}
           checkboxSelection
           loading={isRefetching}
-          onRowClick={(params) => formMethods.reset(params.row)}
+          onRowClick={(params) => openEditModal(params.row)}
           getRowId={(row) => row.id!}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           rowSelectionModel={selectedRows}

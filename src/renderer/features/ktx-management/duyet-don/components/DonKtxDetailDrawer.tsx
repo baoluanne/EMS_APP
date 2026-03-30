@@ -20,6 +20,8 @@ import {
   MeetingRoomOutlined,
   HistoryEdu,
   Assignment,
+  Wc,
+  Fingerprint,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { KtxLoaiDon, KtxDonTrangThaiOptions } from '../configs/KtxDonEnum';
@@ -58,14 +60,18 @@ export const DonKtxDetailDrawer = ({ don, onClose }: Props) => {
       anchor="right"
       open={!!don}
       onClose={onClose}
+      hideBackdrop={true}
       sx={{
         '& .MuiDrawer-root': {
           zIndex: 1500,
         },
         '& .MuiPaper-root': {
           zIndex: 1500,
+          pointerEvents: 'auto',
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.1)',
         },
         zIndex: 1500,
+        pointerEvents: 'none',
       }}
     >
       <Box
@@ -101,46 +107,61 @@ export const DonKtxDetailDrawer = ({ don, onClose }: Props) => {
         <Box sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
           <Paper
             elevation={0}
-            sx={{ p: 3, borderRadius: 4, mb: 3, border: '1px solid #e2e8f0', textAlign: 'center' }}
+            sx={{
+              p: 3,
+              borderRadius: 4,
+              mb: 3,
+              border: '1px solid #e2e8f0',
+              bgcolor: '#fff',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
           >
-            <Avatar
-              sx={{
-                width: 80,
-                height: 80,
-                mx: 'auto',
-                mb: 2,
-                bgcolor: don.sinhVien?.gioiTinh === 0 ? '#3b82f6' : '#ec4899',
-                fontSize: '2rem',
-              }}
-            >
-              {don.sinhVien?.ten?.charAt(0)}
-            </Avatar>
-            <Typography variant="h6" fontWeight={900}>
-              {don.sinhVien?.fullName}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              MSSV: {don.sinhVien?.maSinhVien}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              Giới tính: {don.sinhVien?.gioiTinh === 0 ? 'Nam' : 'Nữ'}
-            </Typography>
-            <Chip
-              label={statusInfo.label}
-              color={statusInfo.color as any}
-              sx={{ fontWeight: 800, mt: 1 }}
-            />
-          </Paper>
+            {/* Header part of the card */}
+            <Stack direction="row" spacing={2.5} alignItems="center" mb={3}>
+              <Avatar
+                sx={{
+                  width: 70,
+                  height: 70,
+                  bgcolor: don.sinhVien?.gioiTinh === 0 ? '#3b82f6' : '#ec4899',
+                  fontSize: '1.75rem',
+                  fontWeight: 900,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                }}
+              >
+                {don.sinhVien?.ten?.charAt(0)}
+              </Avatar>
+              <Box flexGrow={1}>
+                <Typography variant="h6" fontWeight={900} color="textPrimary" sx={{ mb: 0.5 }}>
+                  {don.sinhVien?.fullName}
+                </Typography>
+                <Chip
+                  label={statusInfo.label}
+                  color={statusInfo.color as any}
+                  size="small"
+                  sx={{ fontWeight: 800, borderRadius: 1 }}
+                />
+              </Box>
+            </Stack>
 
-          <Typography
-            variant="overline"
-            color="primary"
-            fontWeight={900}
-            sx={{ mb: 2, display: 'block' }}
-          >
-            Thông tin chung
-          </Typography>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 4, mb: 3, border: '1px solid #e2e8f0' }}>
+            <Divider sx={{ mb: 3, borderStyle: 'dashed' }} />
+
+            {/* General Info Grid */}
             <Grid container spacing={2}>
+              <Grid size={6}>
+                <DetailItem
+                  icon={<Fingerprint fontSize="small" />}
+                  label="MSSV"
+                  value={don.sinhVien?.maSinhVien}
+                />
+              </Grid>
+              <Grid size={6}>
+                <DetailItem
+                  icon={<Wc fontSize="small" />}
+                  label="Giới tính"
+                  value={don.sinhVien?.gioiTinh === 0 ? 'Nam' : 'Nữ'}
+                />
+              </Grid>
               <Grid size={6}>
                 <DetailItem
                   icon={<Description fontSize="small" />}
